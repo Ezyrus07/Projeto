@@ -1,7 +1,10 @@
 (function(){
-  window.__DOKE_SHELL_BUILD__ = "20260307v93";
+  window.__DOKE_SHELL_BUILD__ = "20260309v97";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
+  try {
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  } catch (_e) {}
   // Pages where the mobile shell (header/bottom-nav/search overlay) must NOT be injected
   const DOKE_DISABLE_SHELL_PAGES = ["login.html","cadastro.html","senha.html"];
   const __dokeCurrentFile = String((location.pathname||"").split("/").pop()||"").toLowerCase();
@@ -49,6 +52,15 @@
   };
 
   const LOGO_SRC = "assets/Imagens/doke-logo.png";
+  const NAV_PREBOOT_KEY = "doke_nav_preboot_target_v1";
+
+  function markNextHtmlNavigation(urlObj){
+    try{
+      if(!urlObj) return;
+      const path = `${urlObj.pathname || ""}${urlObj.search || ""}`;
+      sessionStorage.setItem(NAV_PREBOOT_KEY, path);
+    }catch(_e){}
+  }
 
   function toast(msg, type="info"){
     try{
@@ -2296,20 +2308,66 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         box-shadow:0 0 12px rgba(11,119,104,.35);
         animation:dokeNavLoad 900ms ease-in-out infinite;
       }
+      body.doke-nav-cloak::before{
+        content:"";
+        position:fixed;
+        left:0;
+        top:0;
+        height:3px;
+        width:38%;
+        z-index:2147483647;
+        background:linear-gradient(90deg,#2e68a6,#0b7768);
+        box-shadow:0 0 12px rgba(11,119,104,.35);
+        animation:dokeNavLoad 900ms ease-in-out infinite;
+      }
+      body.doke-nav-pending::after{
+        content:"";
+        position:fixed;
+        inset:0;
+        z-index:2147483646;
+        background:#eef3f8;
+        pointer-events:none;
+      }
+      body.doke-nav-cloak::after{
+        content:"";
+        position:fixed;
+        inset:0;
+        z-index:2147483646;
+        background:#eef3f8;
+        pointer-events:none;
+      }
+      body.doke-nav-cloak .navbar-desktop,
+      body.doke-nav-cloak .sidebar-icones,
+      body.doke-nav-cloak main,
+      body.doke-nav-cloak .dp-wrap,
+      body.doke-nav-cloak .main-content,
+      body.doke-nav-cloak .messenger-layout,
+      body.doke-nav-cloak .orders-page{
+        visibility:hidden !important;
+      }
       @keyframes dokeNavLoad{
         0%{ transform:translateX(0); width:24%; }
         50%{ transform:translateX(115%); width:48%; }
         100%{ transform:translateX(265%); width:24%; }
       }
-      body.doke-nav-pending main,
-      body.doke-nav-pending .main-content,
-      body.doke-nav-pending .dp-wrap,
-      body.doke-nav-pending .messenger-layout{
-        opacity:.88;
-        transition:opacity .12s ease;
+      .doke-page-swap-leave{
+        opacity:.14;
+        transform:translateY(-4px);
+        transition:opacity .12s ease, transform .12s ease;
+      }
+      .doke-page-swap-enter{
+        opacity:0;
+        transform:translateY(8px);
+        transition:opacity .18s ease, transform .18s ease;
+      }
+      .doke-page-swap-enter.doke-page-swap-enter--ready{
+        opacity:1;
+        transform:none;
       }
     `;
     if(!document.getElementById(style.id)) document.head.appendChild(style);
+
+    function setNavCloak(active){}
 
     function toUrl(href){
       try { return new URL(String(href || ""), location.href); } catch(_e){ return null; }
@@ -2406,6 +2464,8 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
       if(!a) return;
       const url = toUrl(a.getAttribute("href"));
       if(!isInternalPageUrl(url)) return;
+      markNextHtmlNavigation(url);
+      try { sessionStorage.setItem(`doke_scroll_pos_v1:${url.pathname}${url.search}`, "0"); } catch(_e) {}
       document.body.classList.add("doke-nav-pending");
     }, true);
 
@@ -2448,6 +2508,11 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     const restoreScroll = () => {
       try {
         if (location.hash && location.hash.length > 1) return;
+        const fileName = String((location.pathname || "").split("/").pop() || "").toLowerCase();
+        if (!fileName || fileName === "index.html") {
+          requestAnimationFrame(() => window.scrollTo(0, 0));
+          return;
+        }
         const raw = sessionStorage.getItem(currentKey);
         if (raw == null) return;
         const y = Number(raw);
@@ -2530,6 +2595,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     }
 
     const BLOCKED_FILES = new Set(["login.html", "cadastro.html", "senha.html", "app.html", "app-beta.html"]);
+    const FORCE_FULL_PAGE_HTML_NAV = true;
     // Shell persistente habilitado no site inteiro (exceto páginas de auth em BLOCKED_FILES).
     const PJAX_RUNTIME_BLOCKED = new Set([]);
     const SCRIPT_SKIP_PARTS = [
@@ -2590,6 +2656,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     }
 
     function isPjaxAllowedUrl(urlObj){
+      if (FORCE_FULL_PAGE_HTML_NAV) return false;
       if(!isInternalHtml(urlObj)) return false;
       if (window.matchMedia && window.matchMedia("(max-width:1024px)").matches) return false;
       const liveCurrent = getLiveCurrentFileName();
@@ -3001,6 +3068,8 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
       }
       inflightController = new AbortController();
       document.body.classList.add("doke-nav-pending");
+      try { currentRoot.classList.add("doke-page-swap-leave"); } catch(_e) {}
+      try { window.scrollTo({ top: 0, behavior: "auto" }); } catch(_e) {}
       try{
         const res = await fetch(urlObj.toString(), {
           method: "GET",
@@ -3022,6 +3091,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         runRegisteredTeardowns();
 
         const imported = document.importNode(nextRoot, true);
+        try { imported.classList.add("doke-page-swap-enter"); } catch(_e) {}
         currentRoot.replaceWith(imported);
         syncBodyState(nextDoc);
         if(nextDoc.title) document.title = nextDoc.title;
@@ -3037,6 +3107,17 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         }
         try { window.dispatchEvent(new Event("doke:page-ready")); } catch(_e) {}
         ensureShell();
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            try { imported.classList.add("doke-page-swap-enter--ready"); } catch(_e) {}
+            try {
+              setTimeout(() => {
+                imported.classList.remove("doke-page-swap-enter");
+                imported.classList.remove("doke-page-swap-enter--ready");
+              }, 220);
+            } catch(_e) {}
+          });
+        });
         return true;
       }catch(err){
         if(err && err.name === "AbortError") return false;
@@ -3060,6 +3141,14 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
       const a = pickAnchorFromEventTarget(ev.target);
       if(!a) return;
       const urlObj = toUrl(a.getAttribute("href"));
+      if(!isInternalHtml(urlObj)) return;
+      markNextHtmlNavigation(urlObj);
+      try { sessionStorage.setItem(`doke_scroll_pos_v1:${urlObj.pathname}${urlObj.search}`, "0"); } catch(_e) {}
+      if (FORCE_FULL_PAGE_HTML_NAV) {
+        ev.preventDefault();
+        window.location.href = urlObj.toString();
+        return;
+      }
       if(!isPjaxAllowedUrl(urlObj)) return;
       ev.preventDefault();
       const ok = await navigateInPlace(urlObj, "push");
@@ -3067,6 +3156,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     }, true);
 
     window.addEventListener("popstate", async () => {
+      if (FORCE_FULL_PAGE_HTML_NAV) return;
       const urlObj = new URL(location.href);
       if(!isPjaxAllowedUrl(urlObj)) return;
       const ok = await navigateInPlace(urlObj, "replace");

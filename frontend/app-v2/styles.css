@@ -636,20 +636,12 @@ body.doke-v2-active.doke-v2-search-panel-open .doke-v2-search-backdrop {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 10px 24px rgba(15,23,42,.08);
-    border-bottom: 1px solid rgba(148,163,184,.28);
+    border-bottom: 0 !important;
   }
 
   .doke-v2-header::after {
-    content: "";
-    position: absolute;
-    left: 18px;
-    right: 18px;
-    bottom: -1px;
-    height: 2px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, rgba(42,95,144,.45), rgba(11,119,104,.45));
-    opacity: .45;
-    pointer-events: none;
+    content: none !important;
+    display: none !important;
   }
 
   .doke-v2-header .top-menu {
@@ -735,37 +727,117 @@ body.doke-v2-active.doke-v2-search-panel-open .doke-v2-search-backdrop {
   z-index: 1;
   display: grid;
   align-content: start;
+  isolation: isolate;
+}
+
+.doke-v2-main::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 30px;
+  background: rgba(238,243,248,.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+  transition: opacity .14s ease;
+}
+
+.doke-v2-main::after {
+  content: "";
+  position: absolute;
+  left: 26px;
+  right: 26px;
+  top: calc(var(--v2-page-start-gap) + 10px);
+  height: min(360px, calc(100vh - var(--v2-header) - 96px));
+  border-radius: 28px;
+  background:
+    linear-gradient(110deg, rgba(255,255,255,.30) 18%, rgba(255,255,255,.72) 34%, rgba(255,255,255,.30) 48%) 0 0 / 220% 100% no-repeat,
+    linear-gradient(#ffffff 0 0) center 26px / calc(100% - 28px) 166px no-repeat,
+    linear-gradient(#ffffff 0 0) left 14px top 212px / 58% 54px no-repeat,
+    linear-gradient(#ffffff 0 0) right 14px top 212px / 38% 54px no-repeat,
+    linear-gradient(#ffffff 0 0) center 284px / calc(100% - 28px) 92px no-repeat;
+  border: 1px solid rgba(214,224,236,.92);
+  box-shadow: 0 18px 36px rgba(15,23,42,.08);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 6;
+  transition: opacity .14s ease;
 }
 
 .doke-v2-route {
   width: 100%;
   grid-area: 1 / 1;
   align-self: start;
+  position: relative;
+  z-index: 1;
 }
 
 .doke-v2-route.doke-v2-route-enter {
   opacity: 0;
-  transform: none;
+  transform: translateY(10px);
   filter: none;
+  visibility: hidden;
 }
 
 .doke-v2-route.doke-v2-route-enter.is-visible {
   opacity: 1;
-  transform: none;
+  transform: translateY(0);
   filter: none;
-  transition: opacity .22s ease;
+  visibility: visible;
+  transition: opacity .22s ease, transform .24s ease;
 }
 
-.doke-v2-route-leave {
-  opacity: 0;
-  transform: none;
-  filter: none;
-  transition: opacity .18s ease;
-  pointer-events: none;
+.doke-v2-route.doke-v2-route-live {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
 }
 
 .doke-v2-main.is-routing {
   contain: layout paint;
+}
+
+.doke-v2-main.is-routing::before {
+  opacity: 1;
+}
+
+.doke-v2-main.is-routing::after {
+  opacity: 1;
+  animation: dokeV2RouteSkeleton 1s linear infinite;
+}
+
+.doke-v2-main.is-routing.is-route-ready::before {
+  opacity: 0;
+  transition: opacity .16s ease;
+}
+
+.doke-v2-main.is-routing.is-route-ready::after {
+  opacity: 0;
+  transition: opacity .16s ease;
+  animation: none;
+}
+
+@keyframes dokeV2RouteSkeleton {
+  from {
+    background-position: 100% 0, center 26px, left 14px top 212px, right 14px top 212px, center 284px;
+  }
+  to {
+    background-position: -100% 0, center 26px, left 14px top 212px, right 14px top 212px, center 284px;
+  }
+}
+
+.doke-v2-main.is-routing > .doke-v2-route {
+  visibility: hidden;
+}
+
+.doke-v2-main.is-routing > .doke-v2-route.doke-v2-route-enter.is-visible,
+.doke-v2-main.is-routing > .doke-v2-route.doke-v2-route-live {
+  visibility: visible;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -798,6 +870,30 @@ body.doke-v2-active .doke-v2-main > * {
   margin: 0 auto;
   padding-top: var(--v2-page-start-gap);
   box-sizing: border-box;
+}
+
+body.doke-v2-active .doke-v2-page-home main.dp-wrap {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 18px !important;
+  align-content: start !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .secao-busca {
+  min-height: clamp(250px, 31vh, 320px) !important;
+  margin-bottom: 0 !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .categorias-container {
+  min-height: clamp(250px, 31vh, 330px) !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .videos-container,
+body.doke-v2-active .doke-v2-page-home .fotos-container,
+body.doke-v2-active .doke-v2-page-home .pros-section,
+body.doke-v2-active .doke-v2-page-home .para-voce-section,
+body.doke-v2-active .doke-v2-page-home .anuncio-container {
+  min-height: 180px;
 }
 
 /* Distancia unica do header para TODAS as paginas */
@@ -886,8 +982,8 @@ body.doke-v2-active .doke-v2-page main :is(
   position: relative !important;
   background: linear-gradient(165deg, #ffffff 0%, #ffffff 64%, #f2f8ff 100%) !important;
   color: #123153 !important;
-  border: 1px solid #cfe0f2 !important;
-  outline: 1px solid rgba(255,255,255,.75) !important;
+  border: 0 !important;
+  outline: none !important;
   border-radius: 22px !important;
   box-shadow: 0 16px 34px rgba(15, 23, 42, .11) !important;
   overflow: hidden !important;
@@ -947,15 +1043,8 @@ body.doke-v2-active .doke-v2-page main :is(
   .ep-hero,
   .hero
 )::after {
-  content: "";
-  position: absolute;
-  width: 250px;
-  height: 250px;
-  right: -110px;
-  top: -125px;
-  border-radius: 999px;
-  background: radial-gradient(circle at center, rgba(11,119,104,.18), rgba(42,95,144,.10) 60%, rgba(42,95,144,0) 74%);
-  pointer-events: none;
+  content: none !important;
+  display: none !important;
 }
 
 body.doke-v2-active .doke-v2-page main :is(
@@ -1133,6 +1222,15 @@ body.doke-v2-active .doke-v2-page-home #feed-global-container .card-feed-global 
   flex-direction: column !important;
   border-radius: 12px !important;
   overflow: hidden !important;
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease !important;
+}
+
+body.doke-v2-active .doke-v2-page-home #feed-global-container .feed-publicacao-card:hover,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .dp-item:hover,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .card-feed-global:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 22px rgba(15, 23, 42, .10) !important;
+  filter: saturate(1.015) !important;
 }
 
 body.doke-v2-active .doke-v2-page-home #feed-global-container .feed-publicacao-card .dp-itemMedia,
@@ -1160,6 +1258,15 @@ body.doke-v2-active .doke-v2-page-home #feed-global-container .card-feed-global 
   height: 100% !important;
   object-fit: cover !important;
   display: block !important;
+  transition: transform .2s ease, filter .2s ease !important;
+}
+
+body.doke-v2-active .doke-v2-page-home #feed-global-container .feed-publicacao-card:hover .dp-itemMedia img,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .feed-publicacao-card:hover .midia-post img,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .dp-item:hover .dp-itemMedia img,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .card-feed-global:hover .midia-post img {
+  transform: scale(1.02) !important;
+  filter: saturate(1.03) !important;
 }
 
 body.doke-v2-active .doke-v2-page-home #feed-global-container.feed-publicacoes-grid {
@@ -1357,12 +1464,50 @@ body.doke-v2-active .doke-v2-page-home #feed-global-container.feed-publicacoes-g
 
 body.doke-v2-active .doke-v2-page-home .secao-busca {
   margin-top: var(--v2-page-start-gap) !important;
+  padding: 28px 30px 24px !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .typing-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  flex-wrap: nowrap !important;
+  line-height: 1.15 !important;
+  text-align: center !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .typing-container .static-text,
+body.doke-v2-active .doke-v2-page-home .typing-container .icon,
+body.doke-v2-active .doke-v2-page-home .typing-container .dynamic-text,
+body.doke-v2-active .doke-v2-page-home .typing-container .cursor {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .typing-container .dynamic-text,
+body.doke-v2-active .doke-v2-page-home #typewriter {
+  display: inline-block !important;
+  min-width: 0 !important;
+  max-width: min(58vw, 700px) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  vertical-align: bottom !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .typing-container .cursor {
+  display: none !important;
 }
 
 /* Home: remove o filete decorativo no topo do hero de busca */
 body.doke-v2-active .doke-v2-page-home main .secao-busca::before {
   content: none !important;
   display: none !important;
+}
+
+body.doke-v2-active .doke-v2-page-home main .secao-busca {
+  border-top: 0 !important;
+  outline: none !important;
 }
 
 /* Remove o filete decorativo no topo de todos os heros v2 */
@@ -1903,11 +2048,6 @@ body.doke-v2-active .doke-v2-page main :is(
 }
 
 /* ===================== HOME FIX FINAL (20260309v50) ===================== */
-/* Garantir dropdown da busca acima de tudo no index/home v2 */
-body.doke-v2-active .doke-v2-main.is-routing {
-  contain: none !important;
-}
-
 body.doke-v2-active .doke-v2-route,
 body.doke-v2-active .doke-v2-page-home,
 body.doke-v2-active .doke-v2-page-home main,
@@ -1964,6 +2104,37 @@ body.doke-v2-active .doke-v2-page-home #galeria-dinamica {
   margin-bottom: 0 !important;
   padding-bottom: 14px !important;
   align-items: stretch !important;
+}
+
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .tiktok-card,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .dp-reelCard {
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease !important;
+}
+
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .tiktok-card:hover,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .dp-reelCard:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 14px 26px rgba(15, 23, 42, .12) !important;
+  filter: saturate(1.03) !important;
+}
+
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .tiktok-card .video-bg,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .dp-reelCard .video-bg,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .tiktok-card img,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .tiktok-card video,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .dp-reelCard img,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .dp-reelCard video {
+  transition: transform .2s ease, filter .2s ease !important;
+}
+
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .tiktok-card:hover .video-bg,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .dp-reelCard:hover .video-bg,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .tiktok-card:hover img,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .tiktok-card:hover video,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .dp-reelCard:hover img,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica .dp-reelCard:hover video {
+  transform: scale(1.03) !important;
+  filter: saturate(1.05) contrast(1.02) !important;
 }
 
 /* Cards de videos em tamanho equilibrado, sem sobreposicao */

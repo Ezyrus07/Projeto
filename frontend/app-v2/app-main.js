@@ -1,11 +1,13 @@
-﻿(function(){
+(function(){
   const ENABLE_KEY = "doke_app_v2";
-const VERSION = "20260309v53";
+const VERSION = "20260309v65";
   const clearPreboot = () => {
     try { document.documentElement.classList.remove("doke-v2-preboot"); } catch (_e) {}
   };
   const qp = new URLSearchParams(location.search || "");
-  const enabled = qp.get("appv2") === "1" || localStorage.getItem(ENABLE_KEY) === "1";
+  const currentFile = String((location.pathname || "").split("/").pop() || "index.html").toLowerCase();
+  const forcedOff = qp.get("appv2") === "0";
+  const enabled = !forcedOff && (qp.get("appv2") === "1" || localStorage.getItem(ENABLE_KEY) === "1" || currentFile === "index.html");
   const isFrameMode = qp.get("v2frame") === "1" || qp.get("embed") === "1" || qp.get("noshell") === "1";
   if (isFrameMode) { clearPreboot(); return; }
   if (!enabled) { clearPreboot(); return; }

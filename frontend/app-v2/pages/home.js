@@ -320,38 +320,121 @@
     let stopped = false;
     let timer = null;
     let fraseIndex = 0;
-    let charIndex = 0;
-    let isDeleting = false;
 
-    const tick = () => {
+    const render = () => {
       if (stopped || !el.isConnected) return;
-      const currentPhrase = frases[fraseIndex];
-      if (isDeleting) {
-        el.textContent = currentPhrase.substring(0, Math.max(0, charIndex - 1));
-        charIndex = Math.max(0, charIndex - 1);
-      } else {
-        el.textContent = currentPhrase.substring(0, charIndex + 1);
-        charIndex = Math.min(currentPhrase.length, charIndex + 1);
-      }
-
-      let delay = isDeleting ? 50 : 95;
-      if (!isDeleting && charIndex >= currentPhrase.length) {
-        delay = 1700;
-        isDeleting = true;
-      } else if (isDeleting && charIndex <= 0) {
-        isDeleting = false;
-        fraseIndex = (fraseIndex + 1) % frases.length;
-        delay = 400;
-      }
-      timer = window.setTimeout(tick, delay);
+      el.textContent = frases[fraseIndex];
+      fraseIndex = (fraseIndex + 1) % frases.length;
+      timer = window.setTimeout(render, 2200);
     };
 
-    tick();
+    el.textContent = frases[0];
+    timer = window.setTimeout(render, 2200);
     if (typeof onTeardown === "function") {
       onTeardown(() => {
         stopped = true;
         if (timer) {
           try { window.clearTimeout(timer); } catch (_e) {}
+        }
+      });
+    }
+  }
+
+  function bindHomeFilters(page, on, onTeardown) {
+    if (!(page instanceof Element)) return;
+    const syncExpandedState = (open) => {
+      const area = page.querySelector("#filtrosExtras");
+      const btn = page.querySelector(".btn-toggle-filtros");
+      const text = btn ? btn.querySelector(".btn-toggle-filtros-text") : null;
+      const container = area ? area.closest(".filtros-container-premium") : null;
+      if (area instanceof HTMLElement) area.classList.toggle("aberto", !!open);
+      if (btn instanceof HTMLElement) {
+        btn.classList.toggle("is-open", !!open);
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+      if (container instanceof HTMLElement) container.classList.toggle("filtros-expanded", !!open);
+      if (text instanceof HTMLElement) text.textContent = open ? "Esconder filtros" : "Mostrar filtros";
+    };
+
+    const applyNow = () => {
+      safeInvoke(() => window.dokePopulateCategoryFilters && window.dokePopulateCategoryFilters());
+      safeInvoke(() => window.dokeApplyHomeFilters && window.dokeApplyHomeFilters());
+    };
+    let debounce = 0;
+    const scheduleApply = () => {
+      try { if (debounce) window.clearTimeout(debounce); } catch (_e) {}
+      debounce = window.setTimeout(() => {
+        debounce = 0;
+        applyNow();
+      }, 120);
+    };
+
+    const btnAplicar = page.querySelector("#btn-aplicar");
+    const toggleBtn = page.querySelector(".btn-toggle-filtros");
+    const filtrosArea = page.querySelector("#filtrosExtras");
+    const liveSelectors = [
+      "#maxPreco",
+      "#ordenacao",
+      "#filtroCategoria",
+      "#filtroTipoAtend",
+      "#filtroTipoPreco",
+      "#filtroPgPix",
+      "#filtroPgCredito",
+      "#filtroPgDebito",
+      "#filtroGarantia",
+      "#filtroEmergencia",
+      "#filtroFormulario",
+      "#selectEstado",
+      "#selectCidade",
+      "#selectBairro"
+    ];
+
+    liveSelectors.forEach((sel) => {
+      page.querySelectorAll(sel).forEach((node) => {
+        const evt = (node instanceof HTMLInputElement && (node.type === "checkbox" || node.type === "radio")) || node instanceof HTMLSelectElement
+          ? "change"
+          : "input";
+        on(node, evt, scheduleApply);
+      });
+    });
+
+    on(btnAplicar, "click", (ev) => {
+      ev.preventDefault();
+      applyNow();
+      safeInvoke(() => window.dokeToast && window.dokeToast("Filtros aplicados"));
+    });
+
+    on(toggleBtn, "click", (ev) => {
+      ev.preventDefault();
+      const nextOpen = !(filtrosArea instanceof HTMLElement && filtrosArea.classList.contains("aberto"));
+      safeInvoke(() => window.toggleFiltrosExtras && window.toggleFiltrosExtras());
+      syncExpandedState(nextOpen);
+    });
+
+    try {
+      const shouldOpen = window.innerWidth > 640;
+      safeInvoke(() => window.setFiltrosExtrasState && window.setFiltrosExtrasState(shouldOpen));
+      syncExpandedState(shouldOpen);
+    } catch (_e) {}
+
+    try {
+      const chipWrap = page.querySelector(".filtros-chips-scroll");
+      if (chipWrap instanceof HTMLElement) {
+        chipWrap.querySelectorAll(".chip-tag").forEach((chip) => {
+          on(chip, "click", () => {
+            window.__dokeChipFiltro = chip.getAttribute("data-chip") || "todos";
+            chipWrap.querySelectorAll(".chip-tag").forEach((c) => c.classList.remove("ativo"));
+            chip.classList.add("ativo");
+            scheduleApply();
+          });
+        });
+      }
+    } catch (_e) {}
+
+    if (typeof onTeardown === "function") {
+      onTeardown(() => {
+        if (debounce) {
+          try { window.clearTimeout(debounce); } catch (_e) {}
         }
       });
     }
@@ -379,6 +462,7 @@
       jobs.forEach((job) => {
         if (page.querySelector(job.sel)) safeInvoke(job.run);
       });
+      safeInvoke(() => window.dokePopulateCategoryFilters && window.dokePopulateCategoryFilters());
     };
     runJobs();
     try { window.setTimeout(runJobs, 450); } catch (_e) {}
@@ -429,6 +513,7 @@
       bindHomeSearch(page, on);
       bindHomeCategories(page, on);
       bindHomeHorizontalArrows(page, on);
+      bindHomeFilters(page, on, (fn) => teardown.push(fn));
       normalizeHomeVideoLane(page);
       startTypewriterEffect(page, (fn) => teardown.push(fn));
 

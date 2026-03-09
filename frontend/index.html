@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
@@ -9,6 +9,157 @@
 <script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script>
+  (function () {
+    var HOME_PREBOOT_KEY = "doke_nav_preboot_target_v1";
+    var HOME_PREBOOT_ENTER = "doke-home-preboot";
+    var HOME_PREBOOT_READY = "doke-home-preboot-ready";
+    var currentPath = "" + (location.pathname || "") + (location.search || "");
+    var homePrebootActive = false;
+
+    function forceTop() {
+      try { window.scrollTo(0, 0); } catch (_e) {}
+    }
+    function shouldHoldHomePreboot() {
+      try {
+        return (sessionStorage.getItem(HOME_PREBOOT_KEY) || "") === currentPath;
+      } catch (_e) {
+        return false;
+      }
+    }
+    function installHomePrebootStyle() {
+      try {
+        if (document.getElementById("dokeHomePrebootStyle")) return;
+        var style = document.createElement("style");
+        style.id = "dokeHomePrebootStyle";
+        style.textContent = `
+          html.${HOME_PREBOOT_ENTER},
+          html.${HOME_PREBOOT_ENTER} body{
+            background:#eef3f8 !important;
+          }
+          html.${HOME_PREBOOT_ENTER}::before{
+            content:"";
+            position:fixed;
+            inset:0;
+            z-index:2147483646;
+            background:#eef3f8;
+            opacity:1;
+            pointer-events:none;
+            transition:opacity .22s ease;
+          }
+          html.${HOME_PREBOOT_ENTER}::after{
+            content:"";
+            position:fixed;
+            left:0;
+            top:0;
+            height:3px;
+            width:34%;
+            z-index:2147483647;
+            background:linear-gradient(90deg,#2e68a6,#0b7768);
+            box-shadow:0 0 12px rgba(11,119,104,.32);
+            animation:dokeHomePrebootLoad .82s ease-in-out infinite;
+            pointer-events:none;
+            transition:opacity .18s ease;
+          }
+          html.${HOME_PREBOOT_ENTER}.${HOME_PREBOOT_READY}::before,
+          html.${HOME_PREBOOT_ENTER}.${HOME_PREBOOT_READY}::after{
+            opacity:0;
+          }
+          @keyframes dokeHomePrebootLoad{
+            0%{ transform:translateX(0); width:24%; }
+            50%{ transform:translateX(120%); width:46%; }
+            100%{ transform:translateX(270%); width:24%; }
+          }
+        `;
+        document.head.appendChild(style);
+      } catch (_e) {}
+    }
+    function activateHomePreboot() {
+      try {
+        if (!shouldHoldHomePreboot()) return;
+        installHomePrebootStyle();
+        document.documentElement.classList.add(HOME_PREBOOT_ENTER);
+        homePrebootActive = true;
+      } catch (_e) {}
+    }
+    function clearHomePreboot() {
+      try { sessionStorage.removeItem(HOME_PREBOOT_KEY); } catch (_e) {}
+      try { document.documentElement.classList.remove(HOME_PREBOOT_ENTER, HOME_PREBOOT_READY); } catch (_e) {}
+      homePrebootActive = false;
+    }
+    function finishHomePreboot() {
+      try {
+        if (!homePrebootActive) return;
+        document.documentElement.classList.add(HOME_PREBOOT_READY);
+        setTimeout(clearHomePreboot, 220);
+      } catch (_e) {}
+    }
+    function isHomeLayoutStable() {
+      try {
+        var hero = document.querySelector(".secao-busca");
+        if (!(hero instanceof HTMLElement)) return false;
+        var heroStyle = window.getComputedStyle(hero);
+        if (heroStyle.display === "none" || heroStyle.visibility === "hidden" || Number(heroStyle.opacity || "1") <= 0) return false;
+        var rect = hero.getBoundingClientRect();
+        var vh = window.innerHeight || document.documentElement.clientHeight || 0;
+        if (!vh) return false;
+        if ((rect.height || 0) < 180) return false;
+        var maxTop = Math.max(160, Math.min(280, vh * 0.34));
+        if (rect.top < 0 || rect.top > maxTop) return false;
+        var categorias = document.querySelector(".categorias-container");
+        if (categorias instanceof HTMLElement) {
+          var categoriasRect = categorias.getBoundingClientRect();
+          if (categoriasRect.top <= rect.top) return false;
+        }
+        return true;
+      } catch (_e) {
+        return false;
+      }
+    }
+    function waitForStableHomeLayout(startAt) {
+      if (!homePrebootActive) return;
+      requestAnimationFrame(forceTop);
+      if (isHomeLayoutStable()) {
+        finishHomePreboot();
+        return;
+      }
+      if (Date.now() - startAt >= 2400) {
+        finishHomePreboot();
+        return;
+      }
+      setTimeout(function () {
+        waitForStableHomeLayout(startAt);
+      }, 40);
+    }
+
+    try {
+      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    } catch (_e) {}
+    activateHomePreboot();
+    forceTop();
+    document.addEventListener("DOMContentLoaded", function () {
+      requestAnimationFrame(forceTop);
+      if (homePrebootActive) waitForStableHomeLayout(Date.now());
+    }, { once: true });
+    window.addEventListener("pageshow", function (ev) {
+      requestAnimationFrame(forceTop);
+      if (!homePrebootActive) return;
+      if (ev && ev.persisted) {
+        finishHomePreboot();
+        return;
+      }
+      waitForStableHomeLayout(Date.now());
+    });
+    window.addEventListener("load", function () {
+      requestAnimationFrame(forceTop);
+      if (homePrebootActive) waitForStableHomeLayout(Date.now());
+    }, { once: true });
+    setTimeout(function () {
+      if (homePrebootActive) finishHomePreboot();
+    }, 2600);
+  })();
+</script>
+<script src="doke-nav-boot.js?v=20260309v09"></script>
 <style>
   html.doke-v2-preboot body {
     opacity: 0 !important;
@@ -19,15 +170,20 @@
   (function () {
     try {
       var qs = new URLSearchParams(location.search || "");
-      var enabled = qs.get("appv2") === "1" || localStorage.getItem("doke_app_v2") === "1";
+      var file = String((location.pathname || "").split("/").pop() || "index.html").toLowerCase();
+      var forcedOff = qs.get("appv2") === "0";
+      var enabled = !forcedOff && (qs.get("appv2") === "1" || localStorage.getItem("doke_app_v2") === "1" || file === "index.html");
+      if (enabled) {
+        try { localStorage.setItem("doke_app_v2", "1"); } catch (_e2) {}
+      }
       if (enabled) document.documentElement.classList.add("doke-v2-preboot");
     } catch (_e) {}
   })();
 </script>
 <title>Doke</title>
-<meta content="A Doke conecta vocÃª a profissionais confiÃ¡veis. Encontre serviÃ§os, publicaÃ§Ãµes e vÃ­deos curtos em um sÃ³ lugar." name="description"/>
+<meta content="A Doke conecta voc� a profissionais confi�veis. Encontre servi�os, publica��es e v�deos curtos em um s� lugar." name="description"/>
 <meta content="Doke" property="og:title"/>
-<meta content="Encontre profissionais e serviÃ¯Â¿Â½os com confianÃ¯Â¿Â½a na Doke." property="og:description"/>
+<meta content="Encontre profissionais e servi�os com confian�a na Doke." property="og:description"/>
 <meta content="website" property="og:type"/>
 <meta content="assets/Imagens/doke-logo.png" property="og:image"/>
 <link href="manifest.webmanifest" rel="manifest"/>
@@ -66,7 +222,7 @@
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <script defer="" src="doke-beforeafter.js?v=20260211v3"></script>
 <script src="doke-reco.js?v=20260228v1"></script>
-<script defer="" src="script.js?v=20260309v68"></script>
+<script defer="" src="script.js?v=20260309v69"></script>
 <style>
         .cat-track,
         #categoriesCarousel,
@@ -89,14 +245,14 @@
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
 </head>
 <body data-page="home">
-<a class="skip-link" href="#feedAnuncios">Pular para o conteÃºdo</a>
+<a class="skip-link" href="#feedAnuncios">Pular para o conte�do</a>
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">Ã—</span>
+<span class="close-btn" onclick="fecharPopup()">�</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                NÃ£o tem uma conta?
+                N�o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -115,8 +271,8 @@
 </div>
 <div class="busca-wrapper" id="buscaWrapper">
 <div class="busca-input-container">
-<label class="sr-only" for="inputBusca">Buscar serviÃ§os ou profissionais</label>
-<input autocomplete="off" id="inputBusca" name="inputBusca" placeholder="Descreva o que vocÃª estÃ¡ procurando" type="text"/>
+<label class="sr-only" for="inputBusca">Buscar servi�os ou profissionais</label>
+<input autocomplete="off" id="inputBusca" name="inputBusca" placeholder="Descreva o que voc� est� procurando" type="text"/>
 <button class="btn-search-circle" onclick="document.querySelector('.btn-procurar').click()">
 <svg fill="none" height="24" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="24">
 <line x1="5" x2="19" y1="12" y2="12"></line>
@@ -131,16 +287,16 @@
 <div class="recentes-container" id="containerHistorico" style="display: none;">
 <h4>Buscas recentes</h4>
 <div id="listaRecentes"></div>
-<div class="limpar-historico" id="limparHistoricoBtn">Limpar histÃ³rico</div>
+<div class="limpar-historico" id="limparHistoricoBtn">Limpar hist�rico</div>
 </div>
 </div>
 </div>
 <div class="botoes-busca">
-<button class="btn-procurar">Procurar serviÃ§os</button>
-<a href="anunciar.html" target="_blank"><button class="btn-anunciar">Anunciar meu serviÃ§o</button></a>
+<button class="btn-procurar">Procurar servi�os</button>
+<a href="anunciar.html" target="_blank"><button class="btn-anunciar">Anunciar meu servi�o</button></a>
 </div>
-<!-- Linha de confianÃ§a (mobile-first) -->
-<!-- chips rÃ¡pidos removidos (polui a a Ã¡rea de busca) -->
+<!-- Linha de confian�a (mobile-first) -->
+<!-- chips r�pidos removidos (polui a a �rea de busca) -->
 </section>
 <!-- ============================
      PROMO: Pagamento seguro + recompensas (primeiro acesso)
@@ -149,10 +305,10 @@
 <div class="doke-promo__icon"><i class="bx bxs-shield-check"></i></div>
 <div class="doke-promo__body">
 <strong>Pagamento seguro via Doke</strong>
-<div class="doke-promo__text">Ganhe confianÃ§a, histÃ³rico de serviÃ§os e vantagens. Profissional recebe mais rÃ¡pido e o cliente fica protegido.</div>
+<div class="doke-promo__text">Ganhe confian�a, hist�rico de servi�os e vantagens. Profissional recebe mais r�pido e o cliente fica protegido.</div>
 <div class="doke-promo__actions">
-<a class="doke-promo__btn" href="pagamentos.html"><i class="bx bx-crown"></i> Ver benefÃ­cios</a>
-<button class="doke-promo__close" id="dokePromoClose" type="button">Agora nÃ£o</button>
+<a class="doke-promo__btn" href="pagamentos.html"><i class="bx bx-crown"></i> Ver benef�cios</a>
+<button class="doke-promo__close" id="dokePromoClose" type="button">Agora n�o</button>
 </div>
 </div>
 </section>
@@ -161,7 +317,7 @@
 <h2 class="sec-title">Categorias em alta</h2>
 </div>
 <div class="categorias-em-alta categorias-min">
-<!-- Setas no MESMO padrÃ£o dos carrossÃ³is de profissionais -->
+<!-- Setas no MESMO padr�o dos carross�is de profissionais -->
 <button aria-label="Categoria anterior" class="pro-arrow left cat-prev" type="button"><i class="bx bx-chevron-left"></i></button>
 <div class="cat-carousel">
 <div aria-label="Lista de categorias" class="cat-track" id="listaCategorias" role="list">
@@ -203,7 +359,7 @@
 </div>
 </div>
 </div>
-<button aria-label="PrÃ³xima categoria" class="pro-arrow right cat-next" type="button"><i class="bx bx-chevron-right"></i></button>
+<button aria-label="Pr�xima categoria" class="pro-arrow right cat-next" type="button"><i class="bx bx-chevron-right"></i></button>
 </div>
 </section>
 <section class="videos-container">
@@ -274,7 +430,7 @@
 
 <div class="section-feed-title sec-head-row sec-head-row--inline is-green" style="padding: 0; margin-bottom: 25px; margin-top: 40px;">
   <div class="sec-head-left">
-    <h2 class="sec-title sec-title-light">PublicaÃ§Ãµes</h2>
+    <h2 class="sec-title sec-title-light">Publica��es</h2>
   </div>
   <div class="sec-head-right sec-head-actions">
     <button type="button" class="carousel-nav pub-prev" aria-label="Publicacoes anteriores">
@@ -349,32 +505,33 @@
 <div class="anuncio-container anuncio-container-home">
 <div class="filtros-container-premium">
 <div class="filtros-header-row">
-<button class="btn-toggle-filtros" onclick="toggleFiltrosExtras()">
-<i class="bx bx-slider-alt"></i> Filtros AvanÃ§ados
-            </button>
+<button class="btn-toggle-filtros" onclick="toggleFiltrosExtras()" type="button">
+<i class="bx bx-slider-alt"></i>
+<span class="btn-toggle-filtros-text">Esconder filtros</span>
+</button>
 </div>
 <div class="filtros-expandidos" id="filtrosExtras">
-<div class="grid-extras">
-<div>
-<label for="maxPreco" style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">PreÃ§o MÃ¡ximo</label>
+<div class="grid-extras grid-extras-ref">
+<div class="advanced-field advanced-field--price">
+<label class="advanced-label" for="maxPreco">Pre�o M�ximo</label>
 <input class="input-premium" id="maxPreco" name="maxPreco" placeholder="R$ 0,00" type="number"/>
 </div>
-<div>
-<label for="ordenacao" style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Ordenar Por</label>
+<div class="advanced-field advanced-field--sort">
+<label class="advanced-label" for="ordenacao">Ordenar Por</label>
 <select class="input-premium" id="ordenacao" name="ordenacao">
 <option value="mais_recente">Mais Recentes</option>
-<option value="preco_menor">Menor PreÃ§o</option>
-<option value="melhor_avaliaÃ§Ã£o">Melhor AvaliaÃ§Ã£o</option>
+<option value="preco_menor">Menor Pre�o</option>
+<option value="melhor_avalia��o">Melhor Avalia��o</option>
 </select>
 </div>
-<div>
-<label for="filtroCategoria" style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Categoria</label>
+<div class="advanced-field advanced-field--category">
+<label class="advanced-label" for="filtroCategoria">Categoria</label>
 <select class="input-premium" id="filtroCategoria" name="filtroCategoria">
 <option value="todas">Todas</option>
 </select>
 </div>
-<div>
-<label for="filtroTipoAtend" style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Tipo de ServiÃ§o</label>
+<div class="advanced-field advanced-field--service-type">
+<label class="advanced-label" for="filtroTipoAtend">Tipo de Servi�o</label>
 <select class="input-premium" id="filtroTipoAtend" name="filtroTipoAtend">
 <option value="todos">Todos</option>
 <option value="online">Online</option>
@@ -382,36 +539,35 @@
 <option value="ambos">Ambos</option>
 </select>
 </div>
-<div>
-<label for="filtroTipoPreco" style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Tipo de PreÃ§o</label>
+<div class="advanced-field advanced-field--price-type">
+<label class="advanced-label" for="filtroTipoPreco">Tipo de Pre�o</label>
 <select class="input-premium" id="filtroTipoPreco" name="filtroTipoPreco">
 <option value="todos">Todos</option>
-<option value="preco_fixo">PreÃ§o Fixo</option>
-<option value="sob_orcamento">Sob OrÃ§amento</option>
+<option value="preco_fixo">Pre�o Fixo</option>
+<option value="sob_orcamento">Sob Or�amento</option>
 </select>
 </div>
-<div class="filtro-checks">
-<span class="filtro-label">Pagamentos aceitos</span>
+<div class="filtro-checks advanced-group advanced-group--payments">
+<span class="filtro-label advanced-label">Pagamentos aceitos</span>
 <div class="filtro-checks-row">
 <label><input id="filtroPgPix" type="checkbox"/> Pix</label>
-<label><input id="filtroPgCredito" type="checkbox"/> CrÃ©dito</label>
-<label><input id="filtroPgDebito" type="checkbox"/> DÃ©bito</label>
+<label><input id="filtroPgCredito" type="checkbox"/> Cr�dito</label>
+<label><input id="filtroPgDebito" type="checkbox"/> D�bito</label>
 </div>
 </div>
-<div class="filtro-checks">
-<span class="filtro-label">Extras</span>
+<div class="filtro-checks advanced-group advanced-group--extras">
+<span class="filtro-label advanced-label">Extras</span>
 <div class="filtro-checks-row">
 <label><input id="filtroGarantia" type="checkbox"/> Com garantia</label>
-<label><input id="filtroEmergencia" type="checkbox"/> EmergÃªncia</label>
-<label><input id="filtroFormulario" type="checkbox"/> Tem formulÃ¡rio</label>
+<label><input id="filtroEmergencia" type="checkbox"/> Emerg�ncia</label>
+<label><input id="filtroFormulario" type="checkbox"/> Tem formul�rio</label>
 </div>
 </div>
-<button class="btn-aplicar" id="btn-aplicar" type="button">Aplicar</button>
 </div>
 </div>
 <div class="filtros-localizacao">
 <div class="loc-title-row">
-<span class="label-loc">LocalizaÃ§Ã£o</span>
+<span class="label-loc">Localiza��o</span>
 <button class="btn-cep-inline" id="btnCepInlineHome" onclick="toggleCepAt(event, this)" type="button">CEP</button>
 </div>
 <div class="grid-loc">
@@ -419,7 +575,7 @@
 <select class="select-premium" id="selectEstado" name="selectEstado">
 <option disabled="" selected="" value="">Estado</option>
 <option value="BA">Bahia</option>
-<option value="SP">SÃ“o Paulo</option>
+<option value="SP">S�o Paulo</option>
 </select>
 <label class="sr-only" for="selectCidade">Cidade</label>
 <select class="select-premium" disabled="" id="selectCidade" name="selectCidade">
@@ -429,19 +585,22 @@
 <select class="select-premium" disabled="" id="selectBairro" name="selectBairro">
 <option disabled="" selected="" value="">Bairro</option>
 </select>
+<div class="advanced-apply-wrap advanced-apply-wrap--location">
+<button class="btn-aplicar" id="btn-aplicar" type="button">Aplicar Filtros</button>
+</div>
 </div>
 </div>
 <div class="filtros-rapidos">
 <div class="filtros-rapidos-header">
-<span>Filtros rÃ¡pidos</span>
+<span>Filtros r�pidos</span>
 <button class="chips-arrow" onclick="scrollChips(this)" type="button"><i class="bx bx-chevron-right"></i></button>
 </div>
 <div class="filtros-chips-scroll" data-chips="">
 <button class="chip-tag ativo" data-chip="todos" onclick="ativarChip(this)">Todos</button>
-<button class="chip-tag" data-chip="tendencias" onclick="ativarChip(this)"><i class="bx bx-trending-up"></i> TendÃªncias</button>
-<button class="chip-tag" data-chip="perto" onclick="ativarChip(this)"><i class="bx bx-map"></i> Perto de vocÃª</button>
+<button class="chip-tag" data-chip="tendencias" onclick="ativarChip(this)"><i class="bx bx-trending-up"></i> Tend�ncias</button>
+<button class="chip-tag" data-chip="perto" onclick="ativarChip(this)"><i class="bx bx-map"></i> Perto de voc�</button>
 <button class="chip-tag" data-chip="super" onclick="ativarChip(this)"><i class="bx bx-star"></i> Super Profissionais</button>
-<button class="chip-tag" data-chip="recem" onclick="ativarChip(this)"><i class="bx bx-time"></i> RecÃ©m-chegados</button>
+<button class="chip-tag" data-chip="recem" onclick="ativarChip(this)"><i class="bx bx-time"></i> Rec�m-chegados</button>
 <button class="chip-tag" data-chip="verificados" onclick="ativarChip(this)"><i class="bx bx-badge-check"></i> Verificados</button>
 </div>
 </div>
@@ -473,8 +632,8 @@
 <img alt="Doke Logo" class="footer-logo" decoding="async" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'" src="assets/Imagens/doke-logo.png"/>
 <h2 class="footer-logo-text" style="display:none; color:white;">doke</h2>
 <p class="footer-desc">
-                A DOKE revoluciona a prestaÃ§Ã£o de serviÃ§os com o <strong>Pagamento Garantido</strong>. 
-                Seu dinheiro protegido atÃ© a conclusÃ£o do serviÃ§o. SeguranÃ§a, inovaÃ§Ã£o e pontos exclusivos para vocÃª.
+                A DOKE revoluciona a presta��o de servi�os com o <strong>Pagamento Garantido</strong>. 
+                Seu dinheiro protegido at� a conclus�o do servi�o. Seguran�a, inova��o e pontos exclusivos para voc�.
             </p>
 <div class="social-links">
 <a aria-label="Instagram" href="#">
@@ -501,7 +660,7 @@
 <h4>Suporte</h4>
 <ul>
 <li><a href="#">Central de Ajuda</a></li>
-<li><a href="#">SeguranÃ§a</a></li>
+<li><a href="#">Seguran�a</a></li>
 <li><a href="#">Regras da Comunidade</a></li>
 <li><a href="#">Disputas e Reembolsos</a></li>
 </ul>
@@ -510,7 +669,7 @@
 <h4>Legal</h4>
 <ul>
 <li><a href="#">Termos de Uso</a></li>
-<li><a href="#">PolÃ¡tica de Privacidade</a></li>
+<li><a href="#">Pol�tica de Privacidade</a></li>
 <li><a href="#">LGPD</a></li>
 </ul>
 <div class="app-buttons">
@@ -522,7 +681,7 @@
 </div>
 </div>
 <div class="footer-bottom">
-<p>Â© 2026 Doke ServiÃ§os e Tecnologia. Todos os direitos reservados.</p>
+<p>� 2026 Doke Servi�os e Tecnologia. Todos os direitos reservados.</p>
 </div>
 </footer>
 <div class="modal-overlay" id="modalPlayerVideo" onclick="fecharPlayerVideo(event)">
@@ -537,7 +696,7 @@
 <div class="modal-header">
 <div class="modal-author-info" style="display: flex; align-items: center; gap: 10px;">
 <img decoding="async" id="reelAvatar" loading="lazy" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"/>
-<div id="reelUsername" style="font-weight: bold; font-size: 0.95rem;">@usuÃ¡rio</div>
+<div id="reelUsername" style="font-weight: bold; font-size: 0.95rem;">@usu�rio</div>
 </div>
 </div>
 <div class="modal-comments-section" id="reelCommentsBody">
@@ -551,12 +710,12 @@
 <i class="bx bx-paper-plane" onclick="compartilharReelAtual()" style="cursor:pointer;"></i>
 </div>
 <button class="btn-orcar-v" onclick="irOrcamentoReel()">
-<i class="bx bx-dollar"></i> Solicitar OrÃ§amento
+<i class="bx bx-dollar"></i> Solicitar Or�amento
         </button>
 </div>
 <span id="reelLikesCount" style="font-weight: bold; font-size: 0.9rem;">0 curtidas</span>
 <div style="display: flex; gap: 10px; border-top: 1px solid #efefef; padding-top: 15px; margin-top: 10px;">
-<input id="inputComentarioReel" placeholder="Adicione um comentÃ¡rio..." style="flex:1; border:none; outline:none;" type="text"/>
+<input id="inputComentarioReel" placeholder="Adicione um coment�rio..." style="flex:1; border:none; outline:none;" type="text"/>
 <button onclick="enviarComentarioReel()" style="background:none; border:none; color:#0095f6; font-weight:bold; cursor:pointer;">Publicar</button>
 </div>
 </div>
@@ -564,14 +723,14 @@
 </div>
 </div>
 <nav class="bottom-nav">
-<a class="item active" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>InÃ­cio</span></a>
+<a class="item active" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>In�cio</span></a>
 <a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
 <a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
-<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>NotificaÃ§Ãµes</span></a>
+<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notifica��es</span></a>
 <a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
 </nav>
 <div class="galeria-overlay" id="modalGaleria" onclick="fecharGaleria(event)" style="display: none;">
-<span class="btn-fechar-galeria">Ã—</span>
+<span class="btn-fechar-galeria">�</span>
 <div class="nav-seta esq" onclick="mudarImagem(-1)"><i class="bx bx-chevron-left"></i></div>
 <div class="galeria-conteudo"><img decoding="async" id="imgExpandida" loading="lazy" src=""/></div>
 <div class="nav-seta dir" onclick="mudarImagem(1)"><i class="bx bx-chevron-right"></i></div>
@@ -586,9 +745,9 @@
 </div>
 <div class="story-header">
 <img class="story-avatar" decoding="async" id="storyUserImg" loading="lazy" src=""/>
-<span id="storyUserName" style="font-weight:bold;">UsuÃ¡rio</span>
+<span id="storyUserName" style="font-weight:bold;">Usu�rio</span>
 <span id="storyTime" style="opacity:0.7; font-size:0.8rem; margin-left:10px;"></span>
-<button onclick="fecharStory()" style="margin-left:auto; background:none; border:none; color:white; font-size:2rem; cursor:pointer; z-index:100;">Ã—</button>
+<button onclick="fecharStory()" style="margin-left:auto; background:none; border:none; color:white; font-size:2rem; cursor:pointer; z-index:100;">�</button>
 </div>
 <div class="story-media-box" id="storyMediaContainer"></div>
 </div>
@@ -716,13 +875,13 @@
       const seen = localStorage.getItem(key) === '1';
       if(!seen){ promo.style.display = 'flex'; }
       on(close, 'click', ()=>{ promo.style.display='none'; localStorage.setItem(key,'1'); });
-      // se clicar no CTA, marca visto tambÃ©m
+      // se clicar no CTA, marca visto tamb�m
       promo.querySelectorAll('a').forEach((a) => on(a, 'click', ()=> localStorage.setItem(key,'1')));
     }catch(e){}
   })();
 </script>
-<script src="doke-shell.js?v=20260307v93"></script>
-<script defer="" src="app-v2/app-main.js?v=20260309v53"></script>
+<script src="doke-shell.js?v=20260309v97"></script>
+<script defer="" src="app-v2/app-main.js?v=20260309v65"></script>
 <script>
   (function(){
     const runtime = window.dokePageRuntime || null;
@@ -778,11 +937,11 @@
   }
 
   async function refetchPublicacoes(mode){
-    // Se existir funÃ§Ã£o global do seu app, usa.
+    // Se existir fun��o global do seu app, usa.
     if(typeof window.carregarPublicacoesIndex === 'function'){
       try{ await window.carregarPublicacoesIndex({mode}); return true; }catch(e){}
     }
-    // Fallback: apenas reordena/filtra itens jÃ¡ renderizados se tiver data-following
+    // Fallback: apenas reordena/filtra itens j� renderizados se tiver data-following
     const cont=document.getElementById('feed-global-container');
     if(!cont) return false;
     const cards=[...cont.querySelectorAll('.feed-publicacao-card')].filter(c=>!c.classList.contains('pub-skel'));

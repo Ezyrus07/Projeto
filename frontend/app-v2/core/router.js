@@ -20,7 +20,7 @@
     let current = null;
     let mounted = null;
     let navQueue = Promise.resolve();
-    const ENTER_MS = 320;
+    const ENTER_MS = 240;
     const root = opts && opts.root;
     const onAfterNavigate = opts && typeof opts.onAfterNavigate === "function" ? opts.onAfterNavigate : null;
 
@@ -50,17 +50,19 @@
           );
           minHeightPx = Math.max(hRoot, hPrev, 320);
           root.classList.add("is-routing");
+          root.classList.remove("is-route-ready");
           if (minHeightPx > 0) root.style.minHeight = `${minHeightPx}px`;
         } catch (_e) {}
       }
-      if (shouldAnimate) {
-        prevNodes.forEach((node) => {
-          if (node instanceof HTMLElement) node.classList.add("doke-v2-route-leave");
-        });
+      if (prevMounted && typeof prevMounted.unmount === "function") {
+        try { prevMounted.unmount(); } catch (_e) {}
       }
+      prevNodes.forEach((node) => {
+        try { node.remove(); } catch (_e) {}
+      });
 
       const mountRoot = document.createElement("div");
-      mountRoot.className = shouldAnimate ? "doke-v2-route doke-v2-route-enter" : "doke-v2-route";
+      mountRoot.className = shouldAnimate ? "doke-v2-route doke-v2-route-enter" : "doke-v2-route doke-v2-route-live";
       root.appendChild(mountRoot);
 
       mounted = await factory({ root: mountRoot, path: keyPath, search: parsed.search });
@@ -72,23 +74,23 @@
       if (shouldAnimate) {
         try {
           window.requestAnimationFrame(() => {
+            root.classList.add("is-route-ready");
             mountRoot.classList.add("is-visible");
           });
         } catch (_e) {
+          root.classList.add("is-route-ready");
           mountRoot.classList.add("is-visible");
         }
         await new Promise((resolve) => window.setTimeout(resolve, ENTER_MS));
       }
-      if (prevMounted && typeof prevMounted.unmount === "function") {
-        try { prevMounted.unmount(); } catch (_e) {}
-      }
-      prevNodes.forEach((node) => {
-        try { node.remove(); } catch (_e) {}
-      });
       if (shouldAnimate) {
-        try { mountRoot.classList.remove("doke-v2-route-enter"); } catch (_e) {}
+        try {
+          mountRoot.classList.remove("doke-v2-route-enter");
+          mountRoot.classList.add("doke-v2-route-live");
+        } catch (_e) {}
         try {
           root.classList.remove("is-routing");
+          root.classList.remove("is-route-ready");
           root.style.minHeight = "";
         } catch (_e) {}
       }

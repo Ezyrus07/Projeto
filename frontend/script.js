@@ -14,6 +14,7 @@ function dokeApplyAppPageEnter(){
         if (isAppV2) return;
         const body = document.body;
         if (!body || body.classList.contains('doke-app-page-enter')) return;
+        if (body.dataset && body.dataset.page === "home") return;
         body.classList.add('doke-app-page-enter');
         setTimeout(() => {
             try { body.classList.remove('doke-app-page-enter'); } catch (_) {}
@@ -4676,32 +4677,31 @@ setTimeout(() => {
 window.abrirPopup = function() { const p = document.getElementById("popup"); if(p) p.style.display = "block"; }
 window.fecharPopup = function() { const p = document.getElementById("popup"); if(p) p.style.display = "none"; }
 
-window.toggleFiltrosExtras = function() {
+function setFiltrosExtrasState(open) {
     const area = document.getElementById("filtrosExtras");
     const btn = document.querySelector(".btn-toggle-filtros");
-    if(!area || !btn) return;
+    const text = btn ? btn.querySelector(".btn-toggle-filtros-text") : null;
+    const container = area ? area.closest(".filtros-container-premium") : null;
+    if (!area || !btn) return;
+
+    area.classList.toggle("aberto", !!open);
+    btn.classList.toggle("is-open", !!open);
+    if (container) container.classList.toggle("filtros-expanded", !!open);
     btn.setAttribute('aria-controls', 'filtrosExtras');
-    if (area.classList.contains("aberto")) {
-        area.classList.remove("aberto");
-        btn.style.background = "transparent"; btn.style.color = "var(--cor0)";
-        btn.setAttribute('aria-expanded', 'false');
-    } else {
-        area.classList.add("aberto");
-        btn.style.background = "var(--cor0)"; btn.style.color = "white";
-        btn.setAttribute('aria-expanded', 'true');
-    }
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (text) text.textContent = open ? 'Esconder filtros' : 'Mostrar filtros';
 }
 
-// Garante estado inicial (filtros avan?ados fechados) em F5 / carregamento
+window.toggleFiltrosExtras = function() {
+    const area = document.getElementById("filtrosExtras");
+    if(!area) return;
+    setFiltrosExtrasState(!area.classList.contains("aberto"));
+}
+
+// Desktop abre por padrão; mobile começa recolhido.
 document.addEventListener('DOMContentLoaded', () => {
-  const area = document.getElementById('filtrosExtras');
-  const btn = document.querySelector('.btn-toggle-filtros');
-  if(!area || !btn) return;
-  area.classList.remove('aberto');
-  btn.setAttribute('aria-controls', 'filtrosExtras');
-  btn.setAttribute('aria-expanded', 'false');
-  btn.style.background = 'transparent';
-  btn.style.color = 'var(--cor0)';
+  const shouldOpen = window.innerWidth > 640;
+  setFiltrosExtrasState(shouldOpen);
 });
 window.__dokeChipFiltro = window.__dokeChipFiltro || 'todos';
 window.ativarChip = function(el) {
@@ -4764,55 +4764,27 @@ window.limparHistorico = function(e) {
 function initHomeEnhancements() {
     if (!document.body || document.body.dataset.page !== "home") return;
 
-    const revealEls = Array.from(document.querySelectorAll(
-        '.secao-busca, .categorias-container, .videos-container, .fotos-container, .anuncio-container, .rodape-container, .rodape-container2'
+    const stableEls = Array.from(document.querySelectorAll(
+        '.secao-busca, .categorias-container, .videos-container, .fotos-container, .anuncio-container, .rodape-container, .rodape-container2, .pros-section, .para-voce-section'
     ));
-    const isMobileHome = window.matchMedia("(max-width: 1024px)").matches;
-    if (isMobileHome) {
-        // No mobile, priorizamos estabilidade: evita telas "vazias" por anima??o/reflow.
-        const stableEls = Array.from(document.querySelectorAll(
-            '.secao-busca, .categorias-container, .videos-container, .fotos-container, .anuncio-container, .pros-section, .para-voce-section'
-        ));
-        stableEls.forEach(el => {
-            try {
-                el.classList.remove('reveal', 'is-visible');
-                if (window.getComputedStyle(el).display === 'none') el.style.display = 'block';
-                el.style.visibility = 'visible';
-                el.style.opacity = '1';
-                el.style.transform = 'none';
-                el.style.contentVisibility = 'visible';
-                el.style.containIntrinsicSize = 'auto';
-            } catch (_) {}
-        });
-        const footer = document.querySelector('footer.main-footer');
-        if (footer) {
-            footer.style.marginLeft = '0';
-            footer.style.width = '100%';
-        }
-    } else {
-        // Ativa anima??o "reveal" s? quando o JS estiver rodando (desktop/tablet grande)
-        document.body.classList.add("reveal-enabled");
-        revealEls.forEach(el => el.classList.add('reveal'));
-
-        if ('IntersectionObserver' in window) {
-            const io = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        io.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.12 });
-            revealEls.forEach(el => io.observe(el));
-        } else {
-            revealEls.forEach(el => el.classList.add('is-visible'));
-        }
-
-        setTimeout(() => {
-            try {
-                revealEls.forEach(el => el.classList.add('is-visible'));
-            } catch (e) {}
-        }, 900);
+    stableEls.forEach(el => {
+        try {
+            el.classList.remove('reveal', 'is-visible');
+            if (window.getComputedStyle(el).display === 'none') el.style.display = 'block';
+            el.style.visibility = 'visible';
+            el.style.opacity = '1';
+            el.style.transform = 'none';
+            el.style.contentVisibility = 'visible';
+            el.style.containIntrinsicSize = 'auto';
+        } catch (_) {}
+    });
+    try {
+        document.body.classList.remove("reveal-enabled");
+    } catch (_) {}
+    const footer = document.querySelector('footer.main-footer');
+    if (footer) {
+        footer.style.marginLeft = '0';
+        footer.style.width = '100%';
     }
 
     const scrollers = [
