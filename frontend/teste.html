@@ -1,289 +1,95 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doke - Layout Compacto</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <title>Card Personalizado</title>
     <style>
-        /* Variáveis de Cores baseadas na sua imagem */
         :root {
-            --primary-color: #2D5B79; /* Azul escuro do logo/texto */
-            --icon-color: #1A6B66;    /* Verde/Teal dos ícones */
-            --bg-active: #EEF2F5;     /* Fundo do item selecionado */
-            --border-color: #E5E7EB;  /* Linhas divisórias */
-            --badge-bg: #FF5A5F;      /* Vermelho do badge NOVO */
-            --text-muted: #6B7280;    /* Texto secundário */
-            --bg-main: #F9FAFB;       /* Fundo da área principal */
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
+            --primary-color: #077861; /* Verde sugerido */
+            --secondary-color: #2a5f90; /* Azul sugerido */
+            --text-light: #ffffff;
+            --bg-card: #f9f9f9;
         }
 
         body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
-            height: 100vh;
-            background-color: #ffffff;
-            color: var(--primary-color);
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #e0e0e0;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
             overflow: hidden;
+            width: 320px;
+            transition: transform 0.3s ease;
+            border-top: 5px solid var(--primary-color);
         }
 
-        /* ==================== SIDEBAR COMPACTO ==================== */
-        .sidebar {
-            width: 90px; /* Menu mais estreito */
-            height: 100vh;
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px 0;
-            background-color: #ffffff;
-            z-index: 10;
+        .card:hover {
+            transform: translateY(-10px);
         }
 
-        .logo-container {
-            margin-bottom: 30px;
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        /* Oculta o resto do nome, deixa só a inicial ou um ícone no modo compacto */
-        .logo-compact {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 40px;
-            height: 40px;
-            background-color: var(--primary-color);
-            color: white;
-            border-radius: 10px;
-            font-size: 20px;
-        }
-
-        .nav-menu {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            width: 100%;
-            padding: 0 10px;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            color: var(--primary-color);
-            padding: 12px 4px;
-            border-radius: 12px;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-
-        .nav-item i {
-            font-size: 20px;
-            color: var(--icon-color);
-            margin-bottom: 6px;
-            transition: transform 0.2s ease;
-        }
-
-        .nav-item span {
-            font-size: 11px;
-            font-weight: 500;
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 25px;
             text-align: center;
+            color: var(--text-light);
         }
 
-        .nav-item:hover {
-            background-color: #f3f4f6;
+        .card-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
         }
 
-        .nav-item:hover i {
-            transform: translateY(-2px);
+        .card-body {
+            padding: 20px;
+            color: #444;
+            line-height: 1.6;
         }
 
-        .nav-item.active {
-            background-color: var(--bg-active);
+        .card-footer {
+            padding: 15px;
+            text-align: center;
+            background-color: #eee;
         }
 
-        .nav-item.active span, .nav-item.active i {
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        /* Empurra o "Mais" pro fundo se quiser */
-        .nav-item.bottom {
-            margin-top: auto;
-        }
-
-        /* ==================== ÁREA PRINCIPAL & HEADER ==================== */
-        .main-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--bg-main);
-        }
-
-        .header {
-            height: 70px;
-            background-color: #ffffff;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 32px;
-        }
-
-        /* Lado esquerdo do Header (CEP) */
-        .header-left {
-            display: flex;
-            align-items: center;
-        }
-
-        .location-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--icon-color);
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        /* Lado direito do Header (Links e Perfil) */
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
-
-        .header-link {
-            text-decoration: none;
-            color: var(--text-muted);
-            font-size: 14px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: color 0.2s;
-        }
-
-        .header-link:hover {
-            color: var(--primary-color);
-        }
-
-        .badge-novo {
-            background-color: var(--badge-bg);
+        .btn {
+            background-color: var(--secondary-color);
             color: white;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 4px;
-            letter-spacing: 0.5px;
-        }
-
-        .profile-pic {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
             cursor: pointer;
-            border: 2px solid transparent;
-            transition: border-color 0.2s;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background 0.3s ease;
         }
 
-        .profile-pic:hover {
-            border-color: var(--icon-color);
-        }
-
-        /* ==================== CONTEÚDO (Apenas para visualização) ==================== */
-        .content {
-            padding: 32px;
-            flex: 1;
+        .btn:hover {
+            background-color: var(--primary-color);
         }
     </style>
 </head>
 <body>
 
-    <aside class="sidebar">
-        <a href="#" class="logo-container">
-            <div class="logo-compact">d</div>
-        </a>
-
-        <nav class="nav-menu">
-            <a href="#" class="nav-item">
-                <i class="fa-solid fa-house"></i>
-                <span>Início</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <span>Pesquisar</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fa-solid fa-store"></i>
-                <span>Negócios</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fa-regular fa-bell"></i>
-                <span>Notificações</span>
-            </a>
-            <a href="#" class="nav-item active">
-                <i class="fa-regular fa-comment-dots"></i>
-                <span>Mensagens</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fa-solid fa-box-open"></i>
-                <span>Pedidos</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fa-solid fa-users"></i>
-                <span>Comunidades</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fa-regular fa-user"></i>
-                <span>Perfil</span>
-            </a>
-            
-            <a href="#" class="nav-item bottom">
-                <i class="fa-solid fa-bars"></i>
-                <span>Mais</span>
-            </a>
-        </nav>
-    </aside>
-
-    <div class="main-wrapper">
-        
-        <header class="header">
-            <div class="header-left">
-                <div class="location-btn">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <span>Informe seu CEP</span>
-                </div>
-            </div>
-
-            <div class="header-right">
-                <a href="#" class="header-link">Anunciar</a>
-                <a href="#" class="header-link">
-                    Comunidades
-                    <span class="badge-novo">NOVO</span>
-                </a>
-                <a href="#" class="header-link">Novidades</a>
-                
-                <img src="https://ui-avatars.com/api/?name=User&background=2D5B79&color=fff" alt="Perfil" class="profile-pic">
-            </div>
-        </header>
-
-        <main class="content">
-            </main>
-        
+    <div class="card">
+        <div class="card-header">
+            <h2>Novo Design</h2>
+        </div>
+        <div class="card-body">
+            <p>Este card foi estilizado utilizando a paleta de cores personalizada. O gradiente superior une o verde e o azul para um visual corporativo moderno.</p>
+        </div>
+        <div class="card-footer">
+            <button class="btn">Saiba Mais</button>
+        </div>
     </div>
 
 </body>

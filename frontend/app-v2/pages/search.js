@@ -68,7 +68,7 @@
 
   function ensureBuscaPageStylesLoaded() {
     if (pageBuscaCssLoaded) return;
-    const href = "page-busca.css?v=20260308v06";
+    const href = "page-busca.css?v=20260308v08";
     const exists = Array.from(document.querySelectorAll("link[rel='stylesheet']")).some(
       (link) => String(link.getAttribute("href") || "").includes("page-busca.css")
     );

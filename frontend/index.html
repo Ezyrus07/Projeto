@@ -58,7 +58,7 @@
     });
   })();
 </script>
-<link href="style.css?v=20260211v45" rel="stylesheet"/>
+<link href="style.css?v=20260309v69" rel="stylesheet"/>
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-fixes.css?v=20260117" rel="stylesheet">
 <link href="doke-beforeafter.css?v=20260211v3" rel="stylesheet"/>
@@ -66,7 +66,7 @@
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <script defer="" src="doke-beforeafter.js?v=20260211v3"></script>
 <script src="doke-reco.js?v=20260228v1"></script>
-<script defer="" src="script.js?v=20260307v61"></script>
+<script defer="" src="script.js?v=20260309v68"></script>
 <style>
         .cat-track,
         #categoriesCarousel,
@@ -126,7 +126,7 @@
 </div>
 <div class="busca-dropdown" id="buscaDropdown">
 <div class="busca-hint">
-                        Busque por <i>marca, modelo, opcionais ou uma descriÃ§Ã£o detalhada</i>
+                        Descreva o servico, local, urgencia ou faixa de preco
 </div>
 <div class="recentes-container" id="containerHistorico" style="display: none;">
 <h4>Buscas recentes</h4>
@@ -212,6 +212,14 @@
   <div class="sec-head-left">
     <h2 class="sec-title" id="categorias-title2">Videos curtos</h2>
   </div>
+  <div class="sec-head-right sec-head-actions">
+    <button type="button" class="carousel-nav vid-prev" aria-label="Videos anteriores">
+      <i class='bx bx-chevron-left'></i>
+    </button>
+    <button type="button" class="carousel-nav vid-next" aria-label="Proximos videos">
+      <i class='bx bx-chevron-right'></i>
+    </button>
+  </div>
 </div>
 
 
@@ -267,6 +275,14 @@
 <div class="section-feed-title sec-head-row sec-head-row--inline is-green" style="padding: 0; margin-bottom: 25px; margin-top: 40px;">
   <div class="sec-head-left">
     <h2 class="sec-title sec-title-light">PublicaÃ§Ãµes</h2>
+  </div>
+  <div class="sec-head-right sec-head-actions">
+    <button type="button" class="carousel-nav pub-prev" aria-label="Publicacoes anteriores">
+      <i class='bx bx-chevron-left'></i>
+    </button>
+    <button type="button" class="carousel-nav pub-next" aria-label="Proximas publicacoes">
+      <i class='bx bx-chevron-right'></i>
+    </button>
   </div>
 </div>
 
@@ -706,7 +722,7 @@
   })();
 </script>
 <script src="doke-shell.js?v=20260307v93"></script>
-<script defer="" src="app-v2/app-main.js?v=20260308v33"></script>
+<script defer="" src="app-v2/app-main.js?v=20260309v53"></script>
 <script>
   (function(){
     const runtime = window.dokePageRuntime || null;
@@ -805,6 +821,113 @@
 })();
 </script>
 
+<style>
+  body[data-page="home"] #galeria-dinamica{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    align-items:stretch !important;
+    gap:12px !important;
+    overflow-x:auto !important;
+    overflow-y:visible !important;
+    padding:10px 0 14px !important;
+  }
+  body[data-page="home"] #galeria-dinamica > .tiktok-card,
+  body[data-page="home"] #galeria-dinamica > .dp-reelCard{
+    position:relative !important;
+    inset:auto !important;
+    float:none !important;
+    flex:0 0 210px !important;
+    width:210px !important;
+    min-width:210px !important;
+    max-width:210px !important;
+    height:360px !important;
+    margin:0 !important;
+    transform:none !important;
+  }
+  body[data-page="home"] .videos-container{
+    overflow:visible !important;
+  }
+  body[data-page="home"] #buscaDropdown.is-portal-open{
+    position:fixed !important;
+    z-index:2147483647 !important;
+    display:block !important;
+    right:auto !important;
+  }
+</style>
+<script>
+  (function(){
+    const wrapper = document.getElementById('buscaWrapper');
+    const input = document.getElementById('inputBusca');
+    const dropdown = document.getElementById('buscaDropdown');
+    if (!wrapper || !input || !dropdown) return;
+
+    const originalParent = dropdown.parentNode;
+    const originalNext = dropdown.nextSibling;
+    let mounted = false;
+    let rafId = 0;
+
+    function mountToBody(){
+      if (mounted) return;
+      document.body.appendChild(dropdown);
+      mounted = true;
+    }
+    function restoreToWrapper(){
+      if (!mounted) return;
+      if (originalNext && originalNext.parentNode === originalParent) originalParent.insertBefore(dropdown, originalNext);
+      else originalParent.appendChild(dropdown);
+      mounted = false;
+    }
+    function place(){
+      if (!wrapper.classList.contains('active')) return;
+      const r = wrapper.getBoundingClientRect();
+      const gutter = 12;
+      const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+      const width = Math.max(220, Math.round(r.width));
+      const left = Math.max(gutter, Math.min(Math.round(r.left), vw - width - gutter));
+      const top = Math.round(r.bottom + 10);
+      const maxH = Math.max(180, Math.min(420, Math.round((window.innerHeight || 0) - top - gutter)));
+      dropdown.classList.add('is-portal-open');
+      dropdown.style.left = left + 'px';
+      dropdown.style.top = top + 'px';
+      dropdown.style.width = width + 'px';
+      dropdown.style.maxHeight = maxH + 'px';
+      dropdown.style.overflow = 'auto';
+    }
+    function schedule(){
+      if (!wrapper.classList.contains('active')) return;
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(function(){ rafId = 0; place(); });
+    }
+    function open(){
+      wrapper.classList.add('active');
+      mountToBody();
+      schedule();
+    }
+    function close(){
+      if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+      wrapper.classList.remove('active');
+      dropdown.classList.remove('is-portal-open');
+      dropdown.style.left = '';
+      dropdown.style.top = '';
+      dropdown.style.width = '';
+      dropdown.style.maxHeight = '';
+      dropdown.style.overflow = '';
+      dropdown.style.display = '';
+      restoreToWrapper();
+    }
+
+    input.addEventListener('focus', open);
+    input.addEventListener('input', schedule);
+    window.addEventListener('resize', schedule, { passive:true });
+    window.addEventListener('scroll', schedule, { passive:true });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+    document.addEventListener('click', function(e){
+      const inWrapper = wrapper.contains(e.target);
+      const inDrop = dropdown.contains(e.target);
+      if (!inWrapper && !inDrop) close();
+    });
+  })();
+</script>
 </body>
 </html>
 

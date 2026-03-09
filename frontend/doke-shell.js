@@ -17,6 +17,7 @@
       const target = new URL("index.html", location.href);
       target.searchParams.set("appv2", "1");
       target.searchParams.set("route", route);
+      target.searchParams.set("fromLegacyRoute", "1");
       location.replace(target.toString());
       return;
     } catch (_e) {}

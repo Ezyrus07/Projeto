@@ -9,6 +9,9 @@ try { console.log("[DOKE] build:", window.__DOKE_BUILD__); } catch(_e) {}
 
 function dokeApplyAppPageEnter(){
     try {
+        const qs = new URLSearchParams(location.search || "");
+        const isAppV2 = qs.get("appv2") === "1" || localStorage.getItem("doke_app_v2") === "1" || document.documentElement.classList.contains("doke-v2-active");
+        if (isAppV2) return;
         const body = document.body;
         if (!body || body.classList.contains('doke-app-page-enter')) return;
         body.classList.add('doke-app-page-enter');
@@ -16,6 +19,18 @@ function dokeApplyAppPageEnter(){
             try { body.classList.remove('doke-app-page-enter'); } catch (_) {}
         }, 420);
     } catch (_) {}
+}
+
+function dokeNavigateHtml(targetUrl) {
+    const to = String(targetUrl || '').trim();
+    if (!to) return;
+    try {
+        if (typeof window.__DOKE_V2_NAVIGATE__ === 'function') {
+            window.__DOKE_V2_NAVIGATE__(to);
+            return;
+        }
+    } catch (_) {}
+    window.location.href = to;
 }
 
 if (document.readyState === 'loading') {
@@ -2123,7 +2138,7 @@ window.dokeBuildCardPremium = function(anuncio) {
           e.preventDefault();
           e.stopPropagation();
           const q = catBtn.dataset.q || '';
-          if (q) window.location.href = `busca.html?q=${q}&src=categoria_card`;
+            if (q) dokeNavigateHtml(`busca.html?q=${q}&src=categoria_card`);
         });
       }
 
@@ -2132,7 +2147,7 @@ window.dokeBuildCardPremium = function(anuncio) {
           e.preventDefault();
           e.stopPropagation();
           const q = tagBtn.dataset.q || '';
-          if (q) window.location.href = `busca.html?q=${q}&src=tag_card`;
+            if (q) dokeNavigateHtml(`busca.html?q=${q}&src=tag_card`);
         });
       });
     } catch (_) {}
@@ -2184,16 +2199,208 @@ function __dokeNormalizeText(value) {
         .trim();
 }
 
+const __DOKE_STOPWORDS_PT = new Set([
+    'a','o','os','as','um','uma','uns','umas','de','da','do','das','dos','e','ou',
+    'em','no','na','nos','nas','para','por','com','sem','que','eu','voce','vc','quero',
+    'preciso','procuro','buscar','busca','servico','servicos','meu','minha','seu','sua',
+    'isso','esse','essa','aqui','ali','la','ao','aos','as','das'
+]);
+
+const __DOKE_QUERY_HINTS = {
+    eletricista: ['eletricista','eletrica','eletrico','fiacao','fios','disjuntor','tomada','chuveiro'],
+    encanador: ['encanador','encanamento','cano','cano quebrado','vazamento','torneira','hidraulica'],
+    pintura: ['pintura','pintor','pintar','tinta','paredes'],
+    limpeza: ['limpeza','faxina','diarista','higienizacao','limpar'],
+    frete: ['frete','mudanca','carreto','transporte'],
+    tecnologia: ['tecnologia','informatica','ti','computador','celular','notebook','site','app','sistema'],
+    aulas: ['aulas','aula','professor','professora','curso','reforco','ingles','matematica','musica'],
+    beleza: ['beleza','cabelo','barbeiro','manicure','maquiagem','estetica'],
+    reforma: ['reforma','reformar','obra','pedreiro','marceneiro','marcenaria','armario','moveis','cozinha planejada']
+};
+
+const __DOKE_UF_LIST = new Set([
+    'ac','al','ap','am','ba','ce','df','es','go','ma','mt','ms','mg','pa','pb','pr','pe',
+    'pi','rj','rn','rs','ro','rr','sc','sp','se','to'
+]);
+
+function __dokeEscapeRegex(value) {
+    return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function __dokeIncludesSmart(haystack, needle) {
+    const hay = __dokeNormalizeText(haystack || '');
+    const ndl = __dokeNormalizeText(needle || '');
+    if (!hay || !ndl) return false;
+    if (hay === ndl) return true;
+    if (hay.includes(` ${ndl} `)) return true;
+    try {
+        const rx = new RegExp(`(^|\\b)${__dokeEscapeRegex(ndl)}(\\b|$)`, 'i');
+        return rx.test(hay);
+    } catch (_) {
+        return hay.includes(ndl);
+    }
+}
+
 function __dokeTokenize(term) {
     const base = __dokeNormalizeText(term);
     if (!base) return [];
     const rawTokens = base.split(/[\s,;:.|/\\]+/).filter(Boolean);
     const tokens = new Set();
     rawTokens.forEach(t => {
+        if (t.length < 2) return;
+        if (__DOKE_STOPWORDS_PT.has(t)) return;
         tokens.add(t);
         if (t.endsWith('s') && t.length > 3) tokens.add(t.slice(0, -1));
     });
     return Array.from(tokens);
+}
+
+function __dokeExpandSemanticTokens(tokens, rawTerm = '') {
+    const baseTokens = Array.isArray(tokens) ? tokens : [];
+    const set = new Set(baseTokens);
+    const normalizedTerm = __dokeNormalizeText(rawTerm || baseTokens.join(' '));
+    Object.entries(__DOKE_QUERY_HINTS).forEach(([key, hints]) => {
+        const all = [key].concat(Array.isArray(hints) ? hints : []);
+        const hit = all.some((h) => __dokeIncludesSmart(normalizedTerm, h) || baseTokens.some((t) => __dokeIncludesSmart(t, h)));
+        if (!hit) return;
+        all.forEach((h) => {
+            const normalized = __dokeNormalizeText(h);
+            if (normalized.length >= 2 && !__DOKE_STOPWORDS_PT.has(normalized)) set.add(normalized);
+        });
+    });
+    return Array.from(set);
+}
+
+function __dokeExtractAutoFilters(term, lista = []) {
+    const normalized = __dokeNormalizeText(term);
+    const tokens = __dokeTokenize(normalized);
+    const out = {
+        term: normalized,
+        tokens,
+        semanticTokens: __dokeExpandSemanticTokens(tokens, normalized),
+        tipoAtend: '',
+        tipoPreco: '',
+        categoria: '',
+        chip: '',
+        maxPrice: null,
+        raioKm: null,
+        uf: '',
+        cidade: '',
+        bairro: '',
+        pagamentos: { pix: false, credito: false, debito: false },
+        extras: { garantia: false, emergencia: false, formulario: false }
+    };
+    if (!normalized) return out;
+
+    const hasAny = (list) => (Array.isArray(list) ? list : []).some((item) => __dokeIncludesSmart(normalized, item));
+    const pickLongest = (setLike) => {
+        let best = '';
+        Array.from(setLike || []).forEach((value) => {
+            const v = __dokeNormalizeText(value);
+            if (v.length < 2) return;
+            if (!__dokeIncludesSmart(normalized, v)) return;
+            if (v.length > best.length) best = v;
+        });
+        return best;
+    };
+
+    if (hasAny(['online', 'remoto', 'remota', 'a distancia', 'home office'])) out.tipoAtend = 'online';
+    if (hasAny(['presencial', 'domicilio', 'a domicilio', 'em casa'])) out.tipoAtend = out.tipoAtend || 'presencial';
+    if (hasAny(['hibrido', 'hibrida', 'ambos'])) out.tipoAtend = 'ambos';
+
+    if (hasAny(['urgente', 'urgencia', 'emergencia', '24h', 'hoje'])) out.extras.emergencia = true;
+    if (hasAny(['garantia', 'garantido'])) out.extras.garantia = true;
+    if (hasAny(['formulario', 'briefing'])) out.extras.formulario = true;
+
+    if (hasAny(['pix'])) out.pagamentos.pix = true;
+    if (hasAny(['credito', 'cartao de credito'])) out.pagamentos.credito = true;
+    if (hasAny(['debito', 'cartao de debito'])) out.pagamentos.debito = true;
+
+    if (hasAny(['orcamento', 'a combinar', 'sob orcamento'])) out.tipoPreco = 'sob_orcamento';
+    if (hasAny(['preco fixo', 'valor fixo', 'valor fechado'])) out.tipoPreco = 'preco_fixo';
+
+    if (hasAny(['melhor', 'melhores', 'bem avaliado', 'bem avaliados', 'top'])) out.chip = 'super';
+    if (hasAny(['verificado', 'verificados'])) out.chip = 'verificados';
+    if (hasAny(['tendencia', 'tendencias', 'popular'])) out.chip = out.chip || 'tendencias';
+    if (hasAny(['novo', 'novos', 'recentes', 'recem'])) out.chip = out.chip || 'recem';
+    if (hasAny(['perto de mim', 'proximo', 'proxima', 'ao redor', 'vizinho'])) out.chip = out.chip || 'perto';
+
+    const radiusMatch = normalized.match(/(?:ate\s*)?(\d{1,2})\s*km\b/i);
+    if (radiusMatch) {
+        const km = Number(radiusMatch[1]);
+        if (Number.isFinite(km) && km > 0 && km <= 100) out.raioKm = km;
+        if (!out.chip) out.chip = 'perto';
+    } else if (out.chip === 'perto') {
+        out.raioKm = 5;
+    }
+
+    const maxPriceMatch = normalized.match(/(?:ate|maximo|no maximo)\s*(?:de\s*)?(?:r\$\s*)?(\d{2,7}(?:[\.,]\d{1,2})?)/i);
+    if (maxPriceMatch) {
+        const parsed = parseFloat(String(maxPriceMatch[1]).replace('.', '').replace(',', '.'));
+        if (Number.isFinite(parsed) && parsed > 0) out.maxPrice = parsed;
+    }
+
+    const categoryMap = new Map();
+    (Array.isArray(lista) ? lista : []).forEach((a) => {
+        const values = [];
+        values.push(a?.categoria);
+        values.push(a?.categorias);
+        values.forEach((raw) => {
+            String(raw || '')
+                .split(',')
+                .map((x) => x.trim())
+                .filter(Boolean)
+                .forEach((cat) => {
+                    const n = __dokeNormalizeText(cat);
+                    if (n) categoryMap.set(n, cat);
+                });
+        });
+    });
+
+    let categoryKey = '';
+    categoryMap.forEach((_orig, normCat) => {
+        if (__dokeIncludesSmart(normalized, normCat) && normCat.length > categoryKey.length) categoryKey = normCat;
+    });
+    if (!categoryKey) {
+        Object.entries(__DOKE_QUERY_HINTS).forEach(([baseKey, hints]) => {
+            if (categoryKey) return;
+            const hit = [baseKey].concat(hints || []).some((h) => __dokeIncludesSmart(normalized, h));
+            if (!hit) return;
+            const match = Array.from(categoryMap.keys()).find((k) => k.includes(baseKey) || baseKey.includes(k));
+            if (match) categoryKey = match;
+        });
+    }
+    if (categoryKey && categoryMap.has(categoryKey)) out.categoria = categoryMap.get(categoryKey) || '';
+
+    const ufSet = new Set();
+    const cidadeSet = new Set();
+    const bairroSet = new Set();
+    (Array.isArray(lista) ? lista : []).forEach((a) => {
+        const uf = __dokeNormalizeText(a?.uf || '');
+        const cidade = __dokeNormalizeText(a?.cidade || '');
+        const bairro = __dokeNormalizeText(a?.bairro || '');
+        if (uf) ufSet.add(uf);
+        if (cidade) cidadeSet.add(cidade);
+        if (bairro) bairroSet.add(bairro);
+    });
+    out.bairro = pickLongest(bairroSet);
+    out.cidade = pickLongest(cidadeSet);
+    out.uf = pickLongest(ufSet);
+
+    if (!out.uf) {
+        const words = normalized.split(/\s+/).filter(Boolean);
+        for (let i = 0; i < words.length; i++) {
+            const w = words[i];
+            if (!__DOKE_UF_LIST.has(w)) continue;
+            const prev = words[i - 1] || '';
+            if (!prev || ['em', 'no', 'na', 'uf', 'estado', 'de'].includes(prev)) {
+                out.uf = w;
+                break;
+            }
+        }
+    }
+
+    return out;
 }
 
 function __dokeBuildSearchText(anuncio) {
@@ -2220,36 +2427,63 @@ function __dokeBuildSearchText(anuncio) {
     return text;
 }
 
-function __dokeScoreAnuncio(anuncio, tokens) {
-    if (!tokens.length) return 0;
+function __dokeScoreAnuncio(anuncio, primaryTokens, semanticTokens, autoFilters = null) {
+    const rawPrimary = Array.isArray(primaryTokens) ? primaryTokens.filter(Boolean) : [];
+    const rawSemantic = Array.isArray(semanticTokens) && semanticTokens.length ? semanticTokens.filter(Boolean) : rawPrimary;
+    if (!rawPrimary.length && !rawSemantic.length) return 0;
     const titulo = __dokeNormalizeText(anuncio.titulo || '');
     const desc = __dokeNormalizeText(anuncio.descricao || '');
     const cat = __dokeNormalizeText(`${anuncio.categoria || ''} ${anuncio.categorias || ''}`);
     const loc = __dokeNormalizeText(`${anuncio.cidade || ''} ${anuncio.bairro || ''} ${anuncio.uf || ''}`);
 
     let score = 0;
-    tokens.forEach(t => {
-        if (titulo.includes(t)) score += 6;
-        if (cat.includes(t)) score += 4;
-        if (desc.includes(t)) score += 3;
+    rawSemantic.forEach(t => {
+        if (titulo.includes(t)) score += 4;
+        if (cat.includes(t)) score += 3;
+        if (desc.includes(t)) score += 2;
+        if (loc.includes(t)) score += 3;
+    });
+    rawPrimary.forEach(t => {
+        if (titulo.includes(t)) score += 4;
+        if (cat.includes(t)) score += 3;
+        if (desc.includes(t)) score += 2;
         if (loc.includes(t)) score += 2;
+        if (__dokeIncludesSmart(titulo, t)) score += 2;
     });
 
     const full = __dokeBuildSearchText(anuncio);
-    const fullTerm = tokens.join(' ');
+    const fullTerm = rawPrimary.join(' ');
     if (full.includes(fullTerm)) score += 5;
 
+    if (autoFilters && typeof autoFilters === 'object') {
+        if (autoFilters.bairro && loc.includes(__dokeNormalizeText(autoFilters.bairro))) score += 8;
+        if (autoFilters.cidade && loc.includes(__dokeNormalizeText(autoFilters.cidade))) score += 8;
+        if (autoFilters.uf && loc.includes(__dokeNormalizeText(autoFilters.uf))) score += 6;
+        if (autoFilters.categoria && cat.includes(__dokeNormalizeText(autoFilters.categoria))) score += 8;
+        if (autoFilters.tipoAtend) {
+            const modo = __dokeNormalizeText(anuncio.modo_atend || anuncio.modoAtend || anuncio.atendimento || anuncio.tipoAtendimento || '');
+            if (modo.includes(__dokeNormalizeText(autoFilters.tipoAtend)) || (autoFilters.tipoAtend === 'online' && modo.includes('ambos'))) {
+                score += 4;
+            }
+        }
+    }
+
+    score += Math.min(14, __dokeScoreQualidade(anuncio) * 0.12);
     return score;
 }
 
 function __dokeFilterByTerm(lista, term) {
     const tokens = __dokeTokenize(term);
     if (!tokens.length) return lista.slice();
+    const auto = __dokeExtractAutoFilters(term, lista);
+    const semanticTokens = Array.isArray(auto.semanticTokens) && auto.semanticTokens.length
+        ? auto.semanticTokens
+        : tokens;
     const ranked = lista.map(a => {
         const hay = __dokeBuildSearchText(a);
         const okAll = tokens.every(t => hay.includes(t));
-        const okAny = tokens.some(t => hay.includes(t));
-        const score = okAll || okAny ? __dokeScoreAnuncio(a, tokens) : 0;
+        const okAny = tokens.some(t => hay.includes(t)) || semanticTokens.some(t => hay.includes(t));
+        const score = okAll || okAny ? __dokeScoreAnuncio(a, tokens, semanticTokens, auto) : 0;
         return { anuncio: a, score, okAll, okAny };
     });
 
@@ -2323,9 +2557,13 @@ function __dokeScoreQualidade(a){
 function __dokeApplyFilters(lista, opts = {}) {
     let out = lista.slice();
     const term = opts.term ? String(opts.term).trim() : '';
+    const auto = term ? __dokeExtractAutoFilters(term, out) : null;
     if (term) out = __dokeFilterByTerm(out, term);
 
-    const tipoAtend = (opts.tipoAtend || '').toLowerCase();
+    const tipoAtendRaw = String(opts.tipoAtend || '').toLowerCase();
+    const tipoAtend = (tipoAtendRaw && tipoAtendRaw !== 'todos')
+        ? tipoAtendRaw
+        : String(auto?.tipoAtend || '').toLowerCase();
     if (tipoAtend && tipoAtend !== 'todos') {
         out = out.filter(a => {
             const modo = __dokeNormalizeText(a.modo_atend || a.modoAtend || a.atendimento || a.tipoAtendimento || '');
@@ -2336,7 +2574,10 @@ function __dokeApplyFilters(lista, opts = {}) {
         });
     }
 
-    const categoria = __dokeNormalizeText(opts.categoria || '');
+    const categoriaRaw = (opts.categoria && __dokeNormalizeText(opts.categoria) !== 'todas')
+        ? opts.categoria
+        : (auto?.categoria || '');
+    const categoria = __dokeNormalizeText(categoriaRaw || '');
     if (categoria && categoria !== 'todas') {
         out = out.filter(a => {
             const cat = __dokeNormalizeText(a.categoria || '');
@@ -2345,7 +2586,10 @@ function __dokeApplyFilters(lista, opts = {}) {
         });
     }
 
-    const tipoPreco = __dokeNormalizeText(opts.tipoPreco || '');
+    const tipoPrecoRaw = (opts.tipoPreco && __dokeNormalizeText(opts.tipoPreco) !== 'todos')
+        ? opts.tipoPreco
+        : (auto?.tipoPreco || '');
+    const tipoPreco = __dokeNormalizeText(tipoPrecoRaw || '');
     if (tipoPreco && tipoPreco !== 'todos') {
         out = out.filter(a => {
             const tipoRaw = __dokeNormalizeText(a.tipoPreco || a.tipo_preco || '');
@@ -2359,11 +2603,14 @@ function __dokeApplyFilters(lista, opts = {}) {
         });
     }
 
-    let uf = __dokeNormalizeText(opts.uf || '');
-    let cidade = __dokeNormalizeText(opts.cidade || '');
-    let bairro = __dokeNormalizeText(opts.bairro || '');
+    let uf = __dokeNormalizeText(opts.uf || auto?.uf || '');
+    let cidade = __dokeNormalizeText(opts.cidade || auto?.cidade || '');
+    let bairro = __dokeNormalizeText(opts.bairro || auto?.bairro || '');
 
-    const chip = __dokeNormalizeText(opts.chip || '');
+    const chipRaw = (opts.chip && __dokeNormalizeText(opts.chip) !== 'todos')
+        ? opts.chip
+        : (auto?.chip || '');
+    const chip = __dokeNormalizeText(chipRaw || '');
     if (chip === 'perto' && !uf && !cidade && !bairro) {
         uf = __dokeNormalizeText(localStorage.getItem('doke_loc_uf') || '');
         cidade = __dokeNormalizeText(localStorage.getItem('doke_loc_cidade') || '');
@@ -2374,7 +2621,8 @@ function __dokeApplyFilters(lista, opts = {}) {
     if (cidade) out = out.filter(a => __dokeNormalizeText(a.cidade || '') === cidade);
     if (bairro) out = out.filter(a => __dokeNormalizeText(a.bairro || '') === bairro);
 
-    const raioKm = Number.isFinite(opts.raioKm) ? opts.raioKm : null;
+    const autoRaio = Number.isFinite(Number(auto?.raioKm)) ? Number(auto.raioKm) : null;
+    const raioKm = Number.isFinite(opts.raioKm) ? opts.raioKm : autoRaio;
     const userLoc = opts.userLoc || __dokeGetStoredLoc();
     if (raioKm && userLoc) {
         out = out.filter(a => {
@@ -2386,34 +2634,40 @@ function __dokeApplyFilters(lista, opts = {}) {
     }
 
     const pagamentos = opts.pagamentos || {};
-    if (pagamentos.pix || pagamentos.credito || pagamentos.debito) {
+    const pagamentosAuto = auto?.pagamentos || {};
+    if (pagamentos.pix || pagamentos.credito || pagamentos.debito || pagamentosAuto.pix || pagamentosAuto.credito || pagamentosAuto.debito) {
         out = out.filter(a => {
             const raw = Array.isArray(a.pagamentosAceitos) ? a.pagamentosAceitos : (a.pagamentos_aceitos || []);
             const list = Array.isArray(raw)
                 ? raw.map(p => __dokeNormalizeText(p))
                 : __dokeNormalizeText(raw).split(',').map(p => p.trim()).filter(Boolean);
-            if (pagamentos.pix && !list.some(p => p.includes('pix'))) return false;
-            if (pagamentos.credito && !list.some(p => p.includes('credito'))) return false;
-            if (pagamentos.debito && !list.some(p => p.includes('debito'))) return false;
+            const needPix = !!(pagamentos.pix || pagamentosAuto.pix);
+            const needCred = !!(pagamentos.credito || pagamentosAuto.credito);
+            const needDeb = !!(pagamentos.debito || pagamentosAuto.debito);
+            if (needPix && !list.some(p => p.includes('pix'))) return false;
+            if (needCred && !list.some(p => p.includes('credito'))) return false;
+            if (needDeb && !list.some(p => p.includes('debito'))) return false;
             return true;
         });
     }
 
     const extras = opts.extras || {};
-    if (extras.garantia) {
+    const extrasAuto = auto?.extras || {};
+    if (extras.garantia || extrasAuto.garantia) {
         out = out.filter(a => String(a.garantia || '').trim().length > 0);
     }
-    if (extras.emergencia) {
+    if (extras.emergencia || extrasAuto.emergencia) {
         out = out.filter(a => a.atendeEmergencia === true || a.emergencia === true);
     }
-    if (extras.formulario) {
+    if (extras.formulario || extrasAuto.formulario) {
         out = out.filter(a => a.temFormulario === true || (Array.isArray(a.perguntasFormularioJson) && a.perguntasFormularioJson.length > 0));
     }
 
-    if (Number.isFinite(opts.maxPrice)) {
+    const maxPrice = Number.isFinite(opts.maxPrice) ? opts.maxPrice : (Number.isFinite(auto?.maxPrice) ? auto.maxPrice : null);
+    if (Number.isFinite(maxPrice)) {
         out = out.filter(a => {
             const p = __dokeParsePreco(a.preco);
-            return p === null ? true : p <= opts.maxPrice;
+            return p === null ? true : p <= maxPrice;
         });
     }
 
@@ -2916,9 +3170,22 @@ window.__dokeResetBuscaFiltros = function(){
     }catch(e){}
 };
 
+function __dokeBindBuscaEnterDesktop() {
+    const input = document.getElementById('inputBusca');
+    if (!(input instanceof HTMLInputElement)) return;
+    if (input.dataset.dokeEnterBuscaBound === '1') return;
+    input.dataset.dokeEnterBuscaBound = '1';
+    input.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        if (typeof window.novaBusca === 'function') window.novaBusca();
+    });
+}
+
 window.aplicarFiltrosBusca = function() {
     const feed = document.getElementById('feedAnuncios');
     if (!feed) return;
+    __dokeBindBuscaEnterDesktop();
     try {
         if (typeof window.dokeSyncAnunciosFeedLayout === 'function') {
             window.dokeSyncAnunciosFeedLayout(feed);
@@ -3034,6 +3301,7 @@ window.usarMinhaLocalizacao = function() {
 };
 
 window.novaBusca = function() {
+    __dokeBindBuscaEnterDesktop();
     const input = document.getElementById('inputBusca');
     const termo = (input?.value || '').trim();
     if (termo) {
@@ -4146,12 +4414,10 @@ window.irParaMeuPerfil = function(event) {
 }
 
 window.filtrarPorCategoria = function(categoria) {
-    const input = document.getElementById('inputBusca');
-    if(input) {
-        input.value = categoria;
-        const btn = document.querySelector('.btn-procurar');
-        if(btn) btn.click();
-    }
+    const termo = String(categoria || '').trim();
+    if (!termo) return;
+    try { window.salvarBusca?.(termo); } catch (_e) {}
+    dokeNavigateHtml(`busca.html?q=${encodeURIComponent(termo)}&src=categoria`);
 }
 
 function formatarCepInput(e) {
@@ -4483,7 +4749,7 @@ function atualizarListaHistorico() {
         d.className = 'recent-item'; d.innerHTML = `<i class='bx bx-time-five history-icon'></i><span class='recent-text'>${t}</span>`;
         d.onclick = () => { 
             const inp = document.getElementById('inputBusca');
-            if(inp) { inp.value = t; salvarBusca(t); window.location.href = `busca.html?q=${encodeURIComponent(t)}`; }
+          if(inp) { inp.value = t; salvarBusca(t); dokeNavigateHtml(`busca.html?q=${encodeURIComponent(t)}`); }
         };
         l.appendChild(d);
     });
@@ -5379,6 +5645,68 @@ async function fetchSupabasePublicacoesFeed() {
     });
 }
 
+window.__dokeGetAnunciosSnapshotForFeedFallback = function(limit = 10) {
+    try {
+        const fromMem = Array.isArray(window.__dokeAnunciosCacheFull) ? window.__dokeAnunciosCacheFull : [];
+        if (fromMem.length) return fromMem.slice(0, limit);
+    } catch (_) {}
+    try {
+        const raw = localStorage.getItem("doke_cache_home_anuncios_v4");
+        const parsed = raw ? JSON.parse(raw) : null;
+        const list = Array.isArray(parsed?.data) ? parsed.data : [];
+        if (list.length) return list.slice(0, limit);
+    } catch (_) {}
+    return [];
+}
+
+window.__dokeRenderPublicacoesFallbackFromAnuncios = function(container, limit = 10) {
+    if (!container) return 0;
+    const anuncios = (window.__dokeGetAnunciosSnapshotForFeedFallback(limit) || [])
+        .filter((a) => a && a.ativo !== false)
+        .slice(0, limit);
+    if (!anuncios.length) return 0;
+
+    container.classList.add("feed-publicacoes-grid");
+    container.innerHTML = "";
+
+    anuncios.forEach((a) => {
+        const media =
+            a.media_url ||
+            a.imagem ||
+            a.image_url ||
+            a.img ||
+            (Array.isArray(a.fotos) ? a.fotos[0] : "") ||
+            "https://placehold.co/640x800?text=Doke";
+        const titulo = a.titulo || a.nome || "Publicacao";
+        const desc = a.descricao || "";
+        const autor = normalizeHandle(a.userHandle || a.userhandle || a.nomeAutor || a.nomeautor || "usuario");
+        const when = formatFeedDateShort(a.created_at || a.dataCriacao || a.data_criacao || a.dataAtualizacao || a.updatedat || "");
+        const id = String(a.id || "").trim();
+
+        const html = `
+            <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0"
+                 onclick="window.openDetalhesModal('detalhes.html?id=${encodeURIComponent(id)}')"
+                 onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
+                <div class="dp-itemMedia">
+                    <img src="${media}" loading="lazy" alt="">
+                </div>
+                <div class="dp-itemBody">
+                    <div class="dp-itemAuthor">
+                        <img class="dp-itemAvatar" src="${a.fotoAutor || a.fotoautor || 'https://i.pravatar.cc/80?u=' + encodeURIComponent(id || autor)}" alt="" width="34" height="34" loading="lazy" decoding="async">
+                        <div class="dp-itemUser">${escapeHtml(autor)}</div>
+                        ${when ? `<span class="dp-itemMeta">${escapeHtml(when)}</span>` : ``}
+                    </div>
+                    <b class="dp-itemTitle">${escapeHtml(titulo)}</b>
+                    ${desc ? `<p class="dp-itemDesc">${escapeHtml(desc)}</p>` : ``}
+                </div>
+            </div>`;
+        container.insertAdjacentHTML("beforeend", html);
+    });
+
+    container.setAttribute('aria-busy', 'false');
+    return anuncios.length;
+}
+
 window.carregarFeedGlobal = async function() {
     const container = document.getElementById('feed-global-container');
     if (!container) return;
@@ -5717,6 +6045,8 @@ window.carregarFeedGlobal = async function() {
         }
 
         if (dedupedFeedItems.length === 0) {
+            const fallbackRendered = window.__dokeRenderPublicacoesFallbackFromAnuncios(container, 10);
+            if (fallbackRendered > 0) return;
             container.innerHTML = "<div class='dp-empty'>Nenhuma publicacao ainda.</div>";
             container.setAttribute('aria-busy', 'false');
             return;
@@ -5813,8 +6143,11 @@ window.carregarFeedGlobal = async function() {
     } catch (e) {
         dokeLogNonNetworkError("Falha ao renderizar feed global:", e);
         try {
-            container.innerHTML = "<div class='dp-empty'>Nao foi possivel carregar publicacoes agora.</div>";
-            container.setAttribute('aria-busy', 'false');
+            const fallbackRendered = window.__dokeRenderPublicacoesFallbackFromAnuncios(container, 10);
+            if (!fallbackRendered) {
+                container.innerHTML = "<div class='dp-empty'>Nao foi possivel carregar publicacoes agora.</div>";
+                container.setAttribute('aria-busy', 'false');
+            }
         } catch (_) {}
     } finally {
         clearTimeout(feedWatchdog);
@@ -6095,23 +6428,118 @@ document.addEventListener("DOMContentLoaded", async function() {
     if(inputBusca) {
         atualizarListaHistorico();
         const limparBtn = document.getElementById('limparHistoricoBtn');
+        const dropdownBusca = document.getElementById('buscaDropdown');
+        const dropdownParent = dropdownBusca ? dropdownBusca.parentNode : null;
+        const dropdownNextSibling = dropdownBusca ? dropdownBusca.nextSibling : null;
+        let dropdownPortaled = false;
+        let dropdownRafId = 0;
+
+        const clearDropdownFloating = () => {
+            if (!dropdownBusca) return;
+            dropdownBusca.classList.remove('is-floating');
+            dropdownBusca.style.position = '';
+            dropdownBusca.style.left = '';
+            dropdownBusca.style.top = '';
+            dropdownBusca.style.width = '';
+            dropdownBusca.style.zIndex = '';
+            dropdownBusca.style.maxHeight = '';
+            dropdownBusca.style.overflow = '';
+            dropdownBusca.style.display = '';
+        };
+
+        const mountDropdownToBody = () => {
+            if (!dropdownBusca || dropdownPortaled) return;
+            try {
+                document.body.appendChild(dropdownBusca);
+                dropdownPortaled = true;
+            } catch (_) {}
+        };
+
+        const restoreDropdownToWrapper = () => {
+            if (!dropdownBusca || !dropdownPortaled || !dropdownParent) return;
+            try {
+                if (dropdownNextSibling && dropdownNextSibling.parentNode === dropdownParent) {
+                    dropdownParent.insertBefore(dropdownBusca, dropdownNextSibling);
+                } else {
+                    dropdownParent.appendChild(dropdownBusca);
+                }
+                dropdownPortaled = false;
+            } catch (_) {}
+        };
+
+        const positionDropdownFloating = () => {
+            if (!wrapper || !dropdownBusca || !wrapper.classList.contains('active')) return;
+            const rect = wrapper.getBoundingClientRect();
+            const viewportWidth = document.documentElement.clientWidth || window.innerWidth || 0;
+            const gutter = 12;
+            const width = Math.max(220, Math.round(rect.width));
+            const left = Math.max(gutter, Math.min(Math.round(rect.left), viewportWidth - width - gutter));
+            const top = Math.round(rect.bottom + 10);
+            const maxH = Math.max(180, Math.min(420, Math.round((window.innerHeight || 0) - top - gutter)));
+
+            dropdownBusca.classList.add('is-floating');
+            dropdownBusca.style.position = 'fixed';
+            dropdownBusca.style.left = `${left}px`;
+            dropdownBusca.style.top = `${top}px`;
+            dropdownBusca.style.width = `${width}px`;
+            dropdownBusca.style.zIndex = '2147483000';
+            dropdownBusca.style.maxHeight = `${maxH}px`;
+            dropdownBusca.style.overflow = 'auto';
+            dropdownBusca.style.display = 'block';
+        };
+
+        const scheduleDropdownPosition = () => {
+            if (!wrapper || !wrapper.classList.contains('active')) return;
+            if (dropdownRafId) cancelAnimationFrame(dropdownRafId);
+            dropdownRafId = requestAnimationFrame(() => {
+                dropdownRafId = 0;
+                positionDropdownFloating();
+            });
+        };
+
+        const openDropdownBusca = () => {
+            if (!wrapper) return;
+            wrapper.classList.add('active');
+            mountDropdownToBody();
+            scheduleDropdownPosition();
+        };
+
+        const closeDropdownBusca = () => {
+            if (dropdownRafId) {
+                cancelAnimationFrame(dropdownRafId);
+                dropdownRafId = 0;
+            }
+            if (wrapper) wrapper.classList.remove('active');
+            if (dropdownBusca) dropdownBusca.style.display = 'none';
+            clearDropdownFloating();
+            restoreDropdownToWrapper();
+        };
+
         if (limparBtn) {
             limparBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 window.limparHistorico(e);
             });
         }
-        inputBusca.addEventListener('focus', () => { if(wrapper) wrapper.classList.add('active'); });
+        inputBusca.addEventListener('focus', openDropdownBusca);
+        inputBusca.addEventListener('input', scheduleDropdownPosition);
+        window.addEventListener('resize', scheduleDropdownPosition, { passive: true });
+        window.addEventListener('scroll', scheduleDropdownPosition, { passive: true });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeDropdownBusca();
+        });
         
         document.addEventListener('click', (e) => { 
-            if (wrapper && !wrapper.contains(e.target)) wrapper.classList.remove('active'); 
+            const insideWrapper = !!(wrapper && wrapper.contains(e.target));
+            const insideDropdown = !!(dropdownBusca && dropdownBusca.contains(e.target));
+            if (!insideWrapper && !insideDropdown) closeDropdownBusca(); 
         });
 
         const executarBusca = () => {
             const termo = inputBusca.value.trim();
             if (termo) { 
                 salvarBusca(termo); 
-                window.location.href = `busca.html?q=${encodeURIComponent(termo)}`;
+            dokeNavigateHtml(`busca.html?q=${encodeURIComponent(termo)}`);
             }
         };
 
@@ -13918,8 +14346,7 @@ async function carregarComentariosSupabase(publicacaoId) {
         </div>
       `;
 
-      const btn = item.querySelector('button');
-      btn.addEventListener('click', () => {
+      const goCategorySearch = () => {
         // registra clique
         const clicks = readJSON('doke_categorias_click', []);
         const next = [nome, ...clicks.filter(x => String(x).toLowerCase() !== String(nome).toLowerCase())].slice(0, 12);
@@ -13929,7 +14356,14 @@ async function carregarComentariosSupabase(publicacaoId) {
         try { window.salvarBusca?.(nome); } catch {}
 
         // redireciona para busca
-        window.location.href = `busca.html?q=${encodeURIComponent(nome)}&src=categoria`;
+        dokeNavigateHtml(`busca.html?q=${encodeURIComponent(nome)}&src=categoria`);
+      };
+
+      const btn = item.querySelector('button');
+      btn.addEventListener('click', goCategorySearch);
+      item.addEventListener('click', (ev) => {
+        if (ev.target instanceof Element && ev.target.closest('button')) return;
+        goCategorySearch();
       });
 
       carousel.appendChild(item);
@@ -14713,7 +15147,7 @@ function syncClear(){
       `;
       resultsEl.querySelector('.ig-row-action')?.addEventListener('click', ()=>{
         rememberAdTerm(term);
-        window.location.href = `busca.html?q=${encodeURIComponent(term)}&src=sidebar`;
+        dokeNavigateHtml(`busca.html?q=${encodeURIComponent(term)}&src=sidebar`);
       });
     }
 
@@ -14871,7 +15305,7 @@ function syncClear(){
         const term = input.value.trim();
         if(mode === 'ads' && term.length >= 2){
           rememberAdTerm(term);
-          window.location.href = `busca.html?q=${encodeURIComponent(term)}&src=sidebar`;
+          dokeNavigateHtml(`busca.html?q=${encodeURIComponent(term)}&src=sidebar`);
         }
       }
     });
@@ -15338,7 +15772,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
       }
 
       box.innerHTML = `
-        <div class="sug-title">Sugest?es</div>
+        <div class="sug-title">Ideias para buscar</div>
         <div class="sug-list">
           ${list.map(t => {
             const pinned = pins.some(p => String(p).toLowerCase() === String(t).toLowerCase());
@@ -15348,7 +15782,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
                   <span class="sug-dot"></span>
                   <span class="sug-text">${esc(t)}</span>
                 </div>
-                <button class="sug-pin" type="button" aria-label="${pinned ? 'Remover de favoritados' : 'Adicionar aos favoritados'}" data-pin="${pinned ? '1' : '0'}">${pinned ? '?' : '?'}</button>
+                <button class="sug-pin" type="button" aria-label="${pinned ? 'Remover dos fixados' : 'Fixar sugestao'}" data-pin="${pinned ? '1' : '0'}">${pinned ? 'FIXADO' : 'FIXAR'}</button>
               </div>
             `;
           }).join('')}
@@ -15362,7 +15796,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
         row.addEventListener('click', (e) => {
           if (e.target === pinBtn) return;
           try { window.salvarBusca?.(term); } catch {}
-          window.location.href = `busca.html?q=${encodeURIComponent(term)}&src=sugestao`;
+          dokeNavigateHtml(`busca.html?q=${encodeURIComponent(term)}&src=sugestao`);
         });
 
         pinBtn?.addEventListener('click', (e) => {

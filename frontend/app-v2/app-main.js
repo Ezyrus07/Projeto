@@ -1,6 +1,6 @@
 ﻿(function(){
   const ENABLE_KEY = "doke_app_v2";
-  const VERSION = "20260308v33";
+const VERSION = "20260309v53";
   const clearPreboot = () => {
     try { document.documentElement.classList.remove("doke-v2-preboot"); } catch (_e) {}
   };
@@ -16,10 +16,21 @@
   window.__DOKE_APP_V2_BOOTED__ = true;
 
   function addCss(href){
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = href;
-    document.head.appendChild(link);
+    return new Promise((resolve) => {
+      const existing = Array.from(document.querySelectorAll("link[rel='stylesheet']")).find(
+        (l) => String(l.getAttribute("href") || "").includes(String(href).split("?")[0])
+      );
+      if (existing) {
+        resolve();
+        return;
+      }
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      link.onload = () => resolve();
+      link.onerror = () => resolve();
+      document.head.appendChild(link);
+    });
   }
 
   function addScript(src){
@@ -130,20 +141,24 @@
   }
 
   async function boot(){
-    addCss(`app-v2/styles.css?v=${VERSION}`);
+    await addCss(`app-v2/styles.css?v=${VERSION}`);
     await addScript(`app-v2/core/state.js?v=${VERSION}`);
     await addScript(`app-v2/core/router.js?v=${VERSION}`);
     await addScript(`app-v2/core/shell.js?v=${VERSION}`);
     await addScript(`app-v2/pages/home.js?v=${VERSION}`);
     await addScript(`app-v2/pages/search.js?v=${VERSION}`);
+    await addScript(`app-v2/pages/details.js?v=${VERSION}`);
+    await addScript(`app-v2/pages/legacy-html.js?v=${VERSION}`);
     await addScript(`app-v2/pages/placeholder.js?v=${VERSION}`);
 
     const shellApi = window.__DOKE_V2_SHELL__;
     const routerApi = window.__DOKE_V2_ROUTER__;
     const homeApi = window.__DOKE_V2_PAGE_HOME__;
     const searchApi = window.__DOKE_V2_PAGE_SEARCH__;
+    const detailsApi = window.__DOKE_V2_PAGE_DETAILS__;
+    const legacyHtmlApi = window.__DOKE_V2_PAGE_LEGACY_HTML__;
     const placeholderApi = window.__DOKE_V2_PAGE_PLACEHOLDER__;
-    if (!shellApi || !routerApi || !homeApi || !searchApi || !placeholderApi) {
+    if (!shellApi || !routerApi || !homeApi || !searchApi || !detailsApi || !legacyHtmlApi || !placeholderApi) {
       clearPreboot();
       return;
     }
@@ -207,6 +222,7 @@
         const file = String(path || "").toLowerCase();
         if (file === "index.html") document.body.setAttribute("data-page", "home");
         else if (file === "busca.html") document.body.setAttribute("data-page", "busca");
+        else if (file === "detalhes.html") document.body.setAttribute("data-page", "detalhes");
         else if (file === "pedidos.html") document.body.setAttribute("data-page", "pedidos");
         else if (file === "mensagens.html") document.body.setAttribute("data-page", "chat");
         else document.body.setAttribute("data-page", "v2");
@@ -214,6 +230,7 @@
     });
     router.register("index.html", homeApi.mountHome);
     router.register("busca.html", searchApi.mountSearch);
+    router.register("detalhes.html", detailsApi.mountDetails);
     [
       "negocios.html",
       "notificacoes.html",
@@ -224,23 +241,22 @@
       "mensagens.html",
       "meuperfil.html",
       "mais.html"
+    ].forEach((route) => router.register(route, legacyHtmlApi.mountLegacyHtml));
+    [
+      "carteira.html"
     ].forEach((route) => router.register(route, placeholderApi.mountPlaceholder));
     window.__DOKE_V2_NAVIGATE__ = async (to) => {
       try {
         await router.navigate(String(to || "index.html"));
       } catch (_e) {}
     };
-    router.start().then(async () => {
-      try {
-        const routeRaw = String(new URLSearchParams(location.search || "").get("route") || "").trim();
-        if (!routeRaw) return;
-        const route = routeRaw.split("#")[0];
-        const routeFile = route.split("?")[0].toLowerCase();
-        if (routeFile && routeFile !== "index.html") {
-          await router.navigate(route);
-        }
-      } catch (_e) {}
-    }).finally(() => {
+    const qsNow = new URLSearchParams(location.search || "");
+    const routeRaw = String(qsNow.get("route") || "").trim();
+    const fromLegacyRoute = qsNow.get("fromLegacyRoute") === "1";
+    const currentFile = normalizeRouteFile(location.pathname);
+    const canUseRouteParam = currentFile === "index.html" && fromLegacyRoute && !!routeRaw;
+    const initialRoute = canUseRouteParam ? routeRaw.split("#")[0] : `${location.pathname}${location.search || ""}`;
+    router.start(initialRoute).finally(() => {
       clearPreboot();
     });
   }

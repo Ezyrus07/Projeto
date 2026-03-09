@@ -5,7 +5,24 @@
   --v2-card: #ffffff;
   --v2-text: #0f2744;
   --v2-muted: #5f6670;
-  --v2-content-max: 1220px;
+  --v2-content-max: 1160px;
+  --v2-primary: #2a5f90;
+  --v2-accent: #0b7768;
+  --v2-border: #d9e3ee;
+  --v2-border-strong: #c6d4e3;
+  --v2-shadow-sm: 0 8px 18px rgba(15, 23, 42, .08);
+  --v2-shadow-md: 0 14px 28px rgba(15, 23, 42, .12);
+  --v2-shadow-lg: 0 22px 54px rgba(15, 23, 42, .18);
+  --v2-radius-sm: 10px;
+  --v2-radius-md: 14px;
+  --v2-radius-lg: 18px;
+  --v2-space-1: 6px;
+  --v2-space-2: 10px;
+  --v2-space-3: 14px;
+  --v2-space-4: 18px;
+  --v2-space-5: 24px;
+  --v2-space-6: 32px;
+  --v2-page-start-gap: 26px;
   position: relative;
   width: 100%;
   min-height: 100vh;
@@ -30,9 +47,14 @@ body.doke-v2-active {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   display: block !important;
+  color: var(--v2-text);
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 body.doke-v2-active.doke-v2-drawer-open {
+  overflow: hidden !important;
+}
+body.doke-v2-active.doke-v2-search-panel-open {
   overflow: hidden !important;
 }
 
@@ -73,7 +95,7 @@ body.doke-v2-active .doke-v2-page-home > .dp-wrap {
 
 .doke-v2-sidebar .nav {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .doke-v2-sidebar .nav a {
@@ -87,7 +109,7 @@ body.doke-v2-active .doke-v2-page-home > .dp-wrap {
   font-size: 13px;
   border-radius: 16px;
   padding: 10px 6px;
-  min-height: 54px;
+  min-height: 58px;
   border: 1px solid #d9e1ea;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
   transition: transform .16s ease, box-shadow .2s ease, background .2s ease;
@@ -117,6 +139,328 @@ body.doke-v2-active .doke-v2-page-home > .dp-wrap {
   background: #dbe5f2;
   border-color: #c3d3e6;
   box-shadow: inset 0 0 0 2px rgba(255,255,255,.5), 0 8px 18px rgba(15,23,42,.14);
+}
+
+.doke-v2-sidebar .nav a[data-v2-action="open-search-panel"].is-open {
+  background: linear-gradient(180deg, #d8f0ea, #cfe7e1);
+  border-color: #b7dcd2;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.5), 0 10px 20px rgba(8,81,74,.18);
+}
+
+.doke-v2-search-panel {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: min(360px, 92vw);
+  background: linear-gradient(180deg, rgba(251,253,255,.97), rgba(243,248,254,.98));
+  border-right: 1px solid #d7e2ee;
+  box-shadow: 14px 0 36px rgba(15,23,42,.16);
+  transform: translateX(-108%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .22s ease, opacity .2s ease;
+  z-index: 13020;
+  padding: calc(var(--v2-header) + 12px) 14px 18px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.doke-v2-search-panel.show {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.doke-v2-search-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.doke-v2-search-panel-head h3 {
+  margin: 0;
+  color: #123153;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.doke-v2-search-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #d5deea;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.doke-v2-search-close i {
+  font-size: 22px;
+}
+
+.doke-v2-search-form {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #d3dfeb;
+  border-radius: 14px;
+  padding: 10px 10px 10px 12px;
+  box-shadow: 0 10px 20px rgba(15,23,42,.08);
+}
+
+.doke-v2-search-form i {
+  color: #2a5f90;
+  font-size: 20px;
+}
+
+.doke-v2-search-form input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #0f2744;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.doke-v2-search-form input::placeholder {
+  color: #718096;
+  font-weight: 500;
+}
+
+.doke-v2-search-form button {
+  border: 0;
+  background: linear-gradient(135deg, #0b7768, #15837a);
+  color: #fff;
+  border-radius: 10px;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  cursor: pointer;
+}
+
+.doke-v2-search-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.doke-v2-search-list-head span {
+  color: #2a3f58;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.doke-v2-search-list-head button {
+  border: 1px solid #d1dce8;
+  background: #fff;
+  color: #5f6670;
+  border-radius: 999px;
+  height: 30px;
+  padding: 0 11px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.doke-v2-search-list {
+  display: grid;
+  gap: 8px;
+  overflow: auto;
+  padding-right: 2px;
+  max-height: 28vh;
+}
+
+.doke-v2-search-chip {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #d5e0ec;
+  background: #fff;
+  color: #1f3b58;
+  border-radius: 12px;
+  height: 40px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.doke-v2-search-chip i {
+  color: #2a5f90;
+  font-size: 16px;
+}
+
+.doke-v2-search-empty {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #66778c;
+}
+
+.doke-v2-search-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.doke-v2-search-tabs button {
+  border: 1px solid #d1dce8;
+  background: #fff;
+  color: #34485f;
+  border-radius: 12px;
+  min-height: 36px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.doke-v2-search-tabs button.is-active {
+  color: #11416c;
+  border-color: #bcd0e5;
+  background: linear-gradient(180deg, #f8fbff, #eaf2fb);
+  box-shadow: 0 6px 14px rgba(42,95,144,.12);
+}
+
+.doke-v2-search-reco-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.doke-v2-search-reco-head span {
+  color: #2a3f58;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.doke-v2-search-reco-head button {
+  border: 1px solid #bfd2e5;
+  background: #fff;
+  color: #1d4f7f;
+  border-radius: 999px;
+  height: 30px;
+  padding: 0 11px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.doke-v2-search-reco {
+  display: grid;
+  gap: 10px;
+  overflow: auto;
+  padding-right: 2px;
+  padding-bottom: 6px;
+}
+
+.doke-v2-mini-card {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #d5e0ec;
+  border-radius: 12px;
+  padding: 7px;
+}
+
+.doke-v2-mini-card img {
+  width: 70px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+  background: #eef2f7;
+}
+
+.doke-v2-mini-card .meta {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.doke-v2-mini-card .meta strong {
+  color: #123153;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doke-v2-mini-card .meta small {
+  color: #5f6670;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doke-v2-mini-card .meta .price {
+  color: #0b7768;
+  font-weight: 800;
+}
+
+.doke-v2-mini-card button {
+  border: 0;
+  background: linear-gradient(135deg, #2a5f90, #1f4f7b);
+  color: #fff;
+  border-radius: 10px;
+  height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.doke-v2-mini-card-user {
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+}
+
+.doke-v2-mini-card-user img {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+}
+
+.doke-v2-search-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  opacity: 0 !important;
+  pointer-events: none;
+  transition: none;
+  z-index: 13015;
+}
+
+body.doke-v2-active.doke-v2-search-panel-open .doke-v2-search-backdrop {
+  opacity: 0 !important;
+  pointer-events: none;
 }
 
 .doke-v2-header {
@@ -389,71 +733,39 @@ body.doke-v2-active .doke-v2-page-home > .dp-wrap {
   overflow: visible;
   box-sizing: border-box;
   z-index: 1;
+  display: grid;
+  align-content: start;
 }
 
 .doke-v2-route {
   width: 100%;
+  grid-area: 1 / 1;
+  align-self: start;
 }
 
 .doke-v2-route.doke-v2-route-enter {
   opacity: 0;
-  transform: translateY(8px);
+  transform: none;
+  filter: none;
 }
 
 .doke-v2-route.doke-v2-route-enter.is-visible {
   opacity: 1;
-  transform: translateY(0);
-  transition: opacity .18s ease, transform .22s ease;
+  transform: none;
+  filter: none;
+  transition: opacity .22s ease;
 }
 
 .doke-v2-route-leave {
   opacity: 0;
-  transform: translateY(-4px);
-  transition: opacity .14s ease, transform .18s ease;
+  transform: none;
+  filter: none;
+  transition: opacity .18s ease;
   pointer-events: none;
 }
 
-/* Entrada em camadas para containers/areas */
-.doke-v2-route.doke-v2-route-enter .doke-v2-page > * {
-  opacity: 0;
-  transform: translateY(10px) scale(.995);
-  will-change: opacity, transform;
-}
-
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page > * {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  transition: opacity .24s ease, transform .28s cubic-bezier(.2,.8,.2,1);
-}
-
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page > *:nth-child(1) { transition-delay: .02s; }
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page > *:nth-child(2) { transition-delay: .05s; }
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page > *:nth-child(3) { transition-delay: .08s; }
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page > *:nth-child(4) { transition-delay: .11s; }
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page > *:nth-child(5) { transition-delay: .14s; }
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page > *:nth-child(6) { transition-delay: .17s; }
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page > *:nth-child(7) { transition-delay: .20s; }
-
-/* Home: reforco visual dos blocos principais */
-.doke-v2-route.doke-v2-route-enter .doke-v2-page-home .secao-busca,
-.doke-v2-route.doke-v2-route-enter .doke-v2-page-home .categorias-container,
-.doke-v2-route.doke-v2-route-enter .doke-v2-page-home .videos-container,
-.doke-v2-route.doke-v2-route-enter .doke-v2-page-home .fotos-container,
-.doke-v2-route.doke-v2-route-enter .doke-v2-page-home .anuncio-container,
-.doke-v2-route.doke-v2-route-enter .doke-v2-page-home .para-voce-section,
-.doke-v2-route.doke-v2-route-enter .doke-v2-page-home .pros-section {
-  filter: saturate(.96);
-}
-
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page-home .secao-busca,
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page-home .categorias-container,
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page-home .videos-container,
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page-home .fotos-container,
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page-home .anuncio-container,
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page-home .para-voce-section,
-.doke-v2-route.doke-v2-route-enter.is-visible .doke-v2-page-home .pros-section {
-  filter: saturate(1);
-  transition: filter .35s ease;
+.doke-v2-main.is-routing {
+  contain: layout paint;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -484,20 +796,254 @@ body.doke-v2-active .doke-v2-main > * {
   width: 100%;
   max-width: var(--v2-content-max);
   margin: 0 auto;
+  padding-top: var(--v2-page-start-gap);
+  box-sizing: border-box;
+}
+
+/* Distancia unica do header para TODAS as paginas */
+.doke-v2-page > main > *:first-child,
+.doke-v2-page > .dp-wrap > *:first-child {
+  margin-top: 0 !important;
 }
 
 .doke-v2-card {
   background: var(--v2-card);
-  border: 1px solid #dbe5f0;
-  border-radius: 16px;
-  padding: 20px;
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-lg);
+  padding: var(--v2-space-5);
   color: var(--v2-text);
+  box-shadow: var(--v2-shadow-sm);
+}
+
+.doke-v2-surface {
+  background: var(--v2-card);
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-md);
+  box-shadow: var(--v2-shadow-sm);
+}
+
+.doke-v2-btn {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  min-height: 42px;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform .14s ease, box-shadow .2s ease, background .2s ease, color .2s ease, border-color .2s ease;
+}
+
+.doke-v2-btn:active {
+  transform: translateY(1px) scale(.985);
+}
+
+.doke-v2-btn-primary {
+  background: linear-gradient(135deg, #2a5f90, #2f6da5);
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(42, 95, 144, .22);
+}
+
+.doke-v2-btn-accent {
+  background: linear-gradient(135deg, #0b7768, #0f8d7d);
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(11, 119, 104, .2);
+}
+
+.doke-v2-btn-ghost {
+  background: #fff;
+  color: #35506e;
+  border-color: var(--v2-border-strong);
+}
+
+/* Hero padrao (todos iguais): branco + detalhes azul/verde */
+body.doke-v2-active .doke-v2-page main :is(
+  .secao-busca,
+  .notif-hero-container,
+  .wallet-hero-container,
+  .anuncio-hero-container,
+  .comm-hero-container,
+  .eval-hero,
+  .settings-hero,
+  .ped-hero,
+  .msg-hero,
+  .news-hero,
+  .neg-hero-container,
+  .page-hero,
+  .privacy-hero,
+  .addr-hero,
+  .vp-hero,
+  .av-hero,
+  .grupo-hero,
+  .ep-hero,
+  .hero
+) {
+  position: relative !important;
+  background: linear-gradient(165deg, #ffffff 0%, #ffffff 64%, #f2f8ff 100%) !important;
+  color: #123153 !important;
+  border: 1px solid #cfe0f2 !important;
+  outline: 1px solid rgba(255,255,255,.75) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, .11) !important;
+  overflow: hidden !important;
+}
+
+body.doke-v2-active .doke-v2-page main :is(
+  .secao-busca,
+  .notif-hero-container,
+  .wallet-hero-container,
+  .anuncio-hero-container,
+  .comm-hero-container,
+  .eval-hero,
+  .settings-hero,
+  .ped-hero,
+  .msg-hero,
+  .news-hero,
+  .neg-hero-container,
+  .page-hero,
+  .privacy-hero,
+  .addr-hero,
+  .vp-hero,
+  .av-hero,
+  .grupo-hero,
+  .ep-hero,
+  .hero
+)::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #2a5f90 0%, #3b86bf 46%, #0b7768 100%);
+  box-shadow: 0 6px 14px rgba(42,95,144,.22);
+  opacity: 1;
+  pointer-events: none;
+}
+
+body.doke-v2-active .doke-v2-page main :is(
+  .secao-busca,
+  .notif-hero-container,
+  .wallet-hero-container,
+  .anuncio-hero-container,
+  .comm-hero-container,
+  .eval-hero,
+  .settings-hero,
+  .ped-hero,
+  .msg-hero,
+  .news-hero,
+  .neg-hero-container,
+  .page-hero,
+  .privacy-hero,
+  .addr-hero,
+  .vp-hero,
+  .av-hero,
+  .grupo-hero,
+  .ep-hero,
+  .hero
+)::after {
+  content: "";
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  right: -110px;
+  top: -125px;
+  border-radius: 999px;
+  background: radial-gradient(circle at center, rgba(11,119,104,.18), rgba(42,95,144,.10) 60%, rgba(42,95,144,0) 74%);
+  pointer-events: none;
+}
+
+body.doke-v2-active .doke-v2-page main :is(
+  .notif-hero-container,
+  .wallet-hero-container,
+  .anuncio-hero-container,
+  .comm-hero-container,
+  .eval-hero,
+  .settings-hero,
+  .ped-hero,
+  .msg-hero,
+  .news-hero,
+  .neg-hero-container,
+  .page-hero,
+  .privacy-hero,
+  .addr-hero,
+  .vp-hero,
+  .av-hero,
+  .grupo-hero,
+  .ep-hero,
+  .hero
+) :is(h1, h2, h3) {
+  color: #1f4f7d !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+
+body.doke-v2-active .doke-v2-page main :is(
+  .notif-hero-container,
+  .wallet-hero-container,
+  .anuncio-hero-container,
+  .comm-hero-container,
+  .eval-hero,
+  .settings-hero,
+  .ped-hero,
+  .msg-hero,
+  .news-hero,
+  .neg-hero-container,
+  .page-hero,
+  .privacy-hero,
+  .addr-hero,
+  .vp-hero,
+  .av-hero,
+  .grupo-hero,
+  .ep-hero,
+  .hero
+) :is(p, small, .subtitle, .hero-subtitle) {
+  color: #5f6f84 !important;
+  opacity: 1 !important;
+}
+
+body.doke-v2-active .doke-v2-page main :is(.hero-actions, .hero-stats, .hero-mini) {
+  background: linear-gradient(135deg, rgba(42, 95, 144, .07), rgba(11,119,104,.06)) !important;
+  border: 1px solid rgba(42, 95, 144, .18) !important;
+  border-radius: 14px !important;
+}
+
+body.doke-v2-active .doke-v2-page main :is(.btn-hero-action, .hero-actions button) {
+  background: #fff !important;
+  color: #2a5f90 !important;
+  border: 1px solid rgba(42,95,144,.28) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, .08) !important;
+}
+
+body.doke-v2-active .doke-v2-page main :is(.btn-hero-action:hover, .hero-actions button:hover) {
+  background: linear-gradient(135deg, #2a5f90, #0b7768) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+/* destaque azul/verde mais claro nos botoes de acao do hero */
+body.doke-v2-active .doke-v2-page main .hero-actions > :first-child {
+  background: linear-gradient(135deg, #2a5f90, #3779b0) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+body.doke-v2-active .doke-v2-page main .hero-actions > :nth-child(2) {
+  background: linear-gradient(135deg, #0b7768, #119384) !important;
+  color: #fff !important;
+  border-color: transparent !important;
 }
 
 .doke-v2-page-home {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  padding-top: 0 !important;
 }
 
 .doke-v2-page-home > .dp-wrap {
@@ -529,6 +1075,115 @@ body.doke-v2-active .doke-v2-main > * {
   overflow: visible !important;
 }
 
+/* Home tuning: remove espaco extra e melhorar escala dos cards */
+body.doke-v2-active .doke-v2-page-home .videos-container {
+  display: block !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding-bottom: 6px !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .secao-busca {
+  overflow: visible !important;
+  z-index: 80 !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .busca-wrapper {
+  z-index: 90 !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .busca-wrapper .busca-dropdown {
+  z-index: 9999 !important;
+}
+
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica {
+  min-height: unset !important;
+  height: auto !important;
+  max-height: none !important;
+  align-items: flex-start !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .videos-container .tiktok-scroll-wrapper {
+  min-height: unset !important;
+  height: auto !important;
+  max-height: none !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+body.doke-v2-active .doke-v2-page-home #feed-global-container:not(.feed-publicacoes-grid) .feed-publicacao-card,
+body.doke-v2-active .doke-v2-page-home #feed-global-container:not(.feed-publicacoes-grid) .dp-item,
+body.doke-v2-active .doke-v2-page-home #feed-global-container:not(.feed-publicacoes-grid) .card-feed-global {
+  flex: 0 0 clamp(250px, 22vw, 320px) !important;
+  width: clamp(250px, 22vw, 320px) !important;
+  min-width: clamp(250px, 22vw, 320px) !important;
+}
+
+/* Publicacoes: lock de layout para impedir cards quebrados */
+body.doke-v2-active .doke-v2-page-home #feed-global-container {
+  align-items: stretch !important;
+}
+
+body.doke-v2-active .doke-v2-page-home #feed-global-container .feed-publicacao-card,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .dp-item,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .card-feed-global {
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+body.doke-v2-active .doke-v2-page-home #feed-global-container .feed-publicacao-card .dp-itemMedia,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .feed-publicacao-card .midia-post,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .dp-item .dp-itemMedia,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .card-feed-global .midia-post {
+  width: 100% !important;
+  aspect-ratio: 4 / 5 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  border-radius: 10px !important;
+}
+
+body.doke-v2-active .doke-v2-page-home #feed-global-container .feed-publicacao-card .dp-itemMedia img,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .feed-publicacao-card .dp-itemMedia video,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .feed-publicacao-card .midia-post img,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .feed-publicacao-card .midia-post video,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .dp-item .dp-itemMedia img,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .dp-item .dp-itemMedia video,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .card-feed-global .midia-post img,
+body.doke-v2-active .doke-v2-page-home #feed-global-container .card-feed-global .midia-post video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+body.doke-v2-active .doke-v2-page-home #feed-global-container.feed-publicacoes-grid {
+  display: flex !important;
+  overflow-x: auto !important;
+  gap: 12px !important;
+  padding: 8px 0 !important;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+body.doke-v2-active .doke-v2-page-home #feed-global-container.feed-publicacoes-grid::-webkit-scrollbar {
+  display: none;
+}
+
+body.doke-v2-active .doke-v2-page-home #feed-global-container.feed-publicacoes-grid .dp-item,
+body.doke-v2-active .doke-v2-page-home #feed-global-container.feed-publicacoes-grid .feed-publicacao-card {
+  flex: 0 0 220px !important;
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+  scroll-snap-align: start;
+}
+
 .doke-v2-page-search main {
   margin-left: 0 !important;
   width: 100% !important;
@@ -557,6 +1212,142 @@ body.doke-v2-active .doke-v2-main > * {
   overflow: visible !important;
 }
 
+/* Busca v2: padrao de layout e componentes */
+.doke-v2-page-search .secao-busca {
+  max-width: var(--v2-content-max);
+  margin: 0 auto 16px !important;
+  padding: 6px 0 18px !important;
+}
+
+.doke-v2-page-search .results-header,
+.doke-v2-page-search .doke-toolbar {
+  background: #fff;
+  border: 1px solid var(--v2-border);
+  border-radius: var(--v2-radius-md);
+  box-shadow: var(--v2-shadow-sm);
+}
+
+.doke-v2-page-search .results-header {
+  padding: 14px 16px;
+}
+
+.doke-v2-page-search .results-content #feedAnuncios {
+  margin-top: 12px;
+}
+
+.doke-v2-page-search .filters-sidebar {
+  border: 1px solid var(--v2-border) !important;
+  border-radius: var(--v2-radius-lg) !important;
+  box-shadow: var(--v2-shadow-sm) !important;
+}
+
+.doke-v2-page-search .filters-header {
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.doke-v2-page-search .filter-group {
+  margin-bottom: 18px !important;
+}
+
+.doke-v2-page-search .input-sidebar,
+.doke-v2-page-search .select-sidebar {
+  border-radius: var(--v2-radius-sm) !important;
+  border: 1px solid var(--v2-border) !important;
+  background: #f9fbff !important;
+  min-height: 42px;
+}
+
+.doke-v2-page-search .btn-clean-filters,
+.doke-v2-page-search .btn-loc,
+.doke-v2-page-search .chips-arrow,
+.doke-v2-page-search .btn-filtros-mobile {
+  border-radius: 999px !important;
+  border: 1px solid var(--v2-border-strong) !important;
+  background: #fff !important;
+}
+
+.doke-v2-page-search .chip-tag {
+  border-radius: 999px !important;
+}
+
+.doke-v2-page-search .chip-tag.ativo {
+  box-shadow: 0 8px 16px rgba(11, 119, 104, .18);
+}
+
+.doke-v2-page-search .radio-item {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.doke-v2-page-search .radio-item:has(input:checked) {
+  border-color: #9bcbe0;
+  background: #f5faff;
+}
+
+.doke-v2-page-search .filtro-checks-row label {
+  border-radius: 10px !important;
+  border: 1px solid #d8e3ee !important;
+}
+
+.doke-v2-page-search .filtro-checks-row label:has(input:checked) {
+  border-color: #9bcbe0 !important;
+  background: #f4f9ff !important;
+}
+
+/* Rotas legadas migradas: centralizacao e proporcoes */
+.doke-v2-page-legacy main,
+.doke-v2-page-details main {
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  width: 100% !important;
+  max-width: var(--v2-content-max) !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.doke-v2-page-legacy > .main-footer,
+.doke-v2-page-details > .main-footer {
+  margin-top: 24px !important;
+  width: calc(100vw - var(--v2-sidebar)) !important;
+  max-width: calc(100vw - var(--v2-sidebar)) !important;
+  margin-left: calc(50% - ((100vw - var(--v2-sidebar)) / 2)) !important;
+  margin-right: calc(50% - ((100vw - var(--v2-sidebar)) / 2)) !important;
+  border-radius: 0 !important;
+}
+
+.doke-v2-page-details #main-content {
+  display: contents !important;
+}
+
+.doke-v2-page-details .content-section,
+.doke-v2-page-details .sidebar-sticky,
+.doke-v2-page-details .gallery-wrapper {
+  border: 1px solid var(--v2-border) !important;
+  border-radius: var(--v2-radius-lg) !important;
+  box-shadow: var(--v2-shadow-sm) !important;
+}
+
+.doke-v2-page-details .content-section {
+  padding: 22px !important;
+}
+
+.doke-v2-page-details .btn-hire {
+  border-radius: 999px !important;
+  min-height: 44px !important;
+  background: linear-gradient(135deg, #0b7768, #0f8d7d) !important;
+  color: #fff !important;
+  border: 0 !important;
+}
+
+.doke-v2-page-details .provider-mini {
+  border-top: 1px solid #e5edf6;
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
 @media (max-width: 1280px) {
   .doke-v2-main,
   body.doke-v2-active .doke-v2-main {
@@ -564,14 +1355,47 @@ body.doke-v2-active .doke-v2-main > * {
   }
 }
 
-.doke-v2-page-home .secao-busca {
-  margin-top: 8px !important;
+body.doke-v2-active .doke-v2-page-home .secao-busca {
+  margin-top: var(--v2-page-start-gap) !important;
+}
+
+/* Home: remove o filete decorativo no topo do hero de busca */
+body.doke-v2-active .doke-v2-page-home main .secao-busca::before {
+  content: none !important;
+  display: none !important;
+}
+
+/* Remove o filete decorativo no topo de todos os heros v2 */
+body.doke-v2-active .doke-v2-page main :is(
+  .secao-busca,
+  .notif-hero-container,
+  .wallet-hero-container,
+  .anuncio-hero-container,
+  .comm-hero-container,
+  .eval-hero,
+  .settings-hero,
+  .ped-hero,
+  .msg-hero,
+  .news-hero,
+  .neg-hero-container,
+  .page-hero,
+  .privacy-hero,
+  .addr-hero,
+  .vp-hero,
+  .av-hero,
+  .grupo-hero,
+  .ep-hero,
+  .hero
+)::before {
+  content: none !important;
+  display: none !important;
 }
 
 @media (max-width: 900px) {
   .doke-v2 {
     --v2-header: 66px;
     --v2-content-max: 100%;
+    --v2-page-start-gap: 14px;
   }
 
   .doke-v2-sidebar {
@@ -588,6 +1412,34 @@ body.doke-v2-active .doke-v2-main > * {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 2px 10px rgba(15, 23, 42, .08);
+  }
+
+  .doke-v2-search-panel {
+    left: 0;
+    top: 0;
+    width: min(360px, 92vw);
+    border-right: 1px solid #d5dfeb;
+    box-shadow: 0 24px 44px rgba(15,23,42,.32);
+    z-index: 13032;
+  }
+
+  .doke-v2-search-backdrop {
+    z-index: 13028;
+    background: transparent;
+  }
+
+  .doke-v2-search-list {
+    max-height: 24vh;
+  }
+
+  .doke-v2-mini-card {
+    grid-template-columns: 62px minmax(0, 1fr);
+    align-items: flex-start;
+  }
+
+  .doke-v2-mini-card button {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .doke-v2-header .mobile-left {
@@ -687,12 +1539,14 @@ body.doke-v2-active .doke-v2-main > * {
   .doke-v2-page-home > .dp-wrap,
   .doke-v2-page-home > .dp-wrap > *:not(script):not(style),
   .doke-v2-page-home > .main-footer,
-  .doke-v2-page-search > .main-footer {
+  .doke-v2-page-search > .main-footer,
+  .doke-v2-page-legacy > .main-footer,
+  .doke-v2-page-details > .main-footer {
     max-width: 100% !important;
   }
 
-  .doke-v2-page-home .secao-busca {
-    margin-top: 0 !important;
+  body.doke-v2-active .doke-v2-page-home .secao-busca {
+    margin-top: var(--v2-page-start-gap) !important;
   }
 
   .doke-v2-page-search .search-layout {
@@ -705,6 +1559,15 @@ body.doke-v2-active .doke-v2-main > * {
   .doke-v2-page-search .filters-sidebar {
     width: 100% !important;
     max-width: 100% !important;
+  }
+
+  .doke-v2-page-details main {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .doke-v2-page-details .content-section {
+    padding: 14px !important;
   }
 
   .doke-v2-drawer-backdrop {
@@ -886,6 +1749,22 @@ body.doke-v2-active .doke-v2-main > * {
     margin-left: calc(50% - 50vw) !important;
     margin-right: calc(50% - 50vw) !important;
   }
+
+  .doke-v2-page-legacy > .main-footer,
+  .doke-v2-page-details > .main-footer {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin-left: calc(50% - 50vw) !important;
+    margin-right: calc(50% - 50vw) !important;
+  }
+
+  body.doke-v2-active .doke-v2-page-home #feed-global-container:not(.feed-publicacoes-grid) .feed-publicacao-card,
+  body.doke-v2-active .doke-v2-page-home #feed-global-container:not(.feed-publicacoes-grid) .dp-item,
+  body.doke-v2-active .doke-v2-page-home #feed-global-container:not(.feed-publicacoes-grid) .card-feed-global {
+    flex-basis: 232px !important;
+    width: 232px !important;
+    min-width: 232px !important;
+  }
 }
 
 @media (max-width: 520px) {
@@ -948,6 +1827,14 @@ body.doke-v2-active .doke-v2-main > * {
   box-shadow: 0 4px 12px rgba(15, 23, 42, .08) !important;
 }
 
+.doke-v2-page-home #listaCategorias,
+.doke-v2-page-home #listaCategorias .cat-card,
+.doke-v2-page-home #listaCategorias .cat-item,
+.doke-v2-page-home #listaCategorias .cat-ico,
+.doke-v2-page-home #listaCategorias .cat-icon-wrap {
+  pointer-events: auto !important;
+}
+
 .doke-v2-page-home #feedAnuncios.lista-cards-premium {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -1007,10 +1894,92 @@ body.doke-v2-active .doke-v2-main > * {
 
 @media (max-height: 820px) {
   .doke-v2-sidebar .nav a {
-    min-height: 48px;
-    padding: 8px 6px;
+    min-height: 52px;
+    padding: 9px 6px;
   }
   .doke-v2-sidebar .nav a i {
     font-size: 27px;
+  }
+}
+
+/* ===================== HOME FIX FINAL (20260309v50) ===================== */
+/* Garantir dropdown da busca acima de tudo no index/home v2 */
+body.doke-v2-active .doke-v2-main.is-routing {
+  contain: none !important;
+}
+
+body.doke-v2-active .doke-v2-route,
+body.doke-v2-active .doke-v2-page-home,
+body.doke-v2-active .doke-v2-page-home main,
+body.doke-v2-active .doke-v2-page-home .dp-wrap {
+  overflow: visible !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .secao-busca {
+  overflow: visible !important;
+  z-index: 13040 !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .busca-wrapper {
+  position: relative !important;
+  z-index: 13050 !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .busca-wrapper .busca-dropdown {
+  z-index: 13060 !important;
+  max-height: min(360px, 50vh) !important;
+  overflow: auto !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .busca-wrapper .busca-dropdown.is-floating {
+  position: fixed !important;
+  z-index: 2147483000 !important;
+  right: auto !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .categorias-container,
+body.doke-v2-active .doke-v2-page-home .videos-container,
+body.doke-v2-active .doke-v2-page-home .fotos-container,
+body.doke-v2-active .doke-v2-page-home .anuncio-container {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+/* Remove sobra vertical da faixa de videos curtos */
+body.doke-v2-active .doke-v2-page-home .videos-container {
+  display: block !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding-bottom: 10px !important;
+}
+
+body.doke-v2-active .doke-v2-page-home .videos-container .tiktok-scroll-wrapper,
+body.doke-v2-active .doke-v2-page-home #galeria-dinamica {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 14px !important;
+  align-items: stretch !important;
+}
+
+/* Cards de videos em tamanho equilibrado, sem sobreposicao */
+@media (min-width: 901px) {
+  body.doke-v2-active .doke-v2-page-home #galeria-dinamica .tiktok-card,
+  body.doke-v2-active .doke-v2-page-home #galeria-dinamica .dp-reelCard {
+    flex: 0 0 auto !important;
+    width: clamp(180px, 18vw, 220px) !important;
+    min-width: clamp(180px, 18vw, 220px) !important;
+    height: clamp(300px, 40vh, 360px) !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    left: auto !important;
+    transform: none !important;
+  }
+  body.doke-v2-active .doke-v2-page-home .videos-container {
+    overflow: visible !important;
   }
 }
