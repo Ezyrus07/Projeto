@@ -19,6 +19,17 @@
     }
   }
 
+  function stripInlineHandlers(scope, selector) {
+    const root = scope instanceof Element ? scope : null;
+    if (!root) return;
+    root.querySelectorAll(selector || "[onclick],[onchange],[oninput]").forEach((node) => {
+      if (!(node instanceof HTMLElement)) return;
+      node.removeAttribute("onclick");
+      node.removeAttribute("onchange");
+      node.removeAttribute("oninput");
+    });
+  }
+
   function bindHomeSearch(page, on) {
     if (!(page instanceof Element)) return;
     const wrapper = page.querySelector("#buscaWrapper");
@@ -138,6 +149,13 @@
       const insideDropdown = !!(dropdownBusca && dropdownBusca.contains(t));
       if (!insideWrapper && !insideDropdown) closeDropdown();
     });
+    on(document, "pointerdown", (e) => {
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      const insideWrapper = !!(wrapper && wrapper.contains(t));
+      const insideDropdown = !!(dropdownBusca && dropdownBusca.contains(t));
+      if (!insideWrapper && !insideDropdown) closeDropdown();
+    }, true);
     on(inputBusca, "keydown", (e) => {
       if (e.key !== "Enter") return;
       e.preventDefault();
@@ -342,6 +360,7 @@
 
   function bindHomeFilters(page, on, onTeardown) {
     if (!(page instanceof Element)) return;
+    stripInlineHandlers(page.querySelector(".filtros-container-premium") || page, "[onclick],[onchange],[oninput]");
     const syncExpandedState = (open) => {
       const area = page.querySelector("#filtrosExtras");
       const btn = page.querySelector(".btn-toggle-filtros");
@@ -356,7 +375,48 @@
       if (text instanceof HTMLElement) text.textContent = open ? "Esconder filtros" : "Mostrar filtros";
     };
 
+    const btnAplicar = page.querySelector("#btn-aplicar");
+    const toggleBtn = page.querySelector(".btn-toggle-filtros");
+    const filtrosArea = page.querySelector("#filtrosExtras");
+    const selects = {
+      estado: page.querySelector("#selectEstado"),
+      cidade: page.querySelector("#selectCidade"),
+      bairro: page.querySelector("#selectBairro")
+    };
+
+    const syncLocationState = () => {
+      const estado = selects.estado instanceof HTMLSelectElement ? String(selects.estado.value || "").trim() : "";
+      const cidade = selects.cidade instanceof HTMLSelectElement ? String(selects.cidade.value || "").trim() : "";
+      if (selects.cidade instanceof HTMLSelectElement) selects.cidade.disabled = !estado;
+      if (selects.bairro instanceof HTMLSelectElement) selects.bairro.disabled = !cidade;
+    };
+
+    const persistLocationState = () => {
+      try {
+        const payload = {
+          estado: selects.estado instanceof HTMLSelectElement ? String(selects.estado.value || "") : "",
+          cidade: selects.cidade instanceof HTMLSelectElement ? String(selects.cidade.value || "") : "",
+          bairro: selects.bairro instanceof HTMLSelectElement ? String(selects.bairro.value || "") : ""
+        };
+        localStorage.setItem("doke_home_filters_location_v2", JSON.stringify(payload));
+      } catch (_e) {}
+    };
+
+    const restoreLocationState = () => {
+      try {
+        const raw = localStorage.getItem("doke_home_filters_location_v2") || "";
+        if (!raw) return;
+        const payload = JSON.parse(raw);
+        if (selects.estado instanceof HTMLSelectElement && payload.estado) selects.estado.value = payload.estado;
+        if (selects.cidade instanceof HTMLSelectElement && payload.cidade) selects.cidade.value = payload.cidade;
+        if (selects.bairro instanceof HTMLSelectElement && payload.bairro) selects.bairro.value = payload.bairro;
+      } catch (_e) {}
+      syncLocationState();
+    };
+
     const applyNow = () => {
+      syncLocationState();
+      persistLocationState();
       safeInvoke(() => window.dokePopulateCategoryFilters && window.dokePopulateCategoryFilters());
       safeInvoke(() => window.dokeApplyHomeFilters && window.dokeApplyHomeFilters());
     };
@@ -369,9 +429,6 @@
       }, 120);
     };
 
-    const btnAplicar = page.querySelector("#btn-aplicar");
-    const toggleBtn = page.querySelector(".btn-toggle-filtros");
-    const filtrosArea = page.querySelector("#filtrosExtras");
     const liveSelectors = [
       "#maxPreco",
       "#ordenacao",
@@ -394,7 +451,15 @@
         const evt = (node instanceof HTMLInputElement && (node.type === "checkbox" || node.type === "radio")) || node instanceof HTMLSelectElement
           ? "change"
           : "input";
-        on(node, evt, scheduleApply);
+        on(node, evt, () => {
+          if (node === selects.estado) {
+            if (selects.cidade instanceof HTMLSelectElement) selects.cidade.value = "";
+            if (selects.bairro instanceof HTMLSelectElement) selects.bairro.value = "";
+          }
+          if (node === selects.cidade && selects.bairro instanceof HTMLSelectElement) selects.bairro.value = "";
+          syncLocationState();
+          scheduleApply();
+        });
       });
     });
 
@@ -404,17 +469,21 @@
       safeInvoke(() => window.dokeToast && window.dokeToast("Filtros aplicados"));
     });
 
+    try {
+      if (toggleBtn instanceof HTMLElement) toggleBtn.removeAttribute("onclick");
+    } catch (_e) {}
+
     on(toggleBtn, "click", (ev) => {
       ev.preventDefault();
+      ev.stopPropagation();
       const nextOpen = !(filtrosArea instanceof HTMLElement && filtrosArea.classList.contains("aberto"));
-      safeInvoke(() => window.toggleFiltrosExtras && window.toggleFiltrosExtras());
+      safeInvoke(() => window.setFiltrosExtrasState && window.setFiltrosExtrasState(nextOpen));
       syncExpandedState(nextOpen);
     });
 
     try {
-      const shouldOpen = window.innerWidth > 640;
-      safeInvoke(() => window.setFiltrosExtrasState && window.setFiltrosExtrasState(shouldOpen));
-      syncExpandedState(shouldOpen);
+      safeInvoke(() => window.setFiltrosExtrasState && window.setFiltrosExtrasState(false));
+      syncExpandedState(false);
     } catch (_e) {}
 
     try {
@@ -431,6 +500,9 @@
       }
     } catch (_e) {}
 
+    restoreLocationState();
+    syncLocationState();
+
     if (typeof onTeardown === "function") {
       onTeardown(() => {
         if (debounce) {
@@ -438,6 +510,125 @@
         }
       });
     }
+  }
+
+
+  function bindHomeCepSync(page, on) {
+    if (!(page instanceof Element)) return;
+    const cepIds = ["inputCep", "cepOrcamento", "cepEndereco", "cepBusca"];
+    const cepSalvo = (() => {
+      try { return localStorage.getItem("meu_cep_doke") || ""; } catch (_e) { return ""; }
+    })();
+
+    const syncCepValue = (value) => {
+      const cep = String(value || "");
+      if (cep.length < 5) return;
+      safeInvoke(() => window.preencherTodosCeps && window.preencherTodosCeps(cep));
+    };
+
+    cepIds.forEach((id) => {
+      page.querySelectorAll(`#${id}`).forEach((input) => {
+        if (!(input instanceof HTMLInputElement)) return;
+        if (cepSalvo && !input.value) input.value = cepSalvo;
+        on(input, "input", (e) => {
+          const node = e.currentTarget;
+          if (!(node instanceof HTMLInputElement)) return;
+          if (id === "inputCep") safeInvoke(() => window.formatarCepInput && window.formatarCepInput(e));
+          syncCepValue(node.value);
+        });
+        if (id === "inputCep") {
+          on(input, "keypress", (e) => {
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            safeInvoke(() => window.salvarCep && window.salvarCep());
+          });
+        }
+      });
+    });
+
+    if (cepSalvo) {
+      safeInvoke(() => window.atualizarTelaCep && window.atualizarTelaCep(cepSalvo));
+      syncCepValue(cepSalvo);
+      safeInvoke(async () => {
+        try {
+          const locSalva = JSON.parse(localStorage.getItem("doke_localizacao") || "null");
+          const semEndereco = !locSalva || (!locSalva.cidade && !locSalva.bairro);
+          const cepLimpo = String(cepSalvo).replace(/\D/g, "");
+          if (!semEndereco || cepLimpo.length !== 8 || typeof window.buscarEnderecoPorCep !== "function") return;
+          const payload = await window.buscarEnderecoPorCep(cepLimpo);
+          if (!payload) return;
+          localStorage.setItem("doke_localizacao", JSON.stringify(payload));
+          safeInvoke(() => window.atualizarTelaCep && window.atualizarTelaCep(payload));
+        } catch (_e) {}
+      });
+    }
+  }
+
+  function installHomeResilience(page, onTeardown) {
+    if (!(page instanceof Element)) return;
+    const timers = [];
+    const later = (ms, fn) => {
+      const id = window.setTimeout(() => {
+        try { fn(); } catch (_e) {}
+      }, ms);
+      timers.push(id);
+    };
+
+    later(14000, () => {
+      try {
+        const reelsContainer = page.querySelector("#galeria-dinamica") || page.querySelector(".tiktok-scroll-wrapper");
+        if (reelsContainer) {
+          const hasRealCard = !!reelsContainer.querySelector('.dp-reelCard, .tiktok-card:not(.is-skeleton), video');
+          const hasSkeleton = !!reelsContainer.querySelector('.is-skeleton, .skeleton');
+          if (!hasRealCard && hasSkeleton) {
+            reelsContainer.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possivel carregar videos agora.</p>";
+            reelsContainer.setAttribute("aria-busy", "false");
+          }
+        }
+      } catch (_e) {}
+      try {
+        const feedContainer = page.querySelector("#feed-global-container");
+        if (feedContainer) {
+          const hasRealPost = !!feedContainer.querySelector('.feed-publicacao-card:not(.pub-skel), .card-feed-global, .dp-item:not(.pub-skel)');
+          const hasSkeleton = !!feedContainer.querySelector('.pub-skel, .skeleton');
+          if (!hasRealPost && hasSkeleton) {
+            feedContainer.innerHTML = "<div class='dp-empty'>Nao foi possivel carregar publicacoes agora.</div>";
+            feedContainer.setAttribute("aria-busy", "false");
+          }
+        }
+      } catch (_e) {}
+    });
+
+    later(0, () => {
+      const params = new URLSearchParams(location.search || "");
+      const postParam = params.get("post");
+      const commentParam = params.get("comment");
+      const openReplies = params.get("reply") === "1";
+      if (!postParam) return;
+      window._dokePendingModalCommentId = commentParam || null;
+      window._dokePendingModalOpenReplies = openReplies;
+      if (postParam.startsWith("sb-")) {
+        safeInvoke(async () => window.abrirModalPublicacao && window.abrirModalPublicacao(postParam.slice(3)));
+      } else if (postParam.startsWith("fb-")) {
+        safeInvoke(async () => window.abrirModalPost && window.abrirModalPost(postParam.slice(3), "posts"));
+      }
+    });
+
+    if (typeof onTeardown === "function") {
+      onTeardown(() => {
+        timers.splice(0).forEach((id) => {
+          try { window.clearTimeout(id); } catch (_e) {}
+        });
+      });
+    }
+  }
+
+  function mountHomePageRuntime(page, on, onTeardown) {
+    if (!(page instanceof Element)) return;
+    bindHomeCepSync(page, on);
+    installHomeResilience(page, onTeardown);
+    safeInvoke(() => window.initIgSidebarSearch && window.initIgSidebarSearch());
+    safeInvoke(() => window.__dokeHomeMountInit && window.__dokeHomeMountInit(page));
   }
 
   function hydrateHome(page) {
@@ -491,6 +682,53 @@
     return { main, footer };
   }
 
+
+  function hasRealHomeContent(container, selector, skeletonSelector) {
+    if (!(container instanceof Element)) return false;
+    const real = container.querySelector(selector);
+    if (!real) return false;
+    if (!skeletonSelector) return true;
+    return !real.matches(skeletonSelector);
+  }
+
+  function installHomeSkeletonStability(page, onTeardown) {
+    if (!(page instanceof Element)) return;
+    page.classList.add("doke-v2-home-loading");
+    const root = page.querySelector("main.dp-wrap") || page;
+    const checks = [
+      { id: "listaCategorias", real: ".cat-card:not(.cat-skel)", skel: ".cat-skel" },
+      { id: "galeria-dinamica", real: ".dp-reelCard, .tiktok-card:not(.is-skeleton), video", skel: ".is-skeleton" },
+      { id: "feed-global-container", real: ".feed-publicacao-card:not(.pub-skel), .card-feed-global, .dp-item:not(.pub-skel)", skel: ".pub-skel, .skeleton" },
+      { id: "feedAnuncios", real: ".anuncio-card, .ad-card, .dp-card, article", skel: ".skeleton, .anuncio-skel" },
+      { id: "prosDestaque", real: ".pro-card, .prof-card, .card-profissional, article", skel: ".skeleton, .pro-skel" }
+    ];
+
+    const evaluate = () => {
+      const done = checks.every((cfg) => {
+        const el = root.querySelector(`#${cfg.id}`);
+        if (!(el instanceof Element)) return true;
+        return hasRealHomeContent(el, cfg.real, cfg.skel);
+      });
+      if (done) page.classList.remove("doke-v2-home-loading");
+    };
+
+    const timers = [window.setTimeout(evaluate, 700), window.setTimeout(evaluate, 1800), window.setTimeout(() => page.classList.remove("doke-v2-home-loading"), 4200)];
+    let mo = null;
+    try {
+      mo = new MutationObserver(() => evaluate());
+      mo.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-busy", "style"] });
+    } catch (_e) {}
+    evaluate();
+
+    if (typeof onTeardown === "function") {
+      onTeardown(() => {
+        timers.forEach((id) => { try { clearTimeout(id); } catch (_e) {} });
+        try { if (mo) mo.disconnect(); } catch (_e) {}
+        try { page.classList.remove("doke-v2-home-loading"); } catch (_e) {}
+      });
+    }
+  }
+
   function mountHome(ctx) {
     const page = document.createElement("section");
     page.className = "doke-v2-page doke-v2-page-home";
@@ -509,11 +747,14 @@
       page.appendChild(layout.main);
       if (layout.footer) page.appendChild(layout.footer);
       ctx.root.appendChild(page);
+      stripInlineHandlers(page.querySelector(".filtros-container-premium") || page, ".btn-toggle-filtros,[onclick],[onchange],[oninput]");
 
+      installHomeSkeletonStability(page, (fn) => teardown.push(fn));
       bindHomeSearch(page, on);
       bindHomeCategories(page, on);
       bindHomeHorizontalArrows(page, on);
       bindHomeFilters(page, on, (fn) => teardown.push(fn));
+      mountHomePageRuntime(page, on, (fn) => teardown.push(fn));
       normalizeHomeVideoLane(page);
       startTypewriterEffect(page, (fn) => teardown.push(fn));
 
@@ -521,10 +762,12 @@
       try {
         window.requestAnimationFrame(() => {
           hydrateHome(page);
+          try { window.dispatchEvent(new CustomEvent("doke:page-mount", { detail: { page: "home", root: page } })); } catch (_e) {}
           try { window.dispatchEvent(new Event("doke:page-ready")); } catch (_e) {}
         });
       } catch (_e) {
         hydrateHome(page);
+        try { window.dispatchEvent(new CustomEvent("doke:page-mount", { detail: { page: "home", root: page } })); } catch (_e) {}
         try { window.dispatchEvent(new Event("doke:page-ready")); } catch (_e2) {}
       }
     } else {

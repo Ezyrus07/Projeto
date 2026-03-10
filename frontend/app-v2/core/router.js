@@ -20,7 +20,7 @@
     let current = null;
     let mounted = null;
     let navQueue = Promise.resolve();
-    const ENTER_MS = 240;
+    const ENTER_MS = 90;
     const root = opts && opts.root;
     const onAfterNavigate = opts && typeof opts.onAfterNavigate === "function" ? opts.onAfterNavigate : null;
 
@@ -29,8 +29,21 @@
       routes.set(parsed.file, factory);
     }
 
+    function setNavigationBusy(isBusy) {
+      try {
+        document.body.classList.toggle("doke-v2-nav-busy", !!isBusy);
+        if (root instanceof HTMLElement) root.setAttribute("aria-busy", isBusy ? "true" : "false");
+      } catch (_e) {}
+      try {
+        const eventName = isBusy ? "doke:v2-route-start" : "doke:v2-route-end";
+        window.dispatchEvent(new CustomEvent(eventName, { detail: { busy: !!isBusy } }));
+      } catch (_e) {}
+    }
+
     async function mountPath(path, mode) {
-      const parsed = parseTarget(path);
+      setNavigationBusy(true);
+      try {
+        const parsed = parseTarget(path);
       const keyPath = parsed.file;
       const keyFull = `${parsed.file}${parsed.search}`;
       const factory = routes.get(parsed.file) || routes.get("index.html");
@@ -52,24 +65,15 @@
           root.classList.add("is-routing");
           root.classList.remove("is-route-ready");
           if (minHeightPx > 0) root.style.minHeight = `${minHeightPx}px`;
+          prevNodes.forEach((node) => {
+            if (node instanceof HTMLElement) node.classList.add("doke-v2-route-exit");
+          });
         } catch (_e) {}
       }
-      if (prevMounted && typeof prevMounted.unmount === "function") {
-        try { prevMounted.unmount(); } catch (_e) {}
-      }
-      prevNodes.forEach((node) => {
-        try { node.remove(); } catch (_e) {}
-      });
 
       const mountRoot = document.createElement("div");
       mountRoot.className = shouldAnimate ? "doke-v2-route doke-v2-route-enter" : "doke-v2-route doke-v2-route-live";
       root.appendChild(mountRoot);
-
-      mounted = await factory({ root: mountRoot, path: keyPath, search: parsed.search });
-      current = keyFull;
-      if (onAfterNavigate) {
-        try { onAfterNavigate(keyPath); } catch (_e) {}
-      }
 
       if (shouldAnimate) {
         try {
@@ -81,8 +85,25 @@
           root.classList.add("is-route-ready");
           mountRoot.classList.add("is-visible");
         }
+      }
+
+      mounted = await factory({ root: mountRoot, path: keyPath, search: parsed.search });
+      current = keyFull;
+      if (onAfterNavigate) {
+        try { onAfterNavigate(keyPath); } catch (_e) {}
+      }
+
+      if (shouldAnimate) {
         await new Promise((resolve) => window.setTimeout(resolve, ENTER_MS));
       }
+
+      if (prevMounted && typeof prevMounted.unmount === "function") {
+        try { prevMounted.unmount(); } catch (_e) {}
+      }
+      prevNodes.forEach((node) => {
+        try { node.remove(); } catch (_e) {}
+      });
+
       if (shouldAnimate) {
         try {
           mountRoot.classList.remove("doke-v2-route-enter");
@@ -95,11 +116,14 @@
         } catch (_e) {}
       }
 
-      const nextHref = `${keyPath === "index.html" ? "index.html" : keyPath}${parsed.search || ""}`;
-      if (mode === "push") {
-        history.pushState({ dokeV2: 1, path: nextHref }, "", nextHref);
-      } else if (mode === "replace") {
-        history.replaceState({ dokeV2: 1, path: nextHref }, "", nextHref);
+        const nextHref = `${keyPath === "index.html" ? "index.html" : keyPath}${parsed.search || ""}`;
+        if (mode === "push") {
+          history.pushState({ dokeV2: 1, path: nextHref }, "", nextHref);
+        } else if (mode === "replace") {
+          history.replaceState({ dokeV2: 1, path: nextHref }, "", nextHref);
+        }
+      } finally {
+        setNavigationBusy(false);
       }
     }
 

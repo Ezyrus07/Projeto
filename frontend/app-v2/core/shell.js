@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   const key = "__DOKE_V2_SHELL__";
   if (window[key]) return;
 
@@ -21,6 +21,9 @@
     { href: "negocios.html", icon: "bx-store", label: "Negocios" },
     { href: "meuperfil.html", icon: "bx-user", label: "Perfil" }
   ];
+  const ANNOUNCE_ROUTES = new Set(["escolheranuncio.html", "anunciar.html", "anunciar-negocio.html", "editar-anuncio.html", "tornar-profissional.html"]);
+  const COMMUNITY_ROUTES = new Set(["comunidade.html", "grupo.html"]);
+  const NEWS_ROUTES = new Set(["novidades.html"]);
   const SEARCH_HISTORY_KEY = "doke_historico_busca";
   const SEARCH_USER_HISTORY_KEY = "doke_user_quicksearch_hist_v2";
   const SEARCH_MODE_KEY = "doke_ig_search_mode_v2";
@@ -47,6 +50,42 @@
       } catch (_e) {}
     }
     return {};
+  }
+
+  function getIdentityFromProfile(profile) {
+    const p = profile && typeof profile === "object" ? profile : {};
+    return String(
+      p.uid ||
+      p.id ||
+      p.user_uid ||
+      p.userId ||
+      p.email ||
+      localStorage.getItem("doke_uid") ||
+      ""
+    ).trim();
+  }
+
+  function isProfessional(profile) {
+    const p = profile && typeof profile === "object" ? profile : {};
+    if (p.isProfissional === true || p.profissional === true) return true;
+    if (String(p.role || "").toLowerCase() === "professional") return true;
+    const raw = String(
+      p.tipo ||
+      p.userType ||
+      p.tipoConta ||
+      p.accountType ||
+      p.plano ||
+      ""
+    ).toLowerCase();
+    return raw.includes("pro");
+  }
+
+  function isAuthenticated(profile) {
+    const p = profile && typeof profile === "object" ? profile : readProfile();
+    const flagKeys = ["usuarioLogado", "logado", "isLoggedIn", "doke_logged_in"];
+    const hasFlag = flagKeys.some((keyName) => String(localStorage.getItem(keyName) || "").toLowerCase() === "true");
+    const hasIdentity = !!getIdentityFromProfile(p);
+    return hasFlag && hasIdentity;
   }
 
   function readSavedAccounts() {
@@ -104,19 +143,117 @@
     return "https://i.pravatar.cc/96?img=12";
   }
 
-  function createShell() {
+  function resolveProfileHref(state) {
+    if (!state?.authenticated) return "login.html";
+    return state.isPro ? "meuperfil.html" : "perfil-usuario.html";
+  }
+
+  function resolveAnnounceHref(state) {
+    if (!state?.authenticated) return "login.html?next=escolheranuncio.html";
+    return state.isPro ? "escolheranuncio.html" : "tornar-profissional.html";
+  }
+
+  function buildAuthState(profile, authenticated, source) {
+    const normalizedProfile = authenticated && profile && typeof profile === "object" ? profile : {};
+    const isPro = authenticated ? isProfessional(normalizedProfile) : false;
+    const state = {
+      authenticated: !!authenticated,
+      profile: normalizedProfile,
+      isPro,
+      profileName: authenticated
+        ? (String(normalizedProfile.user || normalizedProfile.nome || normalizedProfile.name || "Minha conta").trim() || "Minha conta")
+        : "Entrar",
+      avatar: authenticated ? readAvatar(normalizedProfile) : "assets/Imagens/user_placeholder.png",
+      source: String(source || "local"),
+      resolved: source === "resolved"
+    };
+    state.profileHref = resolveProfileHref(state);
+    state.announceHref = resolveAnnounceHref(state);
+    return state;
+  }
+
+  function mergeProfileData(profile, user) {
+    const base = profile && typeof profile === "object" ? { ...profile } : {};
+    const meta = user?.user_metadata || {};
+    const merged = {
+      ...base,
+      uid: base.uid || user?.uid || user?.id || base.id || localStorage.getItem("doke_uid") || "",
+      id: base.id || user?.id || user?.uid || base.uid || localStorage.getItem("doke_uid") || "",
+      email: base.email || user?.email || "",
+      nome: base.nome || meta.nome || meta.name || user?.displayName || "",
+      user: base.user || meta.user || base.nome || meta.nome || (user?.email ? String(user.email).split("@")[0] : "") || "",
+      foto: base.foto || meta.foto || meta.avatar_url || user?.photoURL || base.avatar || ""
+    };
+    if (user?.isProfissional === true || meta?.isProfissional === true) merged.isProfissional = true;
+    return merged;
+  }
+
+  function getInitialAuthState() {
+    const snapshot = window.__DOKE_V2_AUTH_SNAPSHOT__;
+    if (snapshot && typeof snapshot === "object" && snapshot.resolved === true) {
+      return buildAuthState(snapshot.profile, snapshot.authenticated, "resolved");
+    }
     const profile = readProfile();
-    const isPro = String(
-      profile.tipo ||
-      profile.userType ||
-      profile.tipoConta ||
-      profile.accountType ||
-      ""
-    ).toLowerCase().includes("pro");
-    const profileName = String(profile.user || profile.nome || profile.name || "Minha conta").trim() || "Minha conta";
-    const profileHref = isPro ? "meuperfil.html" : "perfil-usuario.html";
-    const anunciarHref = isPro ? "anunciar.html" : "tornar-profissional.html";
-    const avatar = readAvatar(profile);
+    return buildAuthState(profile, isAuthenticated(profile), "local");
+  }
+
+  async function resolveAuthState() {
+    let user = null;
+    let profile = readProfile();
+
+    try {
+      if (typeof window.dokeResolveAuthUser === "function") {
+        user = await window.dokeResolveAuthUser();
+      }
+    } catch (_e) {}
+
+    try {
+      const auth = window.sb?.auth || window.supabaseClient?.auth || window.supabase?.auth || null;
+      if (!user && auth?.getSession) {
+        const { data, error } = await auth.getSession();
+        if (!error && data?.session?.user) user = data.session.user;
+      }
+      if (!user && typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+        const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+        if (restored && auth?.getSession) {
+          const retry = await auth.getSession();
+          if (!retry?.error && retry?.data?.session?.user) user = retry.data.session.user;
+        }
+      }
+      if (!user && auth?.getUser) {
+        const { data, error } = await auth.getUser();
+        if (!error && data?.user) user = data.user;
+      }
+    } catch (_e) {}
+
+    const authenticated = !!String(user?.uid || user?.id || "").trim();
+    if (authenticated) {
+      profile = mergeProfileData(profile, user);
+      try {
+        const uid = String(profile.uid || profile.id || "").trim();
+        if (uid) localStorage.setItem("doke_uid", uid);
+        localStorage.setItem("usuarioLogado", "true");
+      } catch (_e) {}
+    } else {
+      try { localStorage.setItem("usuarioLogado", "false"); } catch (_e) {}
+    }
+
+    const state = buildAuthState(profile, authenticated, "resolved");
+    window.__DOKE_V2_AUTH_SNAPSHOT__ = state;
+    return state;
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function createShell() {
+    let authState = getInitialAuthState();
 
     const renderNavLink = (link, withDataV2Link) => {
       const attrs = [
@@ -195,9 +332,9 @@
         </div>
 
         <nav class="top-menu">
-          <a href="escolheranuncio.html" data-v2-link>Anunciar</a>
-          <a href="comunidade.html" data-v2-link>Comunidades <span class="novo">NOVO</span></a>
-          <a href="novidades.html" data-v2-link>Novidades</a>
+          <a href="${authState.announceHref}" data-v2-link data-v2-role="announce-link" data-v2-nav-group="announce">Anunciar</a>
+          <a href="comunidade.html" data-v2-link data-v2-route="comunidade.html" data-v2-nav-group="community">Comunidades <span class="novo">NOVO</span></a>
+          <a href="novidades.html" data-v2-link data-v2-nav-group="news">Novidades</a>
         </nav>
 
         <div class="header-right">
@@ -207,19 +344,10 @@
           </div>
 
           <div class="profile">
-            <button type="button" class="profile-btn" aria-label="Perfil">
-              <img src="${avatar}" alt="Perfil" onerror="this.onerror=null;this.src='https://i.pravatar.cc/96?img=12'">
+            <button type="button" class="profile-btn" aria-label="Perfil" data-v2-role="profile-button" data-profile-href="${authState.profileHref}" data-authenticated="${authState.authenticated ? "1" : "0"}">
+              <img src="${authState.avatar}" alt="Perfil" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png'">
             </button>
-            <div class="profile-menu" hidden>
-              <div class="pm-head">${profileName}</div>
-              <a href="${profileHref}" data-v2-link><i class='bx bx-user-circle'></i><span>Ver Perfil</span></a>
-              <a href="carteira.html" data-v2-link><i class='bx bx-wallet'></i><span>Carteira</span></a>
-              <a href="#" data-v2-action="switch-account"><i class='bx bx-user-pin'></i><span>Alternar Conta</span></a>
-              <a href="${anunciarHref}" data-v2-link><i class='bx bx-plus-circle'></i><span>Anunciar</span></a>
-              <a href="pedidos.html" data-v2-link><i class='bx bx-package'></i><span>Pedidos</span></a>
-              <a href="mensagens.html" data-v2-link><i class='bx bx-chat'></i><span>Mensagens</span></a>
-              <a href="login.html?logout=1" class="pm-logout"><i class='bx bx-log-out'></i><span>Sair</span></a>
-            </div>
+            <div class="profile-menu" hidden data-v2-role="profile-menu"></div>
           </div>
         </div>
       </header>
@@ -247,7 +375,9 @@
 
     const main = root.querySelector(".doke-v2-main");
     const profileBtn = root.querySelector(".profile-btn");
+    const profileBtnImg = profileBtn?.querySelector("img");
     const profileMenu = root.querySelector(".profile-menu");
+    const announceLinks = Array.from(root.querySelectorAll("[data-v2-role='announce-link']"));
     const drawer = root.querySelector(".doke-v2-drawer");
     const drawerBackdrop = root.querySelector(".doke-v2-drawer-backdrop");
     const drawerOpenBtn = root.querySelector(".mobile-hamb");
@@ -262,6 +392,49 @@
     const searchRecoTitle = root.querySelector("[data-v2-role='search-reco-title']");
     const searchModeButtons = Array.from(root.querySelectorAll("[data-v2-action='search-mode']"));
     let searchMode = "ads";
+
+    function buildProfileMenuMarkup(state) {
+      const name = escapeHtml(state.profileName || "Entrar");
+      if (state.authenticated) {
+        return           `
+          <div class="pm-head">${name}</div>
+          <a href="${state.profileHref}" data-v2-link><i class='bx bx-user-circle'></i><span>Ver Perfil</span></a>
+          <a href="carteira.html" data-v2-link><i class='bx bx-wallet'></i><span>Carteira</span></a>
+          <a href="#" data-v2-action="switch-account"><i class='bx bx-user-pin'></i><span>Alternar Conta</span></a>
+          <a href="${state.announceHref}" data-v2-link><i class='bx bx-plus-circle'></i><span>Anunciar</span></a>
+          <a href="pedidos.html" data-v2-link><i class='bx bx-package'></i><span>Pedidos</span></a>
+          <a href="mensagens.html" data-v2-link><i class='bx bx-chat'></i><span>Mensagens</span></a>
+          <a href="login.html?logout=1" class="pm-logout"><i class='bx bx-log-out'></i><span>Sair</span></a>
+        `;
+      }
+      return         `
+        <div class="pm-head">${name}</div>
+        <a href="login.html" data-v2-link><i class='bx bx-log-in-circle'></i><span>Entrar</span></a>
+        <a href="cadastro.html" data-v2-link><i class='bx bx-user-plus'></i><span>Criar conta</span></a>
+        <a href="${state.announceHref}" data-v2-link><i class='bx bx-briefcase-alt-2'></i><span>Quero anunciar</span></a>
+      `;
+    }
+
+    function renderAuthUi(nextState) {
+      authState = nextState && typeof nextState === "object" ? nextState : authState;
+      if (profileBtn instanceof HTMLButtonElement) {
+        profileBtn.dataset.profileHref = authState.profileHref;
+        profileBtn.dataset.authenticated = authState.authenticated ? "1" : "0";
+        profileBtn.setAttribute("aria-label", authState.authenticated ? "Abrir menu da conta" : "Entrar ou criar conta");
+      }
+      if (profileBtnImg instanceof HTMLImageElement) {
+        profileBtnImg.src = authState.avatar;
+        profileBtnImg.alt = authState.authenticated ? "Perfil" : "Entrar";
+      }
+      if (profileMenu instanceof HTMLElement) {
+        profileMenu.innerHTML = buildProfileMenuMarkup(authState);
+      }
+      announceLinks.forEach((link) => {
+        link.setAttribute("href", authState.announceHref);
+      });
+      root.classList.toggle("doke-v2-authenticated", !!authState.authenticated);
+      root.classList.toggle("doke-v2-guest", !authState.authenticated);
+    }
 
     const closeProfileMenu = () => {
       if (profileMenu) profileMenu.hidden = true;
@@ -628,26 +801,21 @@
       }
     }
 
+    renderAuthUi(authState);
+
+    Promise.resolve()
+      .then(() => resolveAuthState())
+      .then((resolvedState) => {
+        renderAuthUi(resolvedState);
+      })
+      .catch(() => {});
+
     if (profileBtn && profileMenu) {
       profileBtn.addEventListener("click", (ev) => {
         ev.preventDefault();
         const isOpen = !profileMenu.hidden;
         closeDrawer();
         profileMenu.hidden = isOpen;
-      });
-
-      profileMenu.querySelectorAll("[data-v2-action='switch-account']").forEach((a) => {
-        a.addEventListener("click", (ev) => {
-          ev.preventDefault();
-          closeProfileMenu();
-          try {
-            if (typeof window.alternarConta === "function") {
-              window.alternarConta();
-              return;
-            }
-          } catch (_e) {}
-          location.href = "login.html";
-        });
       });
     }
 
@@ -733,7 +901,8 @@
           const dest = userItem.isProfissional
             ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}`
             : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
-          location.href = dest;
+          if (typeof window.__DOKE_V2_NAVIGATE__ === "function") window.__DOKE_V2_NAVIGATE__(dest);
+          else location.href = dest;
         }
         return;
       }
@@ -780,7 +949,8 @@
         try { term = decodeURIComponent(term); } catch (_e) {}
         const targetHref = directHref || `busca.html${term ? `?q=${encodeURIComponent(term)}&src=mini_ad` : ""}`;
         closeSearchPanel();
-        location.href = targetHref;
+        if (typeof window.__DOKE_V2_NAVIGATE__ === "function") window.__DOKE_V2_NAVIGATE__(targetHref);
+        else location.href = targetHref;
         return;
       }
 
@@ -797,7 +967,22 @@
           foto: String(openMiniUserBtn.dataset.foto || "").trim(),
           isProfissional: String(openMiniUserBtn.dataset.isprof || "") === "1"
         });
-        location.href = href;
+        if (typeof window.__DOKE_V2_NAVIGATE__ === "function") window.__DOKE_V2_NAVIGATE__(href);
+        else location.href = href;
+        return;
+      }
+
+      const switchAccountBtn = target.closest("[data-v2-action='switch-account']");
+      if (switchAccountBtn) {
+        ev.preventDefault();
+        closeProfileMenu();
+        try {
+          if (typeof window.alternarConta === "function") {
+            window.alternarConta();
+            return;
+          }
+        } catch (_e) {}
+        location.href = "login.html";
       }
     }, true);
 
@@ -830,7 +1015,13 @@
 
       root.querySelectorAll(".doke-v2-header .top-menu a").forEach((a) => {
         const href = String(a.getAttribute("href") || "").toLowerCase().split("?")[0];
-        a.classList.toggle("active", href === file);
+        const group = String(a.getAttribute("data-v2-nav-group") || "");
+        const active =
+          (group === "announce" && ANNOUNCE_ROUTES.has(file)) ||
+          (group === "community" && COMMUNITY_ROUTES.has(file)) ||
+          (group === "news" && NEWS_ROUTES.has(file)) ||
+          (!group && href === file);
+        a.classList.toggle("active", active);
       });
     }
 
