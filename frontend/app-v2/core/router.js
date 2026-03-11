@@ -20,7 +20,7 @@
     let current = null;
     let mounted = null;
     let navQueue = Promise.resolve();
-    const ENTER_MS = 90;
+    const ENTER_MS = 35;
     const root = opts && opts.root;
     const onAfterNavigate = opts && typeof opts.onAfterNavigate === "function" ? opts.onAfterNavigate : null;
 

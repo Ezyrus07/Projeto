@@ -128,6 +128,8 @@
   async function executeScriptText(source, label) {
     const code = String(source || "").trim();
     if (!code) return;
+    const lower = code.toLowerCase();
+    if (lower.includes('<script') || lower.includes('firebaseconfig')) return;
     const originalAdd = document.addEventListener.bind(document);
     document.addEventListener = function(type, listener, options) {
       if (type === "DOMContentLoaded" && typeof listener === "function") {

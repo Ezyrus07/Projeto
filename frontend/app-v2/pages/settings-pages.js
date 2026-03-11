@@ -150,11 +150,9 @@
     page.innerHTML = `
       <section class="doke-v2-hero doke-v2-page-hero doke-v2-settings-hero">
         <div class="doke-v2-settings-hero-copy">
-          <span class="doke-v2-settings-kicker">${kicker}</span>
           <h1>${title}</h1>
           <p>${desc}</p>
         </div>
-        <div class="doke-v2-settings-stats">${statsHtml}</div>
       </section>
       <section class="doke-v2-settings-grid">${contentHtml}</section>`;
     return page;
@@ -197,8 +195,8 @@
     const page = createBasePage({
       pageClass: "doke-v2-page-personal-data",
       kicker: "Minha conta",
-      title: "Dados pessoais em um layout mais claro e editável",
-      desc: "Agora a rota já permite editar e persistir nome, e-mail, telefone e nascimento sem voltar para o HTML legado.",
+      title: "Dados pessoais",
+      desc: "Edite nome, e-mail, telefone e nascimento em um formulário simples.",
       statsHtml: [
         statCard("Campos principais", "4 dados"),
         statCard("Status", user.email !== "Sem e-mail definido" ? "Preenchido" : "Parcial"),

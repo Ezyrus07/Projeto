@@ -12,7 +12,7 @@
 <script src="doke-nav-boot.js?v=20260309v09"></script>
 <title>Notificações | Doke</title>
 <meta content="Acompanhe mensagens, novidades e alertas em um feed organizado." name="description"/>
-<meta content="Doke - NotificaÃ§Ãµes" property="og:title"/>
+<meta content="Doke - Notificações" property="og:title"/>
 <meta content="Acompanhe mensagens, novidades e alertas em um feed organizado." property="og:description"/>
 <meta content="website" property="og:type"/>
 <meta content="assets/Imagens/doke-logo.png" property="og:image"/>
@@ -362,7 +362,18 @@
             .notif-toolbar { top: calc(var(--doke-h, 56px) + env(safe-area-inset-top) + 1px); }
             .settings-grid { grid-template-columns: 1fr; }
         }
-    </style>
+    
+.notif-kicker{display:inline-flex;align-items:center;min-height:30px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);color:#fff;font-weight:800;font-size:.78rem;margin-bottom:12px;}
+.notif-summary{margin-top:16px !important;}
+#lista-notificacoes{min-height:260px;background:#fff;border:1px solid #dfe7f0;border-radius:20px;padding:10px;}
+.notif-loading,.notif-empty-card{min-height:220px;display:grid;place-items:center;text-align:center;color:#64748b;}
+
+
+/* === notification summary visibility fix === */
+.summary-card{background:#fff !important; border:1px solid #dbe5f0 !important; color:#123153 !important;}
+.summary-card span{color:#6b7d90 !important;}
+.summary-card strong{color:#123153 !important;}
+</style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
@@ -372,6 +383,21 @@
 <link href="page-notificacoes.css?v=20260209v39" rel="stylesheet"/>
 <link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260213v2" rel="stylesheet"/>
+
+<style id="clean-notif-overrides">
+main{padding-top:20px !important;}
+.notif-container{max-width:1120px !important;}
+.notif-hero-container{background:linear-gradient(135deg,#1f4d75 0%,#0b7768 100%) !important;border-radius:24px !important;padding:24px !important;box-shadow:0 18px 40px rgba(15,23,42,.10) !important;align-items:flex-start !important;}
+.notif-hero-container::before{display:none !important;}
+.hero-content h1{font-size:clamp(1.7rem,3vw,2.35rem) !important;letter-spacing:-.02em;}
+.hero-content p{max-width:720px;line-height:1.55;color:rgba(255,255,255,.88)!important;}
+.hero-actions{flex-wrap:wrap;}
+.btn-hero-action{background:rgba(255,255,255,.96)!important;color:#10385a !important;border:none !important;box-shadow:none !important;}
+.btn-hero-action:hover{transform:translateY(-1px);background:#fff !important;color:#10385a !important;}
+.summary-card,.notif-toolbar,.empty-state,#lista-notificacoes > *{border-radius:20px !important;box-shadow:0 10px 24px rgba(15,23,42,.05)!important;}
+.summary-card{border:1px solid #dbe5f0 !important;}
+@media (max-width:768px){.notif-hero-container{padding:20px !important;}.hero-actions{width:100%;}.btn-hero-action{flex:1 1 100%;justify-content:center;}}
+</style>
 </head>
 <body data-page="notificacoes">
 <div class="popup" id="popup">
@@ -393,11 +419,12 @@
 <div class="notif-container">
 <div class="notif-hero-container">
 <div class="hero-content">
+<span class="notif-kicker">Central</span>
 <h1>Notificações <span class="badge-count" id="badge-count" style="display:none;">0</span></h1>
-<p>Acompanhe atualizações sobre seus pedidos e pagamentos.</p>
+<p>Acompanhe alertas, pedidos e interações em um painel mais clean e com leitura mais rápida.</p>
 </div>
 <div class="hero-actions">
-<button class="btn-hero-action" onclick="marcarTodasLidas()"><i class="bx bx-check-double"></i> Limpar Avisos</button>
+<button class="btn-hero-action" onclick="marcarTodasLidas()"><i class="bx bx-check-double"></i> Marcar como lidas</button>
 <button class="btn-hero-action" onclick="abrirAjustesNotif()" type="button"><i class="bx bx-cog"></i> Ajustes</button>
 </div>
 </div>
@@ -416,7 +443,7 @@
 </div>
 </div>
 <div id="lista-notificacoes">
-<div style="text-align:center; padding:40px; color:#999;"><i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i><p>Buscando atualizações...</p></div>
+<div class="notif-loading"><div><i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i><p>Buscando atualizações...</p></div></div>
 </div>
 <div class="empty-state" id="empty-state">
 <i class="bx bx-bell-off"></i>
@@ -430,9 +457,9 @@
 <div class="settings-header">
 <div>
 <h3>Ajustes rápidos</h3>
-<p>Escolha como você quer receber alertas.</p>
+<p>Escolha como você prefere receber alertas.</p>
 </div>
-<button class="settings-close" onclick="fecharAjustesNotif()" type="button">âœ•</button>
+<button class="settings-close" onclick="fecharAjustesNotif()" type="button">×</button>
 </div>
 <div class="settings-grid">
 <label class="setting-item">
@@ -444,7 +471,7 @@
 <input checked="" type="checkbox"/>
 </label>
 <label class="setting-item">
-<span>Resumo diario</span>
+<span>Resumo diário</span>
 <input type="checkbox"/>
 </label>
 <label class="setting-item">

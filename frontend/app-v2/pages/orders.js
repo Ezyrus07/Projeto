@@ -292,6 +292,67 @@
     }
   }
 
+
+
+  async function resolveVerifiedAuthUser() {
+    try {
+      if (typeof window.dokeResolveAuthUser === "function") {
+        const resolved = await window.dokeResolveAuthUser();
+        if (resolved && String(resolved.uid || resolved.id || "").trim()) return resolved;
+      }
+    } catch (_e) {}
+
+    try {
+      const auth = window.sb?.auth || window.supabaseClient?.auth || window.supabase?.auth || null;
+      if (auth?.getSession) {
+        const { data, error } = await auth.getSession();
+        if (!error && data?.session?.user) return data.session.user;
+      }
+      if (typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+        const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+        if (restored && auth?.getSession) {
+          const retry = await auth.getSession();
+          if (!retry?.error && retry?.data?.session?.user) return retry.data.session.user;
+        }
+      }
+      if (auth?.getUser) {
+        const { data, error } = await auth.getUser();
+        if (!error && data?.user) return data.user;
+      }
+    } catch (_e) {}
+
+    const fbUser = window.auth?.currentUser || window.firebaseAuth?.currentUser || null;
+    if (fbUser && String(fbUser.uid || fbUser.id || "").trim()) return fbUser;
+    return null;
+  }
+
+  async function ensureAuthenticatedOrRedirect() {
+    const user = await resolveVerifiedAuthUser();
+    const hasUser = !!String(user?.uid || user?.id || "").trim();
+    if (hasUser) {
+      try {
+        localStorage.setItem("usuarioLogado", "true");
+        const uid = String(user.uid || user.id || "").trim();
+        if (uid) localStorage.setItem("doke_uid", uid);
+      } catch (_e) {}
+      return true;
+    }
+    try {
+      [
+        "usuarioLogado","logado","isLoggedIn","doke_logged_in","doke_uid","doke_usuario_perfil",
+        "perfil_usuario","doke_usuario_logado","userLogado"
+      ].forEach((keyName) => localStorage.removeItem(keyName));
+    } catch (_e) {}
+    const next = encodeURIComponent(`${location.pathname.split('/').pop() || 'pedidos.html'}${location.search || ''}`);
+    const target = `login.html?next=${next}`;
+    if (typeof window.__DOKE_V2_HARD_NAVIGATE__ === "function") {
+      window.__DOKE_V2_HARD_NAVIGATE__(target);
+    } else {
+      location.href = target;
+    }
+    return false;
+  }
+
   function counters(list) {
     return {
       total: list.length,
@@ -452,7 +513,10 @@
         merged = mergePedidos([...(merged || []), ...(remote || [])]);
       }
     } catch (_e) {}
-    state.pedidos = merged;
+    if ((!Array.isArray(merged) || merged.length === 0) && Array.isArray(state.pedidos) && state.pedidos.length) {
+      merged = state.pedidos.slice();
+    }
+    state.pedidos = Array.isArray(merged) ? merged : [];
     state.loading = false;
     try { refs.page?.setAttribute("data-ui-state", merged.length ? "ready" : "empty"); } catch (_e) {}
     render(refs);
@@ -460,10 +524,10 @@
 
   function render(refs) {
     const allCounters = counters(state.pedidos);
-    refs.total.textContent = String(allCounters.total);
-    refs.recent.textContent = String(allCounters.recent);
-    refs.progress.textContent = String(allCounters.progress);
-    refs.urgent.textContent = String(allCounters.urgent);
+    if (refs.total) refs.total.textContent = String(allCounters.total);
+    if (refs.recent) refs.recent.textContent = String(allCounters.recent);
+    if (refs.progress) refs.progress.textContent = String(allCounters.progress);
+    if (refs.urgent) refs.urgent.textContent = String(allCounters.urgent);
     refs.sortLabel.textContent = SORT_LABELS[state.sort] || SORT_LABELS.recent;
     refs.filters.forEach((btn) => btn.classList.toggle("is-active", btn.dataset.filter === state.filter));
 
@@ -483,6 +547,8 @@
   }
 
   async function mountOrders(ctx) {
+    const allowed = await ensureAuthenticatedOrRedirect();
+    if (!allowed) return { unmount() {} };
     await ensureCss();
     const html = await loadTemplate();
     const tpl = document.createElement("template");

@@ -49,22 +49,11 @@
       <section class="doke-v2-more-hero doke-v2-hero doke-v2-page-hero">
         <div class="doke-v2-more-hero-main">
           <div class="doke-v2-more-user">
-            <span class="doke-v2-more-avatar" aria-hidden="true">${profile.initials}</span>
             <div>
-              <span class="doke-v2-more-kicker">Mais</span>
-              <h1>Conta, preferências e suporte em um fluxo único</h1>
-              <p>Atalhos principais do app-v2 com layout estável, leitura mais limpa e a mesma identidade visual das outras páginas.</p>
+              <h1>Conta e preferências</h1>
+              <p>Conta, preferências, pagamentos e ajuda em um só lugar.</p>
             </div>
           </div>
-          <div class="doke-v2-more-profile-card" aria-label="Resumo da conta">
-            <strong>${profile.name}</strong>
-            <span>${profile.email}</span>
-          </div>
-        </div>
-        <div class="doke-v2-more-summary" aria-label="Resumo rápido do menu Mais">
-          <article class="doke-v2-more-summary-card"><small>Minha conta</small><strong>4 áreas</strong></article>
-          <article class="doke-v2-more-summary-card"><small>Preferências</small><strong>4 ajustes</strong></article>
-          <article class="doke-v2-more-summary-card"><small>Suporte</small><strong>Ajuda rápida</strong></article>
         </div>
       </section>
 
@@ -94,7 +83,7 @@
         <div class="doke-v2-more-section-head">
           <div>
             <h2>Acessos rápidos</h2>
-            <p>Entradas usadas com mais frequência para navegação curta no app.</p>
+            <p>Entradas mais usadas para navegação curta no app.</p>
           </div>
         </div>
         <div class="doke-v2-more-shortcuts">
@@ -104,6 +93,7 @@
           ${item('admin-validacoes.html','bx-badge-check','Painel de validações','Área administrativa e conferências','Abrir')}
         </div>
       </section>`;
+
     ctx.root.appendChild(page);
     return {
       unmount() {

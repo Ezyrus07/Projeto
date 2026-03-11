@@ -9,17 +9,17 @@
       type: "auth",
       variant: "login",
       eyebrow: "Acesso",
-      title: "Entrar com shell nativa e menos ruptura visual",
-      description: "A autenticação deixa a bridge genérica e entra numa superfície própria do app-v2, com foco visual mais claro e transição estável.",
-      pills: ["Login", "Sessão", "Segurança"]
+      title: "Entrar na sua conta",
+      description: "Use seu e-mail e senha para continuar.",
+      pills: []
     },
     "cadastro.html": {
       type: "auth",
       variant: "signup",
       eyebrow: "Onboarding",
-      title: "Cadastro preparado para evolução dentro do app-v2",
-      description: "O fluxo de criação de conta passa a usar uma camada dedicada, sem voltar para a shell antiga durante a navegação.",
-      pills: ["Cadastro", "Perfil", "Confirmação"]
+      title: "Criar conta",
+      description: "Cadastre seus dados para começar a usar a Doke.",
+      pills: []
     },
     "explorar.html": {
       type: "discover",

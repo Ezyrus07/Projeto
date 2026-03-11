@@ -409,8 +409,8 @@
       }
       return         `
         <div class="pm-head">${name}</div>
-        <a href="login.html" data-v2-link><i class='bx bx-log-in-circle'></i><span>Entrar</span></a>
-        <a href="cadastro.html" data-v2-link><i class='bx bx-user-plus'></i><span>Criar conta</span></a>
+        <a href="login.html" data-v2-native><i class='bx bx-log-in-circle'></i><span>Entrar</span></a>
+        <a href="cadastro.html" data-v2-native><i class='bx bx-user-plus'></i><span>Criar conta</span></a>
         <a href="${state.announceHref}" data-v2-link><i class='bx bx-briefcase-alt-2'></i><span>Quero anunciar</span></a>
       `;
     }

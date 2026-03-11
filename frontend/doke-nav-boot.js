@@ -14,14 +14,14 @@
       style.textContent = `
         html.${ENTER_CLASS},
         html.${ENTER_CLASS} body{
-          background:#eef3f8 !important;
+          background:#ffffff !important;
         }
         html.${ENTER_CLASS}::before{
           content:"";
           position:fixed;
           inset:0;
           z-index:2147483646;
-          background:#eef3f8;
+          background:#ffffff;
           opacity:1;
           pointer-events:none;
           transition:opacity .22s ease;
@@ -29,25 +29,25 @@
         html.${ENTER_CLASS}::after{
           content:"";
           position:fixed;
-          left:0;
-          top:0;
-          height:3px;
-          width:34%;
+          left:50%;
+          top:50%;
+          width:112px;
+          height:112px;
+          transform:translate(-50%,-50%);
           z-index:2147483647;
-          background:linear-gradient(90deg,#2e68a6,#0b7768);
-          box-shadow:0 0 12px rgba(11,119,104,.32);
-          animation:dokeNavBootLoad .82s ease-in-out infinite;
+          background:url("assets/Imagens/doke-logo.png") center/contain no-repeat;
+          opacity:1;
           pointer-events:none;
+          animation:dokeNavBootPulse 1s ease-in-out infinite;
           transition:opacity .18s ease;
         }
         html.${ENTER_CLASS}.${READY_CLASS}::before,
         html.${ENTER_CLASS}.${READY_CLASS}::after{
           opacity:0;
         }
-        @keyframes dokeNavBootLoad{
-          0%{ transform:translateX(0); width:24%; }
-          50%{ transform:translateX(120%); width:46%; }
-          100%{ transform:translateX(270%); width:24%; }
+        @keyframes dokeNavBootPulse{
+          0%,100%{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+          50%{ transform:translate(-50%,-50%) scale(.965); opacity:.82; }
         }
       `;
       document.head.appendChild(style);
@@ -57,7 +57,12 @@
   function shouldBootTransition() {
     try {
       const targetPath = sessionStorage.getItem(NAV_PREBOOT_KEY) || "";
-      return !!targetPath && targetPath === currentPath;
+      if (targetPath && targetPath === currentPath) return true;
+      try {
+        const nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+        if (nav && (nav.type === "reload" || nav.type === "navigate")) return true;
+      } catch (_e) {}
+      return false;
     } catch (_e) {
       return false;
     }

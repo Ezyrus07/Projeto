@@ -6,9 +6,9 @@
 
   const ROUTES = {
     "comunidade.html": {
-      title: "Comunidade",
+      title: "Comunidades",
       eyebrow: "Superfície social",
-      description: "Comunidades, grupos, filtros e descoberta dentro da shell nativa do app-v2.",
+      description: "Explore grupos, assuntos e comunidades em uma navegação mais fluida.",
       highlight: ["Grupos", "Explorar", "Interação"],
       type: "community"
     },
@@ -22,14 +22,14 @@
     "meuperfil.html": {
       title: "Meu perfil",
       eyebrow: "Perfil",
-      description: "Resumo de conta, conteúdo publicado e métricas em uma superfície nativa do app-v2.",
+      description: "Seu perfil com capa, publicações e informações principais em uma camada estável.",
       highlight: ["Perfil", "Conteúdo", "Métricas"],
       type: "profile"
     },
     "perfil-profissional.html": {
       title: "Perfil profissional",
       eyebrow: "Perfil",
-      description: "Portfólio, avaliações e apresentação profissional com header e sidebar fixos do v2.",
+      description: "Seu perfil profissional com serviços, avaliações e apresentação em uma navegação fluida.",
       highlight: ["Serviços", "Avaliações", "Portfólio"],
       type: "profile"
     },
@@ -117,6 +117,8 @@
     });
     if (type === 'community') {
       content.classList.add('is-community');
+      const legacyHero = content.querySelector('.comm-hero-container');
+      if (legacyHero instanceof HTMLElement) legacyHero.removeAttribute('hidden');
       content.querySelectorAll('.tab-btn').forEach((button) => {
         if (!(button instanceof HTMLElement)) return;
         const label = String(button.textContent || '').trim();
@@ -124,6 +126,8 @@
         if (/condom/i.test(label)) button.textContent = 'Condominios';
       });
     } else if (type === 'profile') {
+      const legacyHero = content.querySelector('.perfil-header-card, .perfil-hero, .cover');
+      if (legacyHero instanceof HTMLElement) legacyHero.removeAttribute('hidden');
       content.classList.add('is-profile');
     } else if (type === 'group') {
       content.classList.add('is-group');
@@ -145,7 +149,7 @@
   }
 
   function shouldShowNativeHero(type) {
-    return type === 'profile' || type === 'community';
+    return false;
   }
 
   async function mountSocialPage(ctx) {
@@ -158,13 +162,10 @@
       type: 'generic'
     };
 
-    if (file === 'meuperfil.html' && !hasLocalAuth()) {
-      location.href = 'login.html';
-      return { unmount() {} };
-    }
-
     const page = document.createElement('section');
     page.className = `doke-v2-page doke-v2-page-social doke-v2-page-social-${cfg.type}`;
+    if (cfg.type === 'profile') page.classList.add('is-profile-shell');
+    if (cfg.type === 'community') page.classList.add('is-community-shell');
     const showNativeHero = shouldShowNativeHero(cfg.type);
     page.innerHTML = `
       <div class="doke-v2-social-shell">
@@ -213,10 +214,12 @@
       surface.appendChild(content);
       body.appendChild(surface);
 
-      const shouldRunLegacyScripts = false;
+      const shouldRunLegacyScripts = ['community','group','feed'].includes(cfg.type);
       if (shouldRunLegacyScripts) {
         try { api.executeLinkedScripts && await api.executeLinkedScripts(layout.linkedScripts, file); } catch (_e) {}
         try { api.executeInlineScripts && await api.executeInlineScripts(layout.inlineScripts, file); } catch (_e) {}
+        try { document.dispatchEvent(new Event('DOMContentLoaded')); } catch (_e) {}
+        try { window.dispatchEvent(new Event('load')); } catch (_e) {}
       }
     } else {
       surface.innerHTML = `

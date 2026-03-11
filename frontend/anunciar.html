@@ -10,7 +10,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <script src="doke-nav-boot.js?v=20260309v09"></script>
-<title>Anunciar ServiÃƒÂ§o Completo | Doke</title>
+<title>Anunciar Serviço Completo | Doke</title>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
@@ -1134,6 +1134,18 @@ textarea{
     transform: rotate(45deg);
   }
 }
+
+.anuncio-kicker{display:inline-flex;align-items:center;min-height:30px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);color:#fff;font-weight:800;font-size:.78rem;margin-bottom:12px;}
+.anuncio-hero-container{padding:24px 26px !important;border-radius:22px !important;}
+.anuncio-hero-container h1{font-size:clamp(1.65rem,2.8vw,2.25rem) !important;line-height:1.08 !important;}
+.anuncio-hero-container p{max-width:680px;margin:0 auto;color:rgba(255,255,255,.88) !important;line-height:1.55;}
+.anuncio-card{border-radius:22px !important;box-shadow:0 12px 30px rgba(15,23,42,.06) !important;}
+.progress-wrapper{margin-top:18px !important;margin-bottom:0 !important;}
+.steps-container{gap:34px !important;}
+.step-circle{width:34px;height:34px;}
+.step-label{top:38px;}
+@media (max-width:768px){.anuncio-hero-container{padding:20px !important;}.steps-container{gap:22px !important;}.step-label{font-size:.72rem;width:74px;margin-left:-20px;}}
+
 </style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
@@ -1146,6 +1158,16 @@ textarea{
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+
+<style id="clean-ad-overrides">
+.anuncio-hero-container{background:linear-gradient(135deg,#1f4d75 0%,#0b7768 100%) !important;border-radius:24px !important;padding:28px 24px !important;box-shadow:0 18px 40px rgba(15,23,42,.10)!important;}
+.anuncio-hero-container h1{font-size:clamp(1.8rem,3vw,2.4rem) !important;line-height:1.08 !important;}
+.anuncio-hero-container p{max-width:720px !important;color:rgba(255,255,255,.9)!important;line-height:1.55 !important;}
+.progress-wrapper{margin-top:18px !important;}
+.step-circle{background:rgba(255,255,255,.10)!important;border-color:rgba(255,255,255,.18)!important;}
+.step-circle.active{background:#fff!important;color:#10385a!important;}
+@media (max-width:768px){.anuncio-hero-container{padding:22px 18px !important;}}
+</style>
 </head>
 <body data-page="anunciar">
 <div class="popup" id="popup">
@@ -1170,12 +1192,13 @@ textarea{
 <main>
 <div class="content-wrapper">
 <div class="anuncio-hero-container">
-<h1>Criar AnÃƒÂºncio</h1>
-<p>Preencha os dados completos para garantir confianÃƒÂ§a e atrair mais clientes na plataforma Doke.</p>
+<span class="anuncio-kicker">Anúncio</span>
+<h1>Criar anúncio</h1>
+<p>Publique com clareza, menos ruído visual e foco no que realmente converte.</p>
 <div class="progress-wrapper">
 <div class="steps-container">
 <div class="step-circle active" id="p-1"><span class="step-num">1</span><div class="step-label">Detalhes</div></div>
-<div class="step-circle" id="p-2"><span class="step-num">2</span><div class="step-label">PolÃƒÂ­ticas</div></div>
+<div class="step-circle" id="p-2"><span class="step-num">2</span><div class="step-label">Políticas</div></div>
 <div class="step-circle" id="p-3"><span class="step-num">3</span><div class="step-label">Dados</div></div>
 <div class="step-circle" id="p-4"><span class="step-num">4</span><div class="step-label">Agenda</div></div>
 </div>
@@ -1184,10 +1207,10 @@ textarea{
 <div class="anuncio-card">
 <form data-guard-submit="" id="formAnuncio" onsubmit="return false;">
 <div class="form-step active" id="step-1">
-<h3>Detalhes do ServiÃƒÂ§o</h3>
+<h3>Detalhes do Serviço</h3>
 <div class="form-group">
-<label>TÃƒÂ­tulo do AnÃƒÂºncio</label>
-<input class="input-modern" id="titulo" placeholder="Ex: ManutenÃƒÂ§ÃƒÂ£o ElÃƒÂ©trica Residencial" required="" type="text"/>
+<label>Título do anúncio</label>
+<input class="input-modern" id="titulo" placeholder="Ex: Manutenção Elétrica Residencial" required="" type="text"/>
 </div>
 <div class="form-row">
 <div class="form-group">
@@ -1200,8 +1223,8 @@ textarea{
 <input id="categorias-validacao" style="opacity:0; position:absolute; height:1px;" type="text"/>
 </div>
 <div class="form-group">
-<label>Tags (Separadas por vÃƒÂ­rgula)</label>
-<input class="input-modern" id="tags" placeholder="Ex: eletricista, reparo, fiaÃƒÂ§ÃƒÂ£o" type="text"/>
+<label>Tags (Separadas por vírgula)</label>
+<input class="input-modern" id="tags" placeholder="Ex: eletricista, reparo, fiação" type="text"/>
 </div>
 </div>
 <div class="form-group">
@@ -1213,36 +1236,36 @@ textarea{
 </div>
 </div>
 <div class="form-group">
-<label>Modelo de CobranÃƒÂ§a</label>
+<label>Modelo de Cobrança</label>
 <div class="toggle-wrapper" style="margin-bottom: 15px;">
-<div class="radio-card"><input checked="" id="orcamento" name="tipo_preco" onchange="togglePriceInput()" type="radio" value="Sob OrÃƒÂ§amento"/><label for="orcamento">Sob OrÃƒÂ§amento</label></div>
-<div class="radio-card"><input id="fixo" name="tipo_preco" onchange="togglePriceInput()" type="radio" value="PreÃƒÂ§o Fixo"/><label for="fixo">PreÃƒÂ§o Fixo</label></div>
+<div class="radio-card"><input checked="" id="orcamento" name="tipo_preco" onchange="togglePriceInput()" type="radio" value="Sob Orçamento"/><label for="orcamento">Sob Orçamento</label></div>
+<div class="radio-card"><input id="fixo" name="tipo_preco" onchange="togglePriceInput()" type="radio" value="Preço Fixo"/><label for="fixo">Preço Fixo</label></div>
 </div>
 <div id="price-input-wrapper" style="display:none;">
 <input class="input-modern" id="valor" placeholder="R$ 0,00" type="text"/>
 </div>
 </div>
 <div class="form-group">
-<label>DescriÃƒÂ§ÃƒÂ£o Detalhada</label>
-<textarea id="descricao" placeholder="Descreva seu serviÃƒÂ§o..." required=""></textarea>
+<label>Descrição detalhada</label>
+<textarea id="descricao" placeholder="Descreva seu serviço..." required=""></textarea>
 </div>
 <div class="form-group">
-<label>Fotos do Trabalho (MÃƒÂ¡x 5)</label>
+<label>Fotos do Trabalho (Máx 5)</label>
 <div class="upload-zone" onclick="document.getElementById('upload-galeria').click()">
 <i class="bx bx-images"></i><span>Adicionar fotos da galeria</span>
 <input accept="image/*" id="upload-galeria" multiple="" onchange="processarFotos(this)" type="file"/>
 </div>
 <div class="galeria-preview-container" id="preview-galeria"></div>
-<small class="upload-note">ObrigatÃƒÂ©rio anexar pelo menos 1 foto para publicar o anÃƒÂºncio.</small>
+<small class="upload-note">Obrigatório anexar pelo menos 1 foto para publicar o anúncio.</small>
 </div>
 </div>
 <div class="form-step" id="step-2">
-<h3>QualificaÃƒÂ§ÃƒÂµes</h3>
+<h3>Qualificações</h3>
 <div class="form-row">
-<div class="form-group"><label>ExperiÃƒÂªncia</label><input class="input-modern" id="experiencia" placeholder="Ex: 5 anos" type="text"/></div>
+<div class="form-group"><label>Experiência</label><input class="input-modern" id="experiencia" placeholder="Ex: 5 anos" type="text"/></div>
 </div>
 <div class="form-group">
-<label>Diploma ou Certificado (Opcional Ã¢â‚¬Â¢ PDF ou Imagem) <span class="optional-badge">Opcional</span></label>
+<label>Diploma ou Certificado (Opcional • PDF ou Imagem) <span class="optional-badge">Opcional</span></label>
 <div class="diploma-zone" id="box-diploma" onclick="document.getElementById('upload-diploma').click()">
 <div id="diploma-ui">
 <i class="bx bx-file-blank" style="font-size: 1.8rem; color: #777;"></i>
@@ -1250,12 +1273,12 @@ textarea{
 </div>
 <input accept=".pdf, .jpg, .jpeg, .png" id="upload-diploma" onchange="processarDiploma(this)" style="display:none;" type="file"/>
 </div>
-<small style="color:#888; margin-top:5px; display:block;">Opcional. Isso aumenta a confianÃƒÂ§a do cliente.</small>
+<small style="color:#888; margin-top:5px; display:block;">Opcional. Isso aumenta a confiança do cliente.</small>
 </div>
 <div class="form-group"><label>Garantia</label><textarea id="garantia" placeholder="Detalhes da garantia..." style="min-height:80px;"></textarea></div>
-<div class="form-group"><label>Cancelamento</label><select class="input-modern" id="politica"><option>FlexÃƒÂ­vel</option><option>Moderada</option><option>RÃƒÂ­gida</option></select></div>
+<div class="form-group"><label>Cancelamento</label><select class="input-modern" id="politica"><option>Flexível</option><option>Moderada</option><option>Rígida</option></select></div>
 <div class="form-group"><label class="toggle-line" for="emergencia"><input class="doke-check" id="emergencia" type="checkbox"/><span class="toggle-text">
-                            Atendo EmergÃƒÂªncias (24h)</span></label></div>
+                            Atendo Emergências (24h)</span></label></div>
 </div>
 <div class="form-step" id="step-3">
 <h3>Seus Dados</h3>
@@ -1267,7 +1290,7 @@ textarea{
 <small class="field-hint">Somente nÃƒÂºmeros. O sistema valida CPF/CNPJ automaticamente.</small>
 </div>
 <div class="form-group">
-<label>Documento com Foto (CPF ou CNPJ) <span class="optional-badge">ObrigatÃƒÂ©rio</span></label>
+<label>Documento com Foto (CPF ou CNPJ) <span class="optional-badge">Obrigatório</span></label>
 <div class="upload-zone" onclick="document.getElementById('upload-doc').click()">
 <i class="bx bx-id-card"></i>
 <span>Anexar foto do documento</span>
@@ -1419,7 +1442,7 @@ textarea{
 <input class="input-modern" id="input-pergunta-txt" placeholder="Ex: Qual o problema atual?" type="text"/>
 </div>
 <div class="form-group" id="container-opcoes-input">
-<label>Alternativas (separe com vÃƒÂ­rgula)</label>
+<label>Alternativas (separe com vírgula)</label>
 <input class="input-modern" id="input-opcoes-txt" placeholder="Ex: Tomada, Disjuntor, FiaÃƒÂ§ÃƒÂ£o" type="text"/>
 <small style="color: #888;">O cliente escolherÃƒÂ¡ uma dessas opÃƒÂ§ÃƒÂµes.</small>
 </div>
@@ -1990,7 +2013,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.togglePriceInput = function() {
         const val = document.querySelector('input[name="tipo_preco"]:checked').value;
-        document.getElementById('price-input-wrapper').style.display = (val === 'PreÃƒÂ§o Fixo') ? 'block' : 'none';
+        document.getElementById('price-input-wrapper').style.display = (val === 'Preço Fixo') ? 'block' : 'none';
     }
     window.toggleCNPJ = function() {
         const val = document.querySelector('input[name="tipo_pessoa"]:checked').value;
@@ -2218,7 +2241,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = "meuperfil.html";
         } catch (e) {
             console.error("Erro ao buscar:", e);
-            alert("NÃƒÂ£o foi possÃƒÂ­vel carregar o anÃƒÂºncio para ediÃƒÂ§ÃƒÂ£o.");
+            alert("NÃƒÂ£o foi possÃƒÂ­vel carregar o anúncio para ediÃƒÂ§ÃƒÂ£o.");
             window.location.href = "meuperfil.html";
         }
     }
@@ -2308,16 +2331,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Tipo de preÃƒÂ§o (preferencialmente pelo campo tipoPreco)
         const tipoPrecoSalvo = dados.tipoPreco || dados.tipo_preco || null;
-        if (tipoPrecoSalvo === 'PreÃƒÂ§o Fixo') {
+        if (tipoPrecoSalvo === 'Preço Fixo') {
             document.getElementById('fixo').checked = true;
             if(window.togglePriceInput) window.togglePriceInput();
             document.getElementById('valor').value = dados.preco || "";
-        } else if (tipoPrecoSalvo === 'Sob OrÃƒÂ§amento') {
+        } else if (tipoPrecoSalvo === 'Sob Orçamento') {
             document.getElementById('orcamento').checked = true;
             if(window.togglePriceInput) window.togglePriceInput();
         } else {
             // Fallback: inferir pelo campo preÃƒÂ§o
-            if (dados.preco && dados.preco !== "Sob OrÃƒÂ§amento" && dados.preco !== "A combinar") {
+            if (dados.preco && dados.preco !== "Sob Orçamento" && dados.preco !== "A combinar") {
                 document.getElementById('fixo').checked = true;
                 if(window.togglePriceInput) window.togglePriceInput();
                 document.getElementById('valor').value = dados.preco;
@@ -2342,7 +2365,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(document.getElementById('experiencia')) document.getElementById('experiencia').value = dados.experiencia || "";
         if(document.getElementById('prazo')) document.getElementById('prazo').value = "";
         if(document.getElementById('garantia')) document.getElementById('garantia').value = dados.garantia || "";
-        if(document.getElementById('politica')) document.getElementById('politica').value = dados.politicaCancelamento || dados.politica_cancelamento || "FlexÃƒÂ­vel";
+        if(document.getElementById('politica')) document.getElementById('politica').value = dados.politicaCancelamento || dados.politica_cancelamento || "Flexível";
         if(document.getElementById('emergencia')) {
             const v = dados.atendeEmergencia ?? dados.atende_emergencia;
             document.getElementById('emergencia').checked = (v === true || v === 1 || v === '1' || v === 'true');
@@ -2428,7 +2451,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const modoAtend = document.querySelector('input[name="modo_atend"]:checked')?.value || "";
         const tipoPreco = document.querySelector('input[name="tipo_preco"]:checked')?.value || "";
-        const precoFinal = (tipoPreco === 'PreÃƒÂ§o Fixo') ? getVal('valor') : tipoPreco;
+        const precoFinal = (tipoPreco === 'Preço Fixo') ? getVal('valor') : tipoPreco;
 
         const pagamentosAceitos = Array.from(document.querySelectorAll('input[id^="pg-"]:checked')).map(cb => cb.value);
 
@@ -2752,7 +2775,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(btn){ btn.innerText = "Publicando..."; btn.disabled = true; }
         if (window.dokeShowLoading) {
             window.dokeShowLoading({
-                title: "Publicando anÃƒÂºncio...",
+                title: "Publicando anúncio...",
                 subtitle: "Estamos enviando suas informaÃƒÂ§ÃƒÂµes"
             });
         }
@@ -2836,7 +2859,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const msg = String(erro?.message || erro || '');
             if (/row-level security|rls|42501/i.test(msg)) {
                 salvarDraftPublicacaoLocal(coletarDadosDoForm());
-                alert("Erro ao publicar: sem permissÃƒÂ£o no banco (RLS). O anÃƒÂºncio ficou salvo localmente para nÃƒÂ£o perder dados. FaÃƒÂ§a login novamente e tente de novo.");
+                alert("Erro ao publicar: sem permissÃƒÂ£o no banco (RLS). O anúncio ficou salvo localmente para nÃƒÂ£o perder dados. FaÃƒÂ§a login novamente e tente de novo.");
             } else {
                 alert("Erro ao publicar: " + msg);
             }
@@ -2851,7 +2874,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(btn){ btn.innerText = "Salvando..."; btn.disabled = true; }
         if (window.dokeShowLoading) {
             window.dokeShowLoading({
-                title: "Salvando anÃƒÂºncio...",
+                title: "Salvando anúncio...",
                 subtitle: "Atualizando suas informaÃƒÂ§ÃƒÂµes"
             });
         }
@@ -3084,7 +3107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <div aria-hidden="true" class="doke-modal-overlay" id="dokePreviewOverlay">
 <div aria-labelledby="dokePreviewTitle" aria-modal="true" class="doke-modal" role="dialog">
 <div class="doke-modal-header">
-<h3 id="dokePreviewTitle">PrÃƒÂ©-visualizaÃƒÂ§ÃƒÂ£o do anÃƒÂºncio</h3>
+<h3 id="dokePreviewTitle">PrÃƒÂ©-visualizaÃƒÂ§ÃƒÂ£o do anúncio</h3>
 <button class="doke-modal-close" onclick="window.__dokeClosePreview()" type="button">Ãƒâ€”</button>
 </div>
 <div class="doke-modal-body">
@@ -3410,7 +3433,7 @@ document.addEventListener('DOMContentLoaded', () => {
       title.innerText = 'PrÃƒÂ©-visualizaÃƒÂ§ÃƒÂ£o das alteraÃƒÂ§ÃƒÂµes';
       btn.innerText = 'Confirmar e salvar';
     } else {
-      title.innerText = 'PrÃƒÂ©-visualizaÃƒÂ§ÃƒÂ£o do anÃƒÂºncio';
+      title.innerText = 'PrÃƒÂ©-visualizaÃƒÂ§ÃƒÂ£o do anúncio';
       btn.innerText = 'Confirmar e publicar';
     }
   }
@@ -3437,7 +3460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tags = $('tags')?.value || '';
     const modoAt = document.querySelector('input[name="modo_atend"]:checked')?.value || 'Ã¢â‚¬â€';
     const tp = document.querySelector('input[name="tipo_preco"]:checked')?.value || 'Ã¢â‚¬â€';
-    const preco = (tp === 'PreÃƒÂ§o Fixo') ? ($('valor')?.value || 'Ã¢â‚¬â€') : tp;
+    const preco = (tp === 'Preço Fixo') ? ($('valor')?.value || 'Ã¢â‚¬â€') : tp;
     const endereco = $('endereco')?.value || '';
     const numero = $('numero')?.value || '';
     const cidade = $('cidade')?.value || '';

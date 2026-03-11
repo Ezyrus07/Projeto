@@ -5,7 +5,7 @@
   let templateCache = "";
 
   function ensureCss() {
-    const href = "app-v2/pages/messages.css?v=20260310v01";
+    const href = "app-v2/pages/messages.css?v=20260311v04";
     const existing = document.getElementById(CSS_ID);
     if (existing) return Promise.resolve();
     return new Promise((resolve) => {
@@ -22,7 +22,7 @@
   async function loadTemplate() {
     if (templateCache) return templateCache;
     try {
-      const res = await fetch("app-v2/pages/messages.template.html?v=20260310v01", { cache: "no-store" });
+      const res = await fetch("app-v2/pages/messages.template.html?v=20260311v03", { cache: "no-store" });
       templateCache = await res.text();
     } catch (_e) {
       templateCache = '<section class="doke-v2-page doke-v2-page-messages"><div class="v2-messages-shell"></div></section>';
@@ -49,8 +49,10 @@
   function seedThreads() {
     const base = safeParse(localStorage.getItem("doke_v2_messages_threads") || "null", null);
     if (Array.isArray(base) && base.length) return base;
-    const prefill = safeParse(localStorage.getItem("doke_chat_prefill") || "null", {});
-    const pedido = safeParse(localStorage.getItem("pedidoAtual") || localStorage.getItem("doke_pedido_contexto") || "null", {});
+    const prefillRaw = safeParse(localStorage.getItem("doke_chat_prefill") || "null", null);
+    const pedidoRaw = safeParse(localStorage.getItem("pedidoAtual") || localStorage.getItem("doke_pedido_contexto") || "null", null);
+    const prefill = prefillRaw && typeof prefillRaw === "object" ? prefillRaw : {};
+    const pedido = pedidoRaw && typeof pedidoRaw === "object" ? pedidoRaw : {};
     const now = new Date().toISOString();
     const id = String(prefill.pedidoId || pedido.id || qs().get("chatId") || qs().get("pedidoId") || "pedido-demo");
     const nome = String(prefill.nome || pedido.nome || pedido.usuario || pedido.titulo || "Cliente");
@@ -58,9 +60,55 @@
     return [{ id, nome, title: titulo, updatedAt: now, unread: 0, archived: false, messages: [] }];
   }
 
+  function legacyThreadCandidates() {
+    const buckets = [];
+    const keys = [
+      "doke_v2_messages_threads",
+      "doke_chat_prefill",
+      "pedidoAtual",
+      "doke_pedido_contexto",
+      "usuarioLogado",
+      "doke_usuario_perfil",
+      "perfil_usuario"
+    ];
+    keys.forEach((key) => {
+      try { buckets.push(JSON.parse(localStorage.getItem(key) || "null")); } catch (_e) {}
+    });
+    try {
+      Object.keys(localStorage).forEach((key) => {
+        if (!/conversa|chat|thread|mensag/i.test(key)) return;
+        try { buckets.push(JSON.parse(localStorage.getItem(key) || "null")); } catch (_e) {}
+      });
+    } catch (_e) {}
+    return buckets;
+  }
+
+  function normalizeCandidateThreads(raw) {
+    const out = [];
+    const pushThread = (item) => {
+      if (!item || typeof item !== "object") return;
+      const id = String(item.id || item.chatId || item.threadId || item.pedidoId || item.conversaId || item.codigo || "").trim() || cryptoRandom();
+      const nome = String(item.nome || item.user || item.usuario || item.cliente || item.title || item.assunto || "Contato").trim();
+      const titulo = String(item.title || item.titulo || item.assunto || item.ultimaMensagem || item.preview || "Conversa").trim();
+      const mensagens = Array.isArray(item.messages) ? item.messages : [];
+      out.push({ id, nome: nome || "Contato", title: titulo || "Conversa", avatar: String(item.avatar || item.foto || ""), unread: Number(item.unread || item.naoLidas || 0) || 0, archived: false, updatedAt: item.updatedAt || new Date().toISOString(), messages: mensagens });
+    };
+    const visit = (node) => {
+      if (!node) return;
+      if (Array.isArray(node)) return node.forEach(visit);
+      if (typeof node !== "object") return;
+      if (node.messages || node.chatId || node.threadId || node.pedidoId || node.conversaId) pushThread(node);
+      Object.values(node).forEach((v) => { if (Array.isArray(v)) visit(v); });
+    };
+    legacyThreadCandidates().forEach(visit);
+    return out;
+  }
+
   function loadThreads() {
     const fromLocal = safeParse(localStorage.getItem("doke_v2_messages_threads") || "null", null);
-    const threads = Array.isArray(fromLocal) && fromLocal.length ? fromLocal : seedThreads();
+    const legacy = normalizeCandidateThreads();
+    const baseSeed = seedThreads();
+    const threads = Array.isArray(fromLocal) && fromLocal.length ? fromLocal : (legacy.length ? legacy : baseSeed);
     return threads.map((t) => ({
       id: String(t.id || t.chatId || cryptoRandom()),
       nome: String(t.nome || t.user || t.usuario || t.title || "Conversa"),
@@ -165,13 +213,14 @@
       const thread = activeThread();
       const mobileActive = !!thread;
       page.classList.toggle('has-active-thread', mobileActive);
-      refs.emptyThread.hidden = !!thread;
+      if (refs.emptyThread) { refs.emptyThread.hidden = !!thread || state.threads.length > 0; refs.emptyThread.style.display = (!!thread || state.threads.length > 0) ? 'none' : ''; }
       refs.thread.hidden = !thread;
       if (!thread) return;
       refs.avatar.innerHTML = avatarMarkup(thread);
-      refs.name.textContent = thread.nome;
-      refs.meta.textContent = thread.title || 'Sem contexto';
-      refs.archive.querySelector('span').textContent = thread.archived ? 'Desarquivar' : 'Arquivar';
+      if (refs.name) refs.name.textContent = thread.nome;
+      if (refs.meta) refs.meta.textContent = thread.title || 'Sem contexto';
+      const archiveLabel = refs.archive?.querySelector ? refs.archive.querySelector('span') : null;
+      if (archiveLabel) archiveLabel.textContent = thread.archived ? 'Desarquivar' : 'Arquivar';
       const msgs = Array.isArray(thread.messages) ? thread.messages : [];
       refs.emptyInline.hidden = msgs.length > 0;
       refs.threadBody.innerHTML = msgs.length ? msgs.map((m) => `
@@ -184,10 +233,10 @@
 
     function renderList() {
       const list = filteredThreads();
-      refs.total.textContent = String(state.threads.filter((t) => !t.archived).length);
-      refs.unread.textContent = String(state.threads.reduce((sum, t) => sum + (Number(t.unread) || 0), 0));
-      refs.emptyList.hidden = list.length > 0 || state.loading;
-      refs.list.hidden = list.length === 0 && !state.loading;
+      if (refs.total) refs.total.textContent = String(state.threads.filter((t) => !t.archived).length);
+      if (refs.unread) refs.unread.textContent = String(state.threads.reduce((sum, t) => sum + (Number(t.unread) || 0), 0));
+      if (refs.emptyList) { refs.emptyList.hidden = true; refs.emptyList.style.display = 'none'; }
+      refs.list.hidden = false;
       if (state.loading) {
         try { page.setAttribute('data-ui-state', 'loading'); } catch (_e) {}
         refs.list.hidden = false;
@@ -195,9 +244,11 @@
         refs.threadPanel.innerHTML = threadSkeleton();
         return;
       }
+      if (!state.activeId && list.length) state.activeId = list[0].id;
       refs.list.innerHTML = list.map((t) => conversationMarkup(t, t.id === state.activeId)).join('');
       try { page.setAttribute('data-ui-state', list.length ? 'ready' : 'empty'); } catch (_e) {}
-      if (!refs.thread.querySelector || !page.contains(refs.thread)) return;
+      if (refs.emptyList) { const show = !list.length; refs.emptyList.hidden = !show; refs.emptyList.style.display = show ? "grid" : "none"; }
+      if (!refs.thread || !page.contains(refs.thread)) return;
       renderThread();
     }
 
@@ -216,8 +267,10 @@
       refs.search.addEventListener('input', (ev) => {
         state.query = String(ev.target?.value || '');
         const list = filteredThreads();
+        if (!state.activeId && list.length) state.activeId = list[0].id;
         refs.list.innerHTML = list.map((t) => conversationMarkup(t, t.id === state.activeId)).join('');
-        refs.emptyList.hidden = list.length > 0;
+        if (refs.emptyList) { const show = !list.length; refs.emptyList.hidden = !show; refs.emptyList.style.display = show ? "grid" : "none"; }
+        renderThread();
       });
     }
 
@@ -228,7 +281,7 @@
         refs.emptyThread.hidden = false;
         refs.thread.hidden = true;
       });
-      refs.archive.addEventListener('click', () => {
+      refs.archive?.addEventListener('click', () => {
         const thread = activeThread();
         if (!thread) return;
         thread.archived = !thread.archived;
@@ -277,6 +330,7 @@
       state.threads = loadThreads();
       try { page.setAttribute('data-ui-state', state.threads.length ? 'ready' : 'empty'); } catch (_e) {}
       setActiveByUrl();
+      if (!state.activeId && state.threads.length) state.activeId = state.threads[0].id;
       renderList();
       renderThread();
     };

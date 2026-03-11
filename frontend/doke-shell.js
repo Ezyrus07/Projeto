@@ -10,8 +10,9 @@
   const __dokeCurrentFile = String((location.pathname||"").split("/").pop()||"").toLowerCase();
   const __dokeQs = new URLSearchParams(location.search || "");
   const __dokeAppV2Enabled = (__dokeQs.get("appv2") === "1") || (localStorage.getItem("doke_app_v2") === "1");
+  const __dokeAppV2LegacyOnlyRoutes = new Set([]);
   const __dokeIsV2Frame = (__dokeQs.get("v2frame") === "1") || (__dokeQs.get("embed") === "1") || (__dokeQs.get("noshell") === "1");
-  if (__dokeAppV2Enabled && !__dokeIsV2Frame && __dokeCurrentFile && __dokeCurrentFile !== "index.html" && !DOKE_DISABLE_SHELL_PAGES.includes(__dokeCurrentFile)) {
+  if (__dokeAppV2Enabled && !__dokeIsV2Frame && __dokeCurrentFile && __dokeCurrentFile !== "index.html" && !DOKE_DISABLE_SHELL_PAGES.includes(__dokeCurrentFile) && !__dokeAppV2LegacyOnlyRoutes.has(__dokeCurrentFile)) {
     try {
       const routeQs = new URLSearchParams(location.search || "");
       routeQs.delete("appv2");
@@ -34,7 +35,7 @@
     return;
   }
   // App v2 usa shell/roteador proprios. Evita competir com o shell legado.
-  if (__dokeAppV2Enabled && !__dokeIsV2Frame) {
+  if (__dokeAppV2Enabled && !__dokeIsV2Frame && !__dokeAppV2LegacyOnlyRoutes.has(__dokeCurrentFile)) {
     try { document.documentElement.classList.add("doke-appv2-only"); } catch(_e) {}
     window.__DOKE_LEGACY_SHELL_DISABLED__ = true;
     return;
@@ -52,6 +53,31 @@
   };
 
   const LOGO_SRC = "assets/Imagens/doke-logo.png";
+
+  function showBootScreen(){
+    try{
+      if(document.getElementById("dokeBootScreen")) return;
+      const overlay=document.createElement("div");
+      overlay.id="dokeBootScreen";
+      overlay.setAttribute("aria-hidden","true");
+      overlay.style.cssText="position:fixed;inset:0;z-index:999999;background:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .18s ease;";
+      overlay.innerHTML=`<img src="${LOGO_SRC}" alt="Doke" style="width:120px;max-width:34vw;height:auto;display:block;">`;
+      document.documentElement.appendChild(overlay);
+    }catch(_e){}
+  }
+
+  function hideBootScreen(){
+    try{
+      const overlay=document.getElementById("dokeBootScreen");
+      if(!overlay) return;
+      overlay.style.opacity='0';
+      setTimeout(()=>{ try{ overlay.remove(); }catch(_e){} },180);
+    }catch(_e){}
+  }
+
+  showBootScreen();
+  window.addEventListener("load", hideBootScreen, { once:true });
+  window.addEventListener("doke:v2-route-end", hideBootScreen);
   const NAV_PREBOOT_KEY = "doke_nav_preboot_target_v1";
 
   function markNextHtmlNavigation(urlObj){
@@ -695,7 +721,7 @@
 
     containers.forEach((container) => {
       if(!isLogged){
-        container.innerHTML = `<a href="login.html" class="entrar">Entrar</a>`;
+        container.innerHTML = `<a href="login.html" class="entrar" data-v2-native>Entrar</a>`;
         return;
       }
 
@@ -778,7 +804,7 @@
         if (nameEl) nameEl.textContent = nomePerfil || "Minha conta";
         if (menu instanceof HTMLElement) {
           if (!isLogged) {
-            menu.innerHTML = `<a href="login.html" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
+            menu.innerHTML = `<a href="login.html" class="dropdown-item" data-v2-native><i class='bx bx-log-in'></i> Entrar</a>`;
           } else {
             menu.innerHTML = `
               <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">${nomePerfilSafe}</div>
@@ -874,7 +900,7 @@
     <a href="comunidade.html" ${topTarget === "comunidade.html" ? "class=\"active\" aria-current=\"page\"" : ""}>Comunidades <span class="badge-novo1">NOVO</span></a>
     <a href="novidades.html" ${topTarget === "novidades.html" ? "class=\"active\" aria-current=\"page\"" : ""}>Novidades</a>
   </nav>
-  <div class="botoes-direita doke-header-right"><a class="entrar" href="login.html">Entrar</a></div>
+  <div class="botoes-direita doke-header-right"><a class="entrar" href="login.html" data-v2-native>Entrar</a></div>
 </header>`;
 const sidebarMarkup = `
 <aside class="sidebar-icones" data-shell="unified-desktop">
@@ -1383,7 +1409,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     const itemAlternar = isLogged ? `<a href="#" class="dropdown-item" data-action="alternar-conta"><i class='bx bx-user-pin'></i> Alternar Conta</a>` : "";
     const itemSair = `<a href="#" class="dropdown-item item-sair" data-action="logout"><i class='bx bx-log-out'></i> Sair</a>`;
     const profileItemHTML = `<a href="${profileHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>`;
-    const guestItemHTML = `<a href="login.html" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
+    const guestItemHTML = `<a href="login.html" class="dropdown-item" data-v2-native><i class='bx bx-log-in'></i> Entrar</a>`;
     const dropdownItemsHTML = isLogged
       ? `${profileItemHTML}${itemCarteira}${itemAlternar}<a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${labelAnunciar}</a>${itemSair}`
       : guestItemHTML;
@@ -2321,18 +2347,12 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         animation:dokeNavLoad 900ms ease-in-out infinite;
       }
       body.doke-nav-pending::after{
-        content:"";
-        position:fixed;
-        inset:0;
-        z-index:2147483646;
-        background:#eef3f8;
-        pointer-events:none;
+        content:none;
+        display:none;
       }
       body.doke-nav-cloak::after{
-        content:"";
-        position:fixed;
-        inset:0;
-        z-index:2147483646;
+        content:none;
+        display:none;
         background:#eef3f8;
         pointer-events:none;
       }

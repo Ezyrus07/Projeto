@@ -1,6 +1,6 @@
 (function(){
   const ENABLE_KEY = "doke_app_v2";
-const VERSION = "20260310v82";
+const VERSION = "20260311v04";
   const clearPreboot = () => {
     try { document.documentElement.classList.remove("doke-v2-preboot"); } catch (_e) {}
   };
@@ -8,8 +8,10 @@ const VERSION = "20260310v82";
   const currentFile = String((location.pathname || "").split("/").pop() || "index.html").toLowerCase();
   const forcedOff = qp.get("appv2") === "0";
   const enabled = !forcedOff && (qp.get("appv2") === "1" || localStorage.getItem(ENABLE_KEY) === "1" || currentFile === "index.html");
+  const disabledLegacyRoutes = new Set(["login.html","cadastro.html"]);
   const isFrameMode = qp.get("v2frame") === "1" || qp.get("embed") === "1" || qp.get("noshell") === "1";
   if (isFrameMode) { clearPreboot(); return; }
+  if (disabledLegacyRoutes.has(currentFile)) { clearPreboot(); return; }
   if (!enabled) { clearPreboot(); return; }
   try {
     localStorage.setItem(ENABLE_KEY, "1");
@@ -318,8 +320,6 @@ const VERSION = "20260310v82";
     router.register("diagnostico.html", campaignPagesApi.mountDiagnosis);
     router.register("diagnostico-avancado.html", campaignPagesApi.mountAdvancedDiagnosis);
     router.register("tornar-profissional.html", campaignPagesApi.mountBecomeProfessional);
-    router.register("login.html", utilityPagesApi.mountLogin);
-    router.register("cadastro.html", utilityPagesApi.mountSignup);
     router.register("explorar.html", utilityPagesApi.mountExplore);
     router.register("estatistica.html", utilityPagesApi.mountStats);
     router.register("admin-validacoes.html", utilityPagesApi.mountAdminValidation);

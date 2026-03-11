@@ -535,14 +535,14 @@
           <div class="notif-skeleton-card"></div>
         </div>
       `;
-      if (refs.empty instanceof HTMLElement) refs.empty.hidden = true;
+      if (refs.empty instanceof HTMLElement) { refs.empty.hidden = true; refs.empty.style.display = "none"; }
     }
 
     function renderError(message) {
       if (!(refs.list instanceof HTMLElement)) return;
       try { page.setAttribute("data-ui-state", "error"); } catch (_e) {}
       refs.list.innerHTML = `<div class="notif-error"><i class='bx bx-error-circle'></i><p>${escapeHtml(message || "Erro ao carregar notificações.")}</p></div>`;
-      if (refs.empty instanceof HTMLElement) refs.empty.hidden = true;
+      if (refs.empty instanceof HTMLElement) { refs.empty.hidden = true; refs.empty.style.display = "none"; }
     }
 
     function updateSettingsUi() {
@@ -595,20 +595,19 @@
         try { page.setAttribute("data-ui-state", "empty"); } catch (_e) {}
         refs.list.style.minHeight = "0";
         if (refs.empty instanceof HTMLElement) {
+          const showEmpty = (!!state.searchTerm || state.currentFilter !== "todas") && state.notifications.length === 0;
           const title = refs.empty.querySelector("h3");
           const desc = refs.empty.querySelector("p");
-          if (title) title.textContent = state.searchTerm || state.currentFilter !== "todas" ? "Nenhum resultado" : "Tudo limpo por aqui!";
-          if (desc) desc.textContent = state.searchTerm || state.currentFilter !== "todas"
-            ? "Tente ajustar os filtros ou a busca."
-            : "Você não tem novas notificações no momento.";
-          refs.empty.hidden = false;
+          if (title) title.textContent = "Nenhum resultado";
+          if (desc) desc.textContent = "Tente ajustar os filtros ou a busca.";
+          refs.empty.hidden = !showEmpty; refs.empty.style.display = showEmpty ? "grid" : "none";
         }
         return;
       }
 
       try { page.setAttribute("data-ui-state", "ready"); } catch (_e) {}
       refs.list.style.minHeight = "260px";
-      if (refs.empty instanceof HTMLElement) refs.empty.hidden = true;
+      if (refs.empty instanceof HTMLElement) { refs.empty.hidden = true; refs.empty.style.display = "none"; }
 
       const grupos = agruparPorData(list);
       refs.list.innerHTML = grupos.map((grupo) => `

@@ -1467,6 +1467,17 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
     flex:0 0 auto !important;
   }
 }
+
+/* === clean pedidos hero + auth-safe layout === */
+body[data-page="pedidos"] .hero.hero-clean{display:block !important; background:linear-gradient(135deg,#21527b 0%,#0b7768 100%) !important; border:1px solid rgba(255,255,255,.10) !important; border-radius:22px !important; padding:26px 28px !important; min-height:0 !important; box-shadow:0 14px 32px rgba(15,23,42,.10) !important;}
+body[data-page="pedidos"] .hero.hero-clean .hero-copy{max-width:720px !important;}
+body[data-page="pedidos"] .hero.hero-clean .hero-kicker{display:inline-flex; align-items:center; min-height:30px; padding:0 12px; border-radius:999px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.18); color:#fff; font-weight:800; font-size:.78rem; margin-bottom:12px;}
+body[data-page="pedidos"] .hero.hero-clean h1{margin:0 0 8px !important; font-size:clamp(1.7rem,3vw,2.45rem) !important; line-height:1.06 !important; color:#fff !important;}
+body[data-page="pedidos"] .hero.hero-clean p{margin:0 !important; max-width:700px; color:rgba(255,255,255,.88) !important; font-size:.98rem !important;}
+body[data-page="pedidos"] .hero.hero-clean .badge-count{background:rgba(255,255,255,.18) !important; color:#fff !important; border:1px solid rgba(255,255,255,.18) !important;}
+body[data-page="pedidos"] .hero.hero-clean .hero-stats,
+body[data-page="pedidos"] .hero.hero-clean .hero-mini,
+body[data-page="pedidos"] .hero.hero-clean .hero-actions{display:none !important;}
 </style>
 </head>
 <body data-page="pedidos">
@@ -1476,10 +1487,11 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
 
 <main class="dp-wrap">
 <div class="orders-page">
-<section class="hero">
-<div>
-<h1>Pedidos <span class="badge-count" id="heroCount">0</span></h1>
-<p>Gerencie seus pedidos com dados reais e acesso rapido ao chat.</p>
+<section class="hero hero-clean">
+<div class="hero-copy">
+<span class="hero-kicker">Pedidos</span>
+<h1>Gerencie seus pedidos <span class="badge-count" id="heroCount">0</span></h1>
+<p>Acompanhe andamento, urgência e novas solicitações em um fluxo mais limpo e organizado.</p>
 </div>
 </section>
 <section class="toolbar">
@@ -2419,9 +2431,27 @@ function displayHandle(p){
 
         return mergePedidos(list);
       }
+      async function resolveSessionUid(){
+        try{
+          if(window.sb?.auth?.getSession){
+            const { data } = await window.sb.auth.getSession();
+            const user = data?.session?.user || null;
+            const uid = String(user?.id || user?.uid || '').trim();
+            if(uid){
+              try{ localStorage.setItem('doke_uid', uid); }catch(_){}
+              try{
+                const perfilSalvo = parseJSON(localStorage.getItem('doke_usuario_perfil')) || {};
+                const merged = Object.assign({}, perfilSalvo, { uid, id: uid, email: user?.email || perfilSalvo.email || null });
+                localStorage.setItem('doke_usuario_perfil', JSON.stringify(merged));
+              }catch(_){}
+            }
+            return uid;
+          }
+        }catch(_){}
+        return '';
+      }
       function resolveUid(){
-        const perfil = parseJSON(localStorage.getItem('doke_usuario_perfil')) || {};
-        return String(window.auth?.currentUser?.uid || window.firebaseAuth?.currentUser?.uid || localStorage.getItem('doke_uid') || perfil.uid || perfil.id || '').trim();
+        return String(window.auth?.currentUser?.uid || window.firebaseAuth?.currentUser?.uid || '').trim();
       }
 
 	      function isPlaceholderAvatar(url){
@@ -2592,9 +2622,12 @@ function displayHandle(p){
 	        return arr;
 	      }
 
-      function ensurePedidosAuth(){
-        const uid = resolveUid();
-        if(uid) return true;
+      async function ensurePedidosAuth(){
+        const directUid = resolveUid();
+        const sessionUid = directUid || await resolveSessionUid();
+        if(sessionUid) return true;
+        state.pedidos = [];
+        try{ render(); }catch(_){}
         const next = encodeURIComponent((location.pathname || '').split('/').pop() || 'pedidos.html');
         try{ showToast('Faça login para acessar seus pedidos.'); }catch(_){}
         setTimeout(() => { location.href = `login.html?next=${next}`; }, 120);
@@ -3495,6 +3528,8 @@ function openInlineChat(p){
       }
 
       async function hydrate(forceFs){
+        const authOk = await ensurePedidosAuth();
+        if(!authOk){ state.pedidos = []; render(); return; }
         let local = [];
         try{ local = loadLocal(); }catch(err){ console.warn('loadLocal erro:', err); }
         let merged = mergePedidos(local);
@@ -3624,9 +3659,9 @@ function openInlineChat(p){
         runtimeOn(window, 'storage', (ev) => { const key = String(ev?.key || ''); if(!key || /(pedido|orcamento|doke_)/i.test(key)) hydrate(false); });
       }
 
-      function bootstrapPedidos(){
+      async function bootstrapPedidos(){
         try{
-          if(!ensurePedidosAuth()) return;
+          if(!(await ensurePedidosAuth())) return;
           setupFallbacks();
           syncFiltersPlacement();
           bind();
@@ -3643,8 +3678,10 @@ function openInlineChat(p){
               }
             } catch (_e) {}
           }, 2200);
-          hydrate(true).catch((err) => {
+          hydrate(true).catch(async (err) => {
             console.error('[pedidos] hydrate error', err);
+            const authOk = await ensurePedidosAuth();
+            if(!authOk){ state.pedidos = []; render(); return; }
             try{ state.pedidos = mergePedidos(loadLocal()); }catch(_){ state.pedidos = []; }
             render();
             try{ showToast('Erro ao carregar pedidos. Mostrando dados locais.'); }catch(_){ }
