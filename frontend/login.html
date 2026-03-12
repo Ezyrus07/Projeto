@@ -1,11 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <script>window.__DOKE_LEGACY_SHELL_DISABLED__=true;try{document.documentElement.classList.add("doke-no-shell");}catch(e){}</script>
-<script src="doke-nav-boot.js?v=20260309v09"></script>
+<script>(function(){try{var u=new URL(location.href);if(!u.searchParams.has("noshell")){u.searchParams.set("noshell","1");location.replace(u.toString());}}catch(e){}})();</script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
 <title>Entrar | Doke</title>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
@@ -13,7 +14,7 @@
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 <!-- Supabase (UMD) + init -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <style>
     :root{
       --card-radius: 22px;
@@ -22,14 +23,18 @@
     }
 
     body{ 
-      background: radial-gradient(900px 600px at 15% 10%, rgba(255,255,255,.14), transparent 60%),
-                  linear-gradient(135deg, var(--cor2) 0%, #1a3c5e 55%, #102a40 100%);
+      background: radial-gradient(900px 600px at 15% 10%, rgba(255,255,255,.12), transparent 60%),
+                  linear-gradient(135deg, #2f5f8f 0%, #244f79 55%, #1b4266 100%);
       min-height: 100vh;
       display: grid;
       place-items: center;
       padding: 24px;
       overflow-x: hidden;
     }
+    html, body{margin:0;}
+    body > .doke-v2, body > header, body > nav, body > aside, body > .top-header, body > .menu-lateral, body > .sidebar-icones, body > .bottom-nav, body > .doke-shell, body > #overlay-menu, body > .popup{display:none !important;}
+    body.auth-page .auth-shell, body > .auth-shell{display:grid !important;}
+
 
     .auth-shell{
       width: 100%;
@@ -45,15 +50,7 @@
       .auth-aside{ display:none; }
     }
 
-    @media (max-width: 1024px){
-      body.doke-shell-active{
-        place-items: start center;
-        padding-top: calc(var(--doke-h, 56px) + 18px);
-      }
-      body.doke-shell-active .auth-shell{
-        margin-top: 8px;
-      }
-    }
+    
 
     .auth-card{
       background: #fff;
@@ -336,34 +333,22 @@
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
 
-<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
 
-<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
-<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+  <link rel="stylesheet" href="ui-system.css">
+<style>html,body{margin:0;} body.auth-page, body.auth-page.doke-shell-active{background:radial-gradient(900px 600px at 15% 10%, rgba(255,255,255,.12), transparent 60%), linear-gradient(135deg, #2f5f8f 0%, #244f79 55%, #1b4266 100%) !important; min-height:100vh !important; display:grid !important; place-items:center !important; padding:24px !important; overflow-x:hidden !important;} body.auth-page > .doke-v2, body.auth-page > header, body.auth-page > nav, body.auth-page > aside, body.auth-page > .top-header, body.auth-page > .menu-lateral, body.auth-page > .sidebar-icones, body.auth-page > .bottom-nav, body.auth-page > .doke-shell, body.auth-page > #overlay-menu, body.auth-page > .popup{display:none !important;} body.auth-page .auth-shell{display:grid !important;} </style>
+<script>document.addEventListener('DOMContentLoaded',function(){try{document.body.classList.add('auth-page');var shell=document.querySelector('.auth-shell');if(shell)shell.style.display='grid';}catch(e){}});</script>
+  <link rel="stylesheet" href="site-global-polish.css">
 </head>
-<body>
-<div class="popup" id="popup">
-<div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">&times;</span>
-<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
-<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
-<p class="criar">
-                NÃ£o tem uma conta?
-                <a href="cadastro.html">Criar conta</a>
-</p>
-</div>
-</div>
-
+<body class="auth-page">
 <div class="auth-shell">
 <aside class="auth-aside">
 <h3 class="aside-title">Bem-vindo de volta</h3>
-<p class="aside-p">Entre para ver seus anÃºncios, mensagens e novidades da comunidade.</p>
+<p class="aside-p">Entre para ver seus anúncios, mensagens e novidades da comunidade.</p>
 <div class="aside-kpi">
-<div class="kpi"><b>Feed</b><span>VÃ­deos curtos e posts</span></div>
-<div class="kpi"><b>OrÃ§amento</b><span>Solicite em 1 clique</span></div>
-<div class="kpi"><b>AvaliaÃ§Ãµes</b><span>ConfianÃ§a e reputaÃ§Ã£o</span></div>
+<div class="kpi"><b>Feed</b><span>Vídeos curtos e posts</span></div>
+<div class="kpi"><b>Orçamento</b><span>Solicite em 1 clique</span></div>
+<div class="kpi"><b>Avaliações</b><span>Confiança e reputação</span></div>
 <div class="kpi"><b>Perfil</b><span>Cliente ou Profissional</span></div>
 </div>
 </aside>
@@ -408,7 +393,7 @@
 <button class="btn-social apple" title="Apple (em breve)" type="button"><i class="bx bxl-apple"></i></button>
 </div>
 <div class="footer">
-          NÃ£o tem conta? <a href="cadastro.html">Cadastre-se</a>
+          Não tem conta? <a href="cadastro.html">Cadastre-se</a>
 </div>
 </div>
 </div>
@@ -425,7 +410,7 @@
         sb = pick();
       }
       if (!sb || typeof sb.from !== "function" || !sb.auth) {
-        throw new Error("Supabase nÃ£o inicializado. Verifique supabase-init.js?v=20260218v43");
+        throw new Error("Supabase não inicializado. Verifique supabase-init.js?v=20260312v44");
       }
       return sb;
     }
@@ -449,9 +434,9 @@ function showMsg(type, text){
       if (type !== "ok" && raw.toLowerCase().includes("failed to fetch")) {
         el.textContent =
           "Falha ao conectar no Supabase (CORS/Projeto pausado/offline). " +
-          "? No painel do Supabase: Settings Ã¢â€ â€™ API Ã¢â€ â€™ CORS Allowed Origins, adicione " +
-          "http://localhost:5503 e http://127.0.0.1:5503 (e tambÃ©m 5500 se usar Live Server). " +
-          "Se o projeto estiver pausado, clique em Resume. Depois recarregue a pÃ¡gina.";
+          "? No painel do Supabase: Settings â�?��?T API â�?��?T CORS Allowed Origins, adicione " +
+          "http://localhost:5503 e http://127.0.0.1:5503 (e também 5500 se usar Live Server). " +
+          "Se o projeto estiver pausado, clique em Resume. Depois recarregue a página.";
       } else {
         el.textContent = raw || "Erro";
       }
@@ -488,7 +473,7 @@ function showMsg(type, text){
       const email = document.getElementById("email").value.trim();
       const senha = document.getElementById("senha").value;
 
-      if (!email.includes("@")) return showMsg("err", "Digite um e-mail vÃ¡lido.");
+      if (!email.includes("@")) return showMsg("err", "Digite um e-mail válido.");
       if (!senha) return showMsg("err", "Digite sua senha.");
 
       btn.disabled = true;
@@ -501,6 +486,8 @@ function showMsg(type, text){
             localStorage.removeItem("doke_auth_session_backup");
             localStorage.removeItem("usuarioLogado");
             localStorage.removeItem("doke_uid");
+            localStorage.removeItem("doke_auth_verified_at");
+            try { sessionStorage.removeItem("doke_auth_verified_at"); } catch (_) {}
             localStorage.removeItem("doke_usuario_perfil");
             Object.keys(localStorage).forEach((k) => {
               if (/^sb-[a-z0-9-]+-auth-token$/i.test(String(k || ""))) {
@@ -533,11 +520,11 @@ function showMsg(type, text){
         if (error) throw error;
 
         const uid = data.user?.id;
-        if (!uid) throw new Error("NÃ£o foi possÃ­vel obter seu usuÃ¡rio.");
+        if (!uid) throw new Error("Não foi possível obter seu usuário.");
         const accessTokenRaw = data?.session?.access_token || "";
         const refreshTokenRaw = data?.session?.refresh_token || "";
         if (!accessTokenRaw || !refreshTokenRaw) {
-          throw new Error("SessÃ£o nÃ£o iniciada. Tente entrar novamente.");
+          throw new Error("Sessão não iniciada. Tente entrar novamente.");
         }
 
         try {
@@ -586,7 +573,7 @@ function showMsg(type, text){
             } catch (_) {}
           }
           if (sessErr || !sessData?.session?.access_token) {
-            throw new Error("SessÃ£o nÃ£o persistiu no navegador.");
+            throw new Error("Sessão não persistiu no navegador.");
           }
         } catch (persistErr) {
           throw persistErr;
@@ -607,22 +594,23 @@ function showMsg(type, text){
         }
 
         if (perfilErr) {
-          console.warn("[DOKE] Perfil nÃ£o carregado:", perfilErr);
+          console.warn("[DOKE] Perfil não carregado:", perfilErr);
         }
 
         const statusConta = String(perfil?.conta_status || "").toLowerCase();
         const contaBloqueada = statusConta === "desativada" || statusConta === "excluida" || perfil?.conta_ativa === false;
         if (contaBloqueada) {
           try { await supabase.auth.signOut(); } catch (_) {}
-          throw new Error("Sua conta estÃ¡ desativada ou excluÃ­da. Entre em contato com o suporte para reativaÃ§Ã£o.");
+          throw new Error("Sua conta está desativada ou excluída. Entre em contato com o suporte para reativação.");
         }
 
         if (perfil) {
           localStorage.setItem("doke_usuario_perfil", JSON.stringify(perfil));
           localStorage.setItem("doke_uid", perfil.uid || uid);
+          try { localStorage.setItem("doke_auth_verified_at", String(Date.now())); sessionStorage.setItem("doke_auth_verified_at", String(Date.now())); } catch (_) {}
         } else {
           const meta = data.user?.user_metadata || {};
-          const nomeFallback = meta.nome || meta.full_name || (data.user?.email ? data.user.email.split("@")[0] : "UsuÃ¡rio");
+          const nomeFallback = meta.nome || meta.full_name || (data.user?.email ? data.user.email.split("@")[0] : "Usuário");
           const perfilFallback = {
             uid,
             id: uid,
@@ -633,6 +621,7 @@ function showMsg(type, text){
           };
           localStorage.setItem("doke_usuario_perfil", JSON.stringify(perfilFallback));
           localStorage.setItem("doke_uid", uid);
+          try { localStorage.setItem("doke_auth_verified_at", String(Date.now())); sessionStorage.setItem("doke_auth_verified_at", String(Date.now())); } catch (_) {}
         }
 
         localStorage.setItem("usuarioLogado", "true");
@@ -680,7 +669,7 @@ function showMsg(type, text){
         } else if (errMsg.toLowerCase().includes("email not confirmed")) {
           showMsg("err", "Confirme seu e-mail antes de entrar.");
         } else if (errMsg.toLowerCase().includes("permission") || errMsg.toLowerCase().includes("rls")) {
-          showMsg("err", "PermissÃ£o negada. Verifique as polÃ­ticas (RLS) do Supabase.");
+          showMsg("err", "Permissão negada. Verifique as políticas (RLS) do Supabase.");
         } else {
           showMsg("err", errMsg || "Erro ao entrar.");
         }
@@ -693,7 +682,7 @@ function showMsg(type, text){
     document.getElementById("btnReset").addEventListener("click", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value.trim();
-      if (!email.includes("@")) return showMsg("err", "Digite seu e-mail acima para receber o link de redefiniÃ§Ã£o.");
+      if (!email.includes("@")) return showMsg("err", "Digite seu e-mail acima para receber o link de redefinição.");
 
       try {
         const supabase = await ensureSupabase();
@@ -701,14 +690,15 @@ function showMsg(type, text){
         if (error) throw error;
         showMsg("ok", "Enviamos um e-mail para redefinir sua senha.");
       } catch (err) {
-        showMsg("err", String(err?.message || err || "NÃ£o foi possÃ­vel enviar o e-mail."));
+        showMsg("err", String(err?.message || err || "Não foi possível enviar o e-mail."));
       }
     });
   </script>
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260309v97"></script>
+
+  <script src="site-global-polish.js"></script>
 </body>
 </html>
 

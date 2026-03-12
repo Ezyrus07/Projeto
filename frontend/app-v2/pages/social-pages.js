@@ -142,14 +142,28 @@
       const parsed = raw ? JSON.parse(raw) : null;
       const hasFlag = ['usuarioLogado','logado','isLoggedIn','doke_logged_in'].some((key) => String(localStorage.getItem(key) || '').toLowerCase() === 'true');
       const hasIdentity = !!String(parsed?.uid || parsed?.id || parsed?.email || localStorage.getItem('doke_uid') || '').trim();
-      return hasFlag || hasIdentity;
+      const backup = String(localStorage.getItem('doke_auth_session_backup') || '').trim();
+      const tokenKey = Object.keys(localStorage || {}).find((key) => /^sb-[a-z0-9-]+-auth-token$/i.test(String(key || '')));
+      let hasSbToken = false;
+      if (tokenKey) { try { const raw=localStorage.getItem(tokenKey)||''; const obj=raw?JSON.parse(raw):null; const expiresAt=Number(obj?.expires_at || obj?.expiresAt || obj?.currentSession?.expires_at || 0); const access=String(obj?.access_token || obj?.currentSession?.access_token || '').trim(); hasSbToken=!!(access && (!expiresAt || expiresAt*1000 > Date.now())); } catch(_e) {} }
+      const hasCookie = String(document.cookie || '').includes('doke_dev_session=');
+      return !!(hasFlag && hasIdentity && (backup || hasSbToken || hasCookie || window.auth?.currentUser?.uid));
     } catch (_e) {
       return false;
     }
   }
 
   function shouldShowNativeHero(type) {
-    return false;
+    return type === "community";
+  }
+
+  function authRedirectCard() {
+    return `
+      <div class="doke-v2-card doke-v2-empty-state" style="padding:28px;display:grid;gap:12px;">
+        <h2>Entre para continuar</h2>
+        <p>Essa área precisa de login para carregar seus dados e sua atividade.</p>
+        <div><a href="login.html" class="v2-orders-card-action v2-orders-card-action--primary" data-v2-native>Entrar</a></div>
+      </div>`;
   }
 
   async function mountSocialPage(ctx) {
@@ -161,6 +175,17 @@
       highlight: [],
       type: 'generic'
     };
+
+    const requiresAuth = cfg.type === 'profile';
+    if (requiresAuth && !hasLocalAuth()) {
+      try {
+        const next = encodeURIComponent(file + (location.search || '') + (location.hash || ''));
+        location.replace(`login.html?next=${next}`);
+      } catch (_e) {
+        location.replace('login.html');
+      }
+      return { unmount(){} };
+    }
 
     const page = document.createElement('section');
     page.className = `doke-v2-page doke-v2-page-social doke-v2-page-social-${cfg.type}`;
@@ -214,7 +239,7 @@
       surface.appendChild(content);
       body.appendChild(surface);
 
-      const shouldRunLegacyScripts = ['community','group','feed'].includes(cfg.type);
+      const shouldRunLegacyScripts = ['community','group','feed','profile'].includes(cfg.type);
       if (shouldRunLegacyScripts) {
         try { api.executeLinkedScripts && await api.executeLinkedScripts(layout.linkedScripts, file); } catch (_e) {}
         try { api.executeInlineScripts && await api.executeInlineScripts(layout.inlineScripts, file); } catch (_e) {}

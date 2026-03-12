@@ -1,9 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="doke-nav-boot.js?v=20260309v09"></script>
+  <script src="auth-guard.js?v=20260312v03"></script>
+  <script src="doke-nav-boot.js?v=20260312v11"></script>
 <title>Pedidos | Doke</title>
   <meta name="theme-color" content="#0b7768" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -394,10 +395,10 @@
 .sidebar-icones .item .doke-inline-badge:empty{display:none!important;}
 .sidebar-icones .item .doke-inline-badge + .doke-inline-badge{display:none!important;}
 
-/* largura/padrÃ£o shell igual pÃ¡ginas principais */
+/* largura/padrão shell igual páginas principais */
 .main-content, .pedidos-page, .pedidos-wrap{max-width:1200px !important; width:calc(100% - 48px) !important; margin-left:auto !important; margin-right:auto !important;}
 
-/* hero alinhado ao padrÃ£o de notificaÃ§Ãµes */
+/* hero alinhado ao padrão de notificações */
 .ped-hero, .pedidos-hero, .hero-pedidos{border-radius:28px !important; min-height:190px !important; padding:28px 28px !important; display:grid !important; grid-template-columns:1fr auto !important; align-items:center !important; gap:18px !important; overflow:hidden;}
 .ped-hero h1, .pedidos-hero h1, .hero-pedidos h1{font-size:clamp(2.2rem,4vw,3.15rem) !important; line-height:1.05 !important; font-weight:800 !important; margin:0 0 8px !important;}
 .ped-hero p, .pedidos-hero p, .hero-pedidos p{font-size:1rem !important; line-height:1.35 !important; margin:0 !important; opacity:.98;}
@@ -550,7 +551,7 @@
 
 </style>
 
-<!-- Overrides V10: padronizaÃ§Ã£o do HERO, badges e compactaÃ§Ã£o mobile -->
+<!-- Overrides V10: padronização do HERO, badges e compactação mobile -->
 <style>
   .ped-hero{
     background: linear-gradient(135deg,#1f4d75 0%, #0f6d73 100%) !important;
@@ -594,14 +595,14 @@
 
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 
 
 <style id="pedido-chat-drawer-fit-fix">
   
-/* Fix definitivo: chat embutido encaixado na Ã¡rea de conteÃºdo (respeita header + sidebar no desktop) */
+/* Fix definitivo: chat embutido encaixado na área de conteúdo (respeita header + sidebar no desktop) */
 .chat-drawer-embed{
   --chat-drawer-left: 0px;
   --chat-drawer-top: 0px;
@@ -633,6 +634,7 @@
 
 </style>
 
+  <link rel="stylesheet" href="site-global-polish.css">
 </head>
 
 <body data-page="pedidos">
@@ -645,7 +647,7 @@
       <section class="ped-hero">
         <div>
           <h1>Pedidos <span class="hero-badge" id="heroCount">0</span></h1>
-          <p>Gerencie suas solicitaÃ§Ãµes e acompanhe o progresso em tempo real.</p>
+          <p>Gerencie suas solicitações e acompanhe o progresso em tempo real.</p>
           <span id="mobilePedidoCount" style="display:none"></span>
         </div>
         <div class="hero-mini" aria-label="Resumo">
@@ -658,7 +660,7 @@
       <section class="ped-toolbar">
         <div class="search">
           <i class='bx bx-search'></i>
-          <input id="searchInput" type="text" placeholder="Buscar por nome, serviÃ§o ou ID do pedido" />
+          <input id="searchInput" type="text" placeholder="Buscar por nome, serviço ou ID do pedido" />
         </div>
         <button class="btn" id="sortBtn" type="button" title="Ordenar">
           <i class='bx bx-sort-alt-2'></i>
@@ -680,7 +682,7 @@
 
       <div class="quick-actions">
         <button class="btn" id="agendaBtn" type="button"><i class='bx bx-calendar'></i><span>Agenda</span></button>
-        <button class="btn" id="orcamentosBtn" type="button"><i class='bx bx-receipt'></i><span>OrÃ§amentos</span></button>
+        <button class="btn" id="orcamentosBtn" type="button"><i class='bx bx-receipt'></i><span>Orçamentos</span></button>
       </div>
 
       <section class="panel">
@@ -712,10 +714,10 @@
   </main>
 
   <nav class="bottom-nav">
-<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>InÃ­cio</span></a>
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
 <a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
 <a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
-<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>NotificaÃ§Ãµes</span></a>
+<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
 <a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
 </nav>
 
@@ -779,7 +781,7 @@
         const candidates = [
           // pedidos
           'doke_pedidos','pedidos','DOKE_PEDIDOS','meus_pedidos','cachePedidos','doke_cache_pedidos',
-          // orÃ§amentos (muitos fluxos salvam como orÃ§amento)
+          // orçamentos (muitos fluxos salvam como orçamento)
           'orcamentos','doke_orcamentos','orcamentosCache','doke_orcamentos_cache','doke_cache_orcamentos',
           // compat
           'orcamentos_pedidos'
@@ -793,7 +795,7 @@
             if(list.length) return list;
           }catch(e){}
         }
-        // Fallback: monta pedidos a partir do cache de anÃºncios/home para evitar tela vazia
+        // Fallback: monta pedidos a partir do cache de anúncios/home para evitar tela vazia
         const anuncioKeys = ['doke_cache_home_anuncios_v4','doke_cache_home_anuncios','cacheAnuncios','anuncios'];
         for(const key of anuncioKeys){
           try{
@@ -805,7 +807,7 @@
             if(list.length) return list;
           }catch(e){}
         }
-        return (fallbackPedidos && fallbackPedidos.length ? fallbackPedidos : [{id:"PD-2786",usuario:"@cliente",nome:"Cliente",avatar:"assets/Imagens/user_placeholder.png",titulo:"OrÃ§amento: Teste",descricao:"Teste",tipo:"OrÃ§amento",status:"pendente",urgente:false,prazo:"A combinar",atualizado:"hoje",valor:"Sob OrÃ§amento",naoLidas:2,criadoEm:new Date().toISOString(),categoria:"Encanador"},{id:"PD-2787",usuario:"@cliente",nome:"Cliente",avatar:"assets/Imagens/user_placeholder.png",titulo:"OrÃ§amento: TESTE 2",descricao:"Teste",tipo:"OrÃ§amento",status:"andamento",urgente:false,prazo:"A combinar",atualizado:"hÃ¡ 2h",valor:"Sob OrÃ§amento",naoLidas:0,criadoEm:new Date(Date.now()-7200000).toISOString(),categoria:"Tecnologia"}]);
+        return (fallbackPedidos && fallbackPedidos.length ? fallbackPedidos : [{id:"PD-2786",usuario:"@cliente",nome:"Cliente",avatar:"assets/Imagens/user_placeholder.png",titulo:"Orçamento: Teste",descricao:"Teste",tipo:"Orçamento",status:"pendente",urgente:false,prazo:"A combinar",atualizado:"hoje",valor:"Sob Orçamento",naoLidas:2,criadoEm:new Date().toISOString(),categoria:"Encanador"},{id:"PD-2787",usuario:"@cliente",nome:"Cliente",avatar:"assets/Imagens/user_placeholder.png",titulo:"Orçamento: TESTE 2",descricao:"Teste",tipo:"Orçamento",status:"andamento",urgente:false,prazo:"A combinar",atualizado:"há 2h",valor:"Sob Orçamento",naoLidas:0,criadoEm:new Date(Date.now()-7200000).toISOString(),categoria:"Tecnologia"}]);
       }
 
 
@@ -879,9 +881,9 @@
           const id = String(p.id || p.codigo || `PD-${2800+idx}`);
           const nome = p.nome || p.clienteNome || p.cliente || p.usuarioNome || 'Cliente';
           const usuario = p.usuario || p.username || `@${String(nome).toLowerCase().replace(/\s+/g,'.')}`;
-          const titulo = p.titulo || p.nomeServico || p.servico || p.assunto || 'Pedido sem tÃ­tulo';
+          const titulo = p.titulo || p.nomeServico || p.servico || p.assunto || 'Pedido sem título';
           const descricao = p.descricao || p.mensagem || p.detalhes || 'Sem detalhes adicionais.';
-          const tipo = p.tipo || (String(titulo).toLowerCase().includes('orÃ§amento') ? 'OrÃ§amento' : 'ServiÃ§o');
+          const tipo = p.tipo || (String(titulo).toLowerCase().includes('orçamento') ? 'Orçamento' : 'Serviço');
           return {
             id,
             usuario,
@@ -894,7 +896,7 @@
             urgente,
             prazo: p.prazo || p.deadline || 'Sem prazo',
             atualizado: p.atualizado || p.ultimaAtualizacao || 'recentemente',
-            valor: p.valor || p.preco || p.orcamento || 'â€”',
+            valor: p.valor || p.preco || p.orcamento || '�?"',
             naoLidas: Number(p.naoLidas || p.unread || p.mensagensNaoLidas || 0) || 0,
             criadoEm: p.criadoEm || p.createdAt || new Date().toISOString(),
             categoria: p.categoria || 'Geral',
@@ -908,25 +910,25 @@
       function normalizeAnunciosToPedidos(input){
         const arr = Array.isArray(input) ? input : [];
         return arr.slice(0, 24).map((a, idx) => {
-          const titulo = a.titulo || a.nome || a.title || a.servico || a.categoria || 'OrÃ§amento';
+          const titulo = a.titulo || a.nome || a.title || a.servico || a.categoria || 'Orçamento';
           const nome = a.nomeProfissional || a.nome || a.usuarioNome || a.cliente || a.autor || 'Cliente';
           const usuarioBase = (a.usuario || a.username || a.handle || nome || 'cliente').toString();
           const usuario = usuarioBase.startsWith('@') ? usuarioBase : '@' + usuarioBase.toLowerCase().replace(/\s+/g,'.');
-          const categoria = a.categoria || a.tipo || a.segmento || 'ServiÃ§o';
-          const valorRaw = a.valor || a.preco || a.preÃ§o || a.orcamento || a.faixa || 'â€”';
-          const desc = a.descricao || a.descriÃ§Ã£o || a.resumo || a.texto || 'Pedido gerado a partir de anÃºncio salvo no cache.';
+          const categoria = a.categoria || a.tipo || a.segmento || 'Serviço';
+          const valorRaw = a.valor || a.preco || a.preço || a.orcamento || a.faixa || '�?"';
+          const desc = a.descricao || a.descrição || a.resumo || a.texto || 'Pedido gerado a partir de anúncio salvo no cache.';
           return {
             id: String(a.id || a.codigo || a.anuncioId || `PD-CACHE-${idx+1}`),
             usuario,
             nome,
             avatar: extractAvatarFromAny(a) || 'assets/Imagens/user_placeholder.png',
-            titulo: String(titulo).toLowerCase().includes('orÃ§amento') ? String(titulo) : `OrÃ§amento: ${titulo}`,
+            titulo: String(titulo).toLowerCase().includes('orçamento') ? String(titulo) : `Orçamento: ${titulo}`,
             descricao: desc,
-            tipo: 'OrÃ§amento',
+            tipo: 'Orçamento',
             status: idx % 3 === 0 ? 'pendente' : 'andamento',
             urgente: Boolean(a.urgente || a.priority === 'high' || (typeof valorRaw === 'number' && valorRaw > 1000 && idx % 4 === 0)),
             prazo: a.prazo || a.deadline || 'A combinar',
-            atualizado: a.atualizado || a.ultimaAtualizacao || (idx % 2 ? 'hÃ¡ 2h' : 'hoje'),
+            atualizado: a.atualizado || a.ultimaAtualizacao || (idx % 2 ? 'há 2h' : 'hoje'),
             valor: typeof valorRaw === 'number' ? `R$ ${valorRaw}` : String(valorRaw),
             naoLidas: Number(a.naoLidas || a.unread || (idx % 4 === 0 ? 2 : 0)) || 0,
             criadoEm: a.criadoEm || a.createdAt || new Date(Date.now() - (idx+1)*3600*1000).toISOString(),
@@ -1057,7 +1059,7 @@
         if (el.miniUrgent) el.miniUrgent.textContent = allCounters.urgente;
 
         if (el.listSubtitle) el.listSubtitle.textContent = list.length
-          ? `Mostrando ${list.length} pedido${list.length > 1 ? 's' : ''}${state.filter !== 'all' ? ` â€¢ filtro: ${labelFilter(state.filter)}` : ''}`
+          ? `Mostrando ${list.length} pedido${list.length > 1 ? 's' : ''}${state.filter !== 'all' ? ` �?� filtro: ${labelFilter(state.filter)}` : ''}`
           : `Nenhum pedido encontrado${state.filter !== 'all' ? ` para o filtro ${labelFilter(state.filter)}` : ''}`;
 
         document.getElementById('appRoot')?.classList.toggle('selection-mode', state.selectionMode);
@@ -1091,7 +1093,7 @@
             </div>
 
             <div class="card-user">
-              <img data-avatar-for="${escapeAttr(p.id)}" src="${escapeAttr(avatar)}" alt="Avatar de ${escapeAttr(p.nome || p.usuario || 'usuÃ¡rio')}" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png'">
+              <img data-avatar-for="${escapeAttr(p.id)}" src="${escapeAttr(avatar)}" alt="Avatar de ${escapeAttr(p.nome || p.usuario || 'usuário')}" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png'">
               <div class="user-meta">
                 <strong>${escapeHtml(p.usuario || p.nome || 'Cliente')}</strong>
                 <span>${escapeHtml(p.categoria || p.tipo || 'Geral')}</span>
@@ -1103,9 +1105,9 @@
 
             <div class="meta-grid">
               <div class="meta-box"><i class='bx bx-time-five'></i><div><small>Prazo</small><strong>${escapeHtml(p.prazo || 'Sem prazo')}</strong></div></div>
-              <div class="meta-box"><i class='bx bx-refresh'></i><div><small>Atualizado</small><strong>${escapeHtml(p.atualizado || 'â€”')}</strong></div></div>
-              <div class="meta-box"><i class='bx bx-wallet'></i><div><small>Valor</small><strong>${escapeHtml(String(p.valor ?? 'â€”'))}</strong></div></div>
-              <div class="meta-box"><i class='bx bx-message-dots'></i><div><small>Chat</small><strong>${p.naoLidas ? `${p.naoLidas} nÃ£o lida${p.naoLidas>1?'s':''}` : 'Sem novas'}</strong></div></div>
+              <div class="meta-box"><i class='bx bx-refresh'></i><div><small>Atualizado</small><strong>${escapeHtml(p.atualizado || '�?"')}</strong></div></div>
+              <div class="meta-box"><i class='bx bx-wallet'></i><div><small>Valor</small><strong>${escapeHtml(String(p.valor ?? '�?"'))}</strong></div></div>
+              <div class="meta-box"><i class='bx bx-message-dots'></i><div><small>Chat</small><strong>${p.naoLidas ? `${p.naoLidas} não lida${p.naoLidas>1?'s':''}` : 'Sem novas'}</strong></div></div>
             </div>
 
             <div class="card-footer">
@@ -1168,7 +1170,7 @@
           }
         }catch(e){}
         if(!pedido){
-          fakeToast('NÃ£o foi possÃ­vel abrir o chat deste pedido.');
+          fakeToast('Não foi possível abrir o chat deste pedido.');
           return;
         }
         openChatDrawer(pedido);
@@ -1237,12 +1239,12 @@ function statusLabelForChat(status){
 function hydrateChatContext(pedido){
   if(!pedido || !chatEls.titulo) return;
   chatEls.headTitle.textContent = pedido.usuario || pedido.nome || 'Chat do pedido';
-  chatEls.headSub.textContent = `${pedido.id || ''} â€¢ ${pedido.categoria || 'Geral'}`.trim();
+  chatEls.headSub.textContent = `${pedido.id || ''} �?� ${pedido.categoria || 'Geral'}`.trim();
   chatEls.titulo.textContent = pedido.titulo || 'Pedido';
-  chatEls.id.textContent = pedido.id || 'â€”';
+  chatEls.id.textContent = pedido.id || '�?"';
   chatEls.cliente.textContent = pedido.nome || pedido.usuario || 'Cliente';
   chatEls.prazo.textContent = pedido.prazo || 'Sem prazo';
-  chatEls.valor.textContent = String(pedido.valor ?? 'â€”');
+  chatEls.valor.textContent = String(pedido.valor ?? '�?"');
   if(chatEls.status){
     chatEls.status.innerHTML = `<i class='bx bx-package'></i><span>${escapeHtml(statusLabelForChat(pedido.status))}</span>`;
   }
@@ -1257,10 +1259,10 @@ function isMeMsg(m){
 function getMsgText(m){
   const tipo = String(m?.tipo || 'texto').toLowerCase();
   if(tipo !== 'texto' && tipo !== 'text') {
-    if(tipo === 'imagem') return 'ðŸ“· Imagem';
-    if(tipo === 'audio') return 'ðŸŽ¤ Ãudio';
-    if(tipo === 'video') return 'ðŸŽ¬ VÃ­deo';
-    if(tipo === 'arquivo') return 'ðŸ“Ž Arquivo';
+    if(tipo === 'imagem') return '�Y"� Imagem';
+    if(tipo === 'audio') return '�YZ� Áudio';
+    if(tipo === 'video') return '�YZ� Vídeo';
+    if(tipo === 'arquivo') return '�Y"Z Arquivo';
   }
   return String(m?.texto ?? m?.text ?? '').trim();
 }
@@ -1275,7 +1277,7 @@ function renderMsgs(snapshot){
     const text = getMsgText(m);
     if(!text) return;
     const mine = isMeMsg(m);
-    const author = String(m.senderUser || m.sender_user || (mine ? 'VocÃª' : (m.senderName || m.nome || 'UsuÃ¡rio')));
+    const author = String(m.senderUser || m.sender_user || (mine ? 'Você' : (m.senderName || m.nome || 'Usuário')));
     const cls = mine ? 'pedido-chat-msg is-me' : 'pedido-chat-msg';
     rows.push(`
       <div class="${cls}" data-mid="${escapeAttr(docSnap.id)}">
@@ -1344,7 +1346,7 @@ function buildEmbeddedChatUrl(pedido){
 function syncChatDrawerFrameLayout(){
   if(!chatDrawer) return;
 
-  // Mobile: fullscreen (CSS media query jÃ¡ resolve)
+  // Mobile: fullscreen (CSS media query já resolve)
   if(window.innerWidth <= 900){
     chatDrawer.style.setProperty('--chat-drawer-left', '0px');
     chatDrawer.style.setProperty('--chat-drawer-top', '0px');
@@ -1355,7 +1357,7 @@ function syncChatDrawerFrameLayout(){
 
   let left = 0, top = 0, right = 0, bottom = 0;
 
-  // Preferir a Ã¡rea real de conteÃºdo (main), para nÃ£o cobrir header/topbar nem menu lateral
+  // Preferir a área real de conteúdo (main), para não cobrir header/topbar nem menu lateral
   const mainWrap = document.querySelector('main.dp-wrap') || document.querySelector('.dp-wrap') || document.querySelector('main');
   if(mainWrap){
     const rect = mainWrap.getBoundingClientRect();
@@ -1367,7 +1369,7 @@ function syncChatDrawerFrameLayout(){
     }
   }
 
-  // Fallbacks defensivos se o main nÃ£o estiver disponÃ­vel/medido
+  // Fallbacks defensivos se o main não estiver disponível/medido
   if(left <= 0){
     const sb = document.querySelector('.sidebar-icones') || document.querySelector('.sidebar');
     if(sb){
@@ -1500,7 +1502,7 @@ async function sendCurrentPedidoMessage(){
         texto: text,
         tipo: 'texto',
         senderUid: uid || '',
-        senderUser: 'VocÃª',
+        senderUser: 'Você',
         timestamp: new Date(),
         lidoEm: uid ? ({ [uid]: new Date().toISOString() }) : ({})
       };
@@ -1511,7 +1513,7 @@ async function sendCurrentPedidoMessage(){
       render();
     }catch(e){
       console.warn('Falha ao enviar mensagem', e);
-      fakeToast('NÃ£o foi possÃ­vel enviar a mensagem.');
+      fakeToast('Não foi possível enviar a mensagem.');
     }
   }
 }
@@ -1559,10 +1561,10 @@ async function fetchPedidosFromFirestore(){
     if(statusRaw.includes('and') || statusRaw.includes('aceit')) status = 'andamento';
     else if(statusRaw.includes('fin') || statusRaw.includes('conc')) status = 'finalizado';
 
-    const titulo = p.titulo || p.nomeServico || p.servico || p.assunto || (p.tipo ? `OrÃ§amento: ${p.tipo}` : 'Pedido');
+    const titulo = p.titulo || p.nomeServico || p.servico || p.assunto || (p.tipo ? `Orçamento: ${p.tipo}` : 'Pedido');
     const descricao = p.descricao || p.descricaoBase || p.mensagem || p.detalhes || '';
     const prazo = p.paraQuando || p.dataEspecifica || p.prazo || 'A combinar';
-    const valor = p.valor || p.preco || p.orcamento || 'Sob OrÃ§amento';
+    const valor = p.valor || p.preco || p.orcamento || 'Sob Orçamento';
     const categoria = p.categoria || p.area || p.tipoServico || p.servicoCategoria || '';
 
     list.push({
@@ -1572,11 +1574,11 @@ async function fetchPedidosFromFirestore(){
       avatar: p.foto || p.avatar || p.fotoCliente || 'assets/Imagens/user_placeholder.png',
       titulo,
       descricao,
-      tipo: p.tipo || (String(titulo).toLowerCase().includes('orÃ§amento') ? 'OrÃ§amento' : 'ServiÃ§o'),
+      tipo: p.tipo || (String(titulo).toLowerCase().includes('orçamento') ? 'Orçamento' : 'Serviço'),
       status,
       urgente: !!(p.urgente || p.prioridade === 'alta'),
       prazo,
-      atualizado: 'â€”',
+      atualizado: '�?"',
       valor,
       naoLidas: 0,
       criadoEm: String(p.createdat || p.created_at || p.dataCriacao || p.dataPedido || ''),
@@ -1600,9 +1602,9 @@ async function fetchPedidosFromFirestore(){
         }
       });
       if(last){
-        pedido.atualizado = formatClock(last.timestamp || last.createdAt || last.created_at) ? `Ã s ${formatClock(last.timestamp || last.createdAt || last.created_at)}` : 'agora';
+        pedido.atualizado = formatClock(last.timestamp || last.createdAt || last.created_at) ? `às ${formatClock(last.timestamp || last.createdAt || last.created_at)}` : 'agora';
       } else {
-        pedido.atualizado = 'â€”';
+        pedido.atualizado = '�?"';
       }
       pedido.naoLidas = unread;
     }catch(e){}
@@ -1696,7 +1698,7 @@ function syncActiveStates(){
       }
 
 
-// Menu lateral (mobile) simples para esta pÃ¡gina
+// Menu lateral (mobile) simples para esta página
 document.querySelector('.mobile-header .hamb')?.addEventListener('click', () => {
   const sb = document.querySelector('.sidebar');
   if(!sb) return;
@@ -1718,8 +1720,8 @@ document.addEventListener('click', (ev) => {
   document.body.classList.remove('menu-open-pedidos');
 });
 
-// Compatibilidade mÃ­nima com shell/header padrÃ£o
-window.toggleCep = window.toggleCep || function(ev){ if(ev) ev.preventDefault(); fakeToast('Campo de CEP disponÃ­vel no header principal do site.'); };
+// Compatibilidade mínima com shell/header padrão
+window.toggleCep = window.toggleCep || function(ev){ if(ev) ev.preventDefault(); fakeToast('Campo de CEP disponível no header principal do site.'); };
 window.salvarCep = window.salvarCep || function(){ fakeToast('CEP salvo.'); };
 window.fecharMenuMobile = window.fecharMenuMobile || function(){};
 window.irParaMeuPerfil = window.irParaMeuPerfil || function(ev){ if(ev) ev.preventDefault(); location.href='meuperfil.html'; };
@@ -1760,7 +1762,7 @@ try{
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260309v97"></script>
+<script src="doke-shell.js?v=20260312v99"></script>
 <script>
 (function pedidosHeaderAvatarSync(){
   try{
@@ -1823,8 +1825,8 @@ try{
       });
     })();
   </script>
+  <script src="site-global-polish.js"></script>
 </body>
 </html>
-
 
 

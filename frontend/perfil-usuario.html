@@ -1,11 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
-<script src="doke-nav-boot.js?v=20260309v09"></script>
-<title>Perfil do UsuÃ¡rio | Doke</title>
+<script src="auth-guard.js?v=20260312v03"></script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
+<script>document.documentElement.setAttribute("data-doke-boot-hold","perfil");</script>
+<title>Perfil do Usuário | Doke</title>
 <link href="style.css?v=20260227v01" rel="stylesheet"/>
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="perfil-upgrade.css?v=20260228v02" rel="stylesheet">
@@ -13,11 +15,11 @@
 <link href="doke-beforeafter.css?v=20260211v3" rel="stylesheet">
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 <script defer="" src="doke-beforeafter.js?v=20260211v3"></script>
-<script defer="" src="script.js?v=20260307v61"></script>
+<script defer="" src="script.js?v=20260312v62"></script>
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
@@ -25,15 +27,17 @@
 <link href="doke-responsive.css?v=20260209v24" rel="stylesheet"/>
 <link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260213v2" rel="stylesheet"/>
+<style>.popup{display:none!important;}</style>
+  <link rel="stylesheet" href="site-global-polish.css">
 </head>
 <body class="dp-page" data-page="perfil">
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">Ã—</span>
+<span class="close-btn" onclick="fecharPopup()">×</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                NÃ£o tem uma conta?
+                Não tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -43,7 +47,7 @@
 
 <!-- Sidebar (mantem padrao do site) -->
 
-<!-- ConteÃƒÆ’Âºdo principal -->
+<!-- ConteÃƒºdo principal -->
 <main class="dp-wrap">
 <div class="dp-skeleton dp-theme-cliente" data-mode="self" data-theme="cliente" id="dpRoot">
 <section class="dp-card">
@@ -64,26 +68,26 @@
 </div>
 <div class="dp-info">
 <h1 class="dp-name" id="dpName">Carregando...</h1>
-<div class="dp-handle" id="dpHandle">@usuÃ¡rio</div>
+<div class="dp-handle" id="dpHandle">@usuário</div>
 <div class="dp-bio" id="dpBio">Carregando...</div>
 <div class="dp-meta" id="dpChips"></div>
-<div aria-label="EstatÃ­sticas" class="dp-statsWrap">
-<button aria-label="Ver estatÃ­sticas anteriores" class="dp-statsNav dp-statsPrev" type="button"><i class="bx bx-chevron-left"></i></button>
-<div aria-label="EstatÃ­sticas" class="dp-stats">
+<div aria-label="Estatísticas" class="dp-statsWrap">
+<button aria-label="Ver estatísticas anteriores" class="dp-statsNav dp-statsPrev" type="button"><i class="bx bx-chevron-left"></i></button>
+<div aria-label="Estatísticas" class="dp-stats">
 <div class="dp-stat"><b id="dpFollowers">0</b><span>Seguidores</span></div>
 <div class="dp-stat"><b id="dpFollowing">0</b><span>Seguindo</span></div>
-<div class="dp-stat" data-pro-only=""><b id="dpReviews">0</b><span>AvaliaÃ§Ãµes</span></div>
+<div class="dp-stat" data-pro-only=""><b id="dpReviews">0</b><span>Avaliações</span></div>
 </div>
-<button aria-label="Ver estatÃ­sticas seguintes" class="dp-statsNav dp-statsNext" type="button"><i class="bx bx-chevron-right"></i></button>
+<button aria-label="Ver estatísticas seguintes" class="dp-statsNav dp-statsNext" type="button"><i class="bx bx-chevron-right"></i></button>
 </div>
 </div>
 <div class="dp-actions">
 <div class="dp-availability" id="dpAvailabilityRow">
-<span id="dpStatusText">DisponÃ­vel</span>
+<span id="dpStatusText">Disponível</span>
 <div class="dp-switch" id="dpSwitch"><span></span></div>
 </div>
 <div class="dp-actionsRow">
-<button class="dp-primary" id="dpOrcBtn" style="display:none;" type="button"><i class="bx bx-package"></i> Solicitar orÃ§amento</button>
+<button class="dp-primary" id="dpOrcBtn" style="display:none;" type="button"><i class="bx bx-package"></i> Solicitar orçamento</button>
 <button class="dp-secondary" id="dpFriendBtn" style="display:none;" type="button"><i class="bx bx-user-plus"></i> Amizade</button>
 <button class="dp-secondary" id="dpFollowBtn" style="display:none;" type="button"><i class="bx bx-heart"></i> Seguir</button>
 <button class="dp-secondary" id="dpMessageBtn" style="display:none;" type="button"><i class="bx bx-message-rounded"></i> Mensagem</button>
@@ -94,15 +98,15 @@
 </div>
 </div>
 </section>
-<div aria-label="SeÃ§Ãµes do perfil" class="dp-tabsWrap">
+<div aria-label="Seções do perfil" class="dp-tabsWrap">
 <button aria-label="Ver abas anteriores" class="dp-tabsNav dp-tabsPrev" type="button"><i class="bx bx-chevron-left"></i></button>
-<div aria-label="SeÃ§Ãµes do perfil" class="dp-tabs" role="tablist">
-<button class="dp-tab active" data-tab="publicacoes" type="button"><i class="bx bx-grid-alt"></i> PublicaÃ§Ãµes</button>
-<button class="dp-tab" data-pro-only="" data-tab="reels" type="button"><i class="bx bx-video"></i> VÃ­deos curtos</button>
-<button class="dp-tab" data-pro-only="" data-tab="servicos" type="button"><i class="bx bx-briefcase"></i> ServiÃ§os</button>
-<button class="dp-tab" data-pro-only="" data-tab="portfolio" type="button"><i class="bx bx-collection"></i> PortfÃ³lio</button>
-<button class="dp-tab" data-pro-only="" data-tab="avaliacoes" type="button"><i class="bx bx-star"></i> AvaliaÃ§Ãµes</button>
-<button class="dp-tab" data-pro-owner-only="" data-tab="estatisticas" type="button"><i class="bx bx-line-chart"></i> EstatÃ­sticas <span class="dp-betaPill">BETA</span></button>
+<div aria-label="Seções do perfil" class="dp-tabs" role="tablist">
+<button class="dp-tab active" data-tab="publicacoes" type="button"><i class="bx bx-grid-alt"></i> Publicações</button>
+<button class="dp-tab" data-pro-only="" data-tab="reels" type="button"><i class="bx bx-video"></i> Vídeos curtos</button>
+<button class="dp-tab" data-pro-only="" data-tab="servicos" type="button"><i class="bx bx-briefcase"></i> Serviços</button>
+<button class="dp-tab" data-pro-only="" data-tab="portfolio" type="button"><i class="bx bx-collection"></i> Portfólio</button>
+<button class="dp-tab" data-pro-only="" data-tab="avaliacoes" type="button"><i class="bx bx-star"></i> Avaliações</button>
+<button class="dp-tab" data-pro-owner-only="" data-tab="estatisticas" type="button"><i class="bx bx-line-chart"></i> Estatísticas <span class="dp-betaPill">BETA</span></button>
 <button class="dp-tab" data-tab="sobre" type="button"><i class="bx bx-info-circle"></i> Sobre</button>
 <button class="dp-tab" data-self-only="" data-tab="validacao" type="button"><i class="bx bx-check-shield"></i> Validacao</button>
 </div>
@@ -111,63 +115,63 @@
 <!-- Sections -->
 <section class="dp-section" data-tab="publicacoes">
 <div class="dp-sectionHeader">
-<h2>PublicaÃ§Ãµes</h2>
+<h2>Publicações</h2>
 <button class="dp-newBtn" id="dpNewPublicacao" type="button"><i class="bx bx-plus"></i> Novo</button>
 </div>
 <div class="dp-grid" id="dpGridPublicacoes">
 <div class="dp-empty dp-emptyState">
 <i class="bx bx-grid-alt"></i>
 <div>
-<b>Nenhuma publicaÃ§Ã£o ainda</b>
-<span>Quando vocÃª postar algo, vai aparecer aqui.</span>
+<b>Nenhuma publicação ainda</b>
+<span>Quando você postar algo, vai aparecer aqui.</span>
 </div>
 </div>
 </div>
 </section>
 <section class="dp-section" data-tab="reels" style="display:none;">
 <div class="dp-sectionHeader">
-<h2>VÃ­deos curtos</h2>
+<h2>Vídeos curtos</h2>
 <button class="dp-newBtn" id="dpNewReel" type="button"><i class="bx bx-plus"></i> Novo</button>
 </div>
 <div class="dp-grid" id="dpGridReels">
 <div class="dp-empty dp-emptyState">
 <i class="bx bx-video"></i>
 <div>
-<b>Sem vÃ­deos curtos</b>
-<span>Poste vÃ­deos curtos para ganhar destaque.</span>
+<b>Sem vídeos curtos</b>
+<span>Poste vídeos curtos para ganhar destaque.</span>
 </div>
 </div>
 </div>
 </section>
 <section class="dp-section" data-tab="servicos" style="display:none;">
 <div class="dp-sectionHeader">
-<h2>ServiÃ§os</h2>
+<h2>Serviços</h2>
 <button class="dp-newBtn" id="dpNewServico" type="button"><i class="bx bx-plus"></i> Novo</button>
 </div>
 <div class="dp-grid lista-cards-premium" id="dpGridServicos">
 <div class="dp-empty dp-emptyState">
 <i class="bx bx-briefcase"></i>
 <div>
-<b>Nenhum serviÃ§o ainda</b>
-<span>ServiÃ§os</span>
+<b>Nenhum serviço ainda</b>
+<span>Serviços</span>
 </div>
 </div>
 </div>
 </section>
 <section class="dp-section" data-tab="portfolio" style="display:none;">
 <div class="dp-sectionHeader">
-<h2>PortfÃ³lio <button aria-label="Sobre o portfÃ³lio" class="dp-portfolioHelpBtn" id="dpPortfolioHelpBtn" type="button">?</button></h2>
+<h2>Portfólio <button aria-label="Sobre o portfólio" class="dp-portfolioHelpBtn" id="dpPortfolioHelpBtn" type="button">?</button></h2>
 </div>
 <div class="dp-card dp-portfolioIntro" id="dpPortfolioHelpCard" role="note" style="display:none;">
 <div class="dp-portfolioIntroBody">
-<p>O portfÃ³lio Ã© publicado automaticamente pelo sistema com base nos trabalhos concluÃ­dos.</p>
+<p>O portfólio é publicado automaticamente pelo sistema com base nos trabalhos concluídos.</p>
 </div>
 </div>
 <div class="dp-grid" id="dpGridPortfolio">
 <div class="dp-empty dp-emptyState">
 <i class="bx bx-collection"></i>
 <div>
-<b>PortfÃ³lio vazio</b>
+<b>Portfólio vazio</b>
 <span>O sistema exibira aqui os trabalhos concluidos.</span>
 </div>
 </div>
@@ -175,7 +179,7 @@
 </section>
 <section class="dp-section" data-tab="avaliacoes" style="display:none;">
 <div class="dp-sectionHeader">
-<h2>AvaliaÃ§Ãµes</h2>
+<h2>Avaliações</h2>
 <button class="dp-newBtn" id="dpWriteAvaliacao" style="display:none;" type="button"><i class="bx bx-star"></i> Avaliar</button>
 </div>
 <div id="dpBoxAvaliacoes"></div>
@@ -183,12 +187,12 @@
 <section class="dp-section" data-pro-owner-only="" data-tab="estatisticas" style="display:none;">
 <div class="dp-sectionHeader dp-sectionHeader--analytics">
 <div>
-<h2>EstatÃ­sticas</h2>
-<span class="dp-subtle">Acompanhe o desempenho do perfil e anÃºncios.</span>
+<h2>Estatísticas</h2>
+<span class="dp-subtle">Acompanhe o desempenho do perfil e anúncios.</span>
 </div>
 <div class="dp-analyticsControls">
 <label class="dp-analyticsLabel">
-        PerÃ­odo
+        Período
         <select class="dp-select" id="dpAnalyticsRange">
 <option value="7">7 dias</option>
 <option selected="" value="14">14 dias</option>
@@ -208,11 +212,11 @@
 <div class="dp-card dp-chartCard">
 <div class="dp-chartHead">
 <div>
-<b>OrÃ§amentos e mensagens</b>
-<span class="dp-subtle" id="dpChartSubtitle">Ãšltimos 14 dias</span>
+<b>Orçamentos e mensagens</b>
+<span class="dp-subtle" id="dpChartSubtitle">Últimos 14 dias</span>
 </div>
 <div class="dp-chartLegend">
-<span><i class="dp-dot dp-dot--views"></i> OrÃ§amentos</span>
+<span><i class="dp-dot dp-dot--views"></i> Orçamentos</span>
 <span><i class="dp-dot dp-dot--clicks"></i> Mensagens</span>
 </div>
 </div>
@@ -222,7 +226,7 @@
 <div class="dp-chartHead">
 <div>
 <b>Top categorias</b>
-<span class="dp-subtle">Onde vocÃª mais aparece</span>
+<span class="dp-subtle">Onde você mais aparece</span>
 </div>
 </div>
 <div class="dp-bars" id="dpTopCats"></div>
@@ -231,7 +235,7 @@
 <div class="dp-chartHead">
 <div>
 <b>Funil</b>
-<span class="dp-subtle">ImpressÃµes -&gt; Cliques -&gt; OrÃ§amentos</span>
+<span class="dp-subtle">Impressões -&gt; Cliques -&gt; Orçamentos</span>
 </div>
 </div>
 <div class="dp-funnel" id="dpFunnel"></div>
@@ -249,14 +253,14 @@
 </div>
 <button aria-label="Ocultar DOKE-AI" class="dp-aiToggle" id="dpAiToggle" type="button"><i class="bx bx-chevron-down"></i></button>
 </div>
-<span class="dp-subtle">PeÃ§a sugestÃµes para melhorar anÃºncios e perfil (demo, sem IA real ainda).</span>
+<span class="dp-subtle">Peça sugestões para melhorar anúncios e perfil (demo, sem IA real ainda).</span>
 </div>
 <div aria-live="polite" class="dp-aiMsgs" id="dpAiMsgs"></div>
 <div class="dp-aiQuick">
-<button class="dp-aiChip" data-q="Como melhorar meu anÃƒÆ’Ã‚Âºncio para vender mais?">Melhorar anÃºncio</button>
-<button class="dp-aiChip" data-q="O que falta no meu perfil para passar mais confianÃƒÆ’Ã‚Â§a?">Melhorar perfil</button>
-<button class="dp-aiChip" data-q="Me dÃƒÆ’Ã‚Âª ideias de tÃƒÆ’Ã‚Â­tulos e descriÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes para meus serviÃƒÆ’Ã‚Â§os.">TÃ­tulos &amp; descriÃ§Ãµes</button>
-<button class="dp-aiChip" data-q="Como conseguir mais avaliaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes e seguidores?">Crescer</button>
+<button class="dp-aiChip" data-q="Como melhorar meu anÃƒÂºncio para vender mais?">Melhorar anúncio</button>
+<button class="dp-aiChip" data-q="O que falta no meu perfil para passar mais confianÃƒÂ§a?">Melhorar perfil</button>
+<button class="dp-aiChip" data-q="Me dÃƒÂª ideias de tÃƒÂ­tulos e descriÃƒÂ§ÃƒÂµes para meus serviÃƒÂ§os.">Títulos &amp; descrições</button>
+<button class="dp-aiChip" data-q="Como conseguir mais avaliaÃƒÂ§ÃƒÂµes e seguidores?">Crescer</button>
 </div>
 <div class="dp-aiInputRow">
 <input class="dp-aiInput" id="dpAiInput" placeholder="Escreva sua pergunta..." type="text"/>
@@ -274,7 +278,7 @@
 </div>
 <div class="dp-card" style="padding:18px;">
 <p style="margin:0; color:rgba(0,0,0,.75); line-height:1.4">
-<span id="dpAboutText">As informaÃ§Ãµes do perfil aparecem aqui. (Bio, local e tempo de membro sÃ£o editÃ¡veis no botÃ£o "Editar perfil".)</span>
+<span id="dpAboutText">As informações do perfil aparecem aqui. (Bio, local e tempo de membro são editáveis no botão "Editar perfil".)</span>
 </p>
 </div>
 </section>
@@ -283,7 +287,7 @@
 <h2>Validacao profissional</h2>
 </div>
 <div class="dp-card" style="padding:18px;">
-<p style="margin:0; color:rgba(0,0,0,.75); line-height:1.4">Veja o andamento da anÃ¡lise dos seus dados para se tornar profissional.</p>
+<p style="margin:0; color:rgba(0,0,0,.75); line-height:1.4">Veja o andamento da análise dos seus dados para se tornar profissional.</p>
 <div class="dp-actionsRow" style="margin-top:12px;">
 <button class="dp-newBtn" onclick="window.location.href='acompanhamento-profissional.html'" type="button"><i class="bx bx-right-arrow-alt"></i> Ver andamento</button>
 </div>
@@ -296,7 +300,7 @@
 <div aria-modal="true" class="dp-modal" role="dialog">
 <div class="dp-modalHead">
 <b id="dpModalTitle">Modal</b>
-<button aria-label="Fechar" class="dp-x" id="dpModalClose" type="button">Ã—</button>
+<button aria-label="Fechar" class="dp-x" id="dpModalClose" type="button">×</button>
 </div>
 <div class="dp-modalBody" id="dpModalBody"></div>
 <div class="dp-modalFoot">
@@ -309,7 +313,8 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260309v97"></script>
+<script src="doke-shell.js?v=20260312v99"></script>
+  <script src="site-global-polish.js"></script>
 </body>
 </html>
 

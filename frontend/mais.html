@@ -1,27 +1,28 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="doke-nav-boot.js?v=20260309v09"></script>
-<title>Conta e preferências | Doke</title>
+<script src="auth-guard.js?v=20260312v03"></script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
+<title>Conta e prefer�ncias | Doke</title>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260307v61"></script>
+<script defer="" src="script.js?v=20260312v62"></script>
 <style>
-        /* ================= VARIÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂVEIS E RESET ================= */
+        /* ================= VARIÃƒÆ’Ã‚ÂVEIS E RESET ================= */
         :root {
             --cor0: #0b7768; /* Verde Principal */
             --cor1: #737373; /* Cinza Texto */
-            --cor2: #2a5f90; /* Azul TÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­tulos */
+            --cor2: #2a5f90; /* Azul TÃƒÆ’Ã‚Â­tulos */
             --cor3: #f35b5b; /* Vermelho/Alerta */
             --cor4: #ecedf2; /* Cinza Fundo Claro */
             --cor-borda: #e0e0e0;
@@ -40,7 +41,7 @@
 
         a { text-decoration: none; }
 
-        /* ================= ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂREA PRINCIPAL (Direita) ================= */
+        /* ================= ÃƒÆ’Ã‚ÂREA PRINCIPAL (Direita) ================= */
         .main-content {
             flex: 1; 
             padding: 40px;
@@ -55,7 +56,7 @@
             }
         }
 
-        /* Topo com BotÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o Voltar */
+        /* Topo com BotÃƒÆ’Ã‚Â£o Voltar */
         .page-header {
             width: 100%;
             max-width: 600px;
@@ -73,13 +74,13 @@
         }
         .btn-back:hover { background: white; color: var(--cor2); }
         .page-header h1 {
-            color: white; /* Ajustado para branco pois o fundo do topo ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© escuro */
+            color: white; /* Ajustado para branco pois o fundo do topo ÃƒÆ’Ã‚Â© escuro */
             font-size: 1.8rem;
             font-weight: 700;
             text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Card do FormulÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡rio */
+        /* Card do FormulÃƒÆ’Ã‚Â¡rio */
         .form-card {
             background: white;
             width: 100%;
@@ -241,15 +242,18 @@
 .settings-frame-card,.settings-side__group,.settings-nav-item{box-shadow:0 10px 24px rgba(15,23,42,.05)!important;}
 @media (max-width:768px){.settings-hero{padding:20px !important;}.settings-hero-badges span{font-size:.82rem;padding:8px 12px;}}
 </style>
+  <link rel="stylesheet" href="ui-system.css">
+<style>.popup{display:none!important;}</style>
+  <link rel="stylesheet" href="site-global-polish.css">
 </head>
 <body data-page="mais">
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">×</span>
+<span class="close-btn" onclick="fecharPopup()">�</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                Não tem uma conta?
+                N�o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -262,8 +266,8 @@
 <div class="content-wrapper">
 <div class="settings-hero">
 <div>
-<h1>Conta e preferências</h1>
-<p>Acesse dados pessoais, segurança, pagamentos e preferências em uma estrutura mais clean e direta.</p>
+<h1>Conta e prefer�ncias</h1>
+<p>Acesse dados pessoais, seguran�a, pagamentos e prefer�ncias em uma estrutura mais clean e direta.</p>
 </div>
 </div>
 <div class="settings-frame-card">
@@ -276,17 +280,17 @@
 </a>
 <a class="settings-nav-item" href="enderecos.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-map"></i></span>
-<span class="settings-nav-text">Endereços</span>
+<span class="settings-nav-text">Endere�os</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" href="admin-validacoes.html" id="settingsAdminValidationLink" style="display:none;">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-shield-check"></i></span>
-<span class="settings-nav-text">Painel de validações</span>
+<span class="settings-nav-text">Painel de valida��es</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" href="senha.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-lock-alt"></i></span>
-<span class="settings-nav-text">Segurança e senha</span>
+<span class="settings-nav-text">Seguran�a e senha</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" href="pagamentos.html">
@@ -296,10 +300,10 @@
 </a>
 </div>
 <div class="settings-side__group">
-<div class="settings-side__title">PREFERÊNCIAS</div>
+<div class="settings-side__title">PREFER�NCIAS</div>
 <a class="settings-nav-item" href="preferencia-notif.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-bell"></i></span>
-<span class="settings-nav-text">Notificações</span>
+<span class="settings-nav-text">Notifica��es</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" href="idioma.html">
@@ -322,15 +326,15 @@
 </div>
 </main>
 <nav class="bottom-nav">
-<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>In�cio</span></a>
 <a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
 <a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
-<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
+<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notifica��es</span></a>
 <a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
 </nav>
 <script>
-        // Dados Pessoais (Supabase) - carrega do Auth + tabela usuários + validação (tornar-profissional)
-        // Objetivo: o que você preencheu no tornar-profissional aparecer aqui, e o nome/user ficarem consistentes.
+        // Dados Pessoais (Supabase) - carrega do Auth + tabela usu�rios + valida��o (tornar-profissional)
+        // Objetivo: o que voc� preencheu no tornar-profissional aparecer aqui, e o nome/user ficarem consistentes.
 
         const safeJSON = (k, fallback = null) => {
             try { return JSON.parse(localStorage.getItem(k) || '') || fallback; } catch { return fallback; }
@@ -388,7 +392,7 @@
                 dados.doc_num ||
                 dados.cpf ||
                 dados.cnpj ||
-                "NÃ£o informado"
+                "Não informado"
             );
             setValue('inputNome', String(dados.nome || "").slice(0, 40));
             setValue('inputEmail', dados.email || "");
@@ -404,7 +408,7 @@
         }
 
         async function carregarPerfilReal() {
-            // proteÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÂ£o simples
+            // proteÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚£o simples
             const logado = localStorage.getItem('usuarioLogado') === 'true' || !!localStorage.getItem('doke_usuario_perfil');
             if (!logado) {
                 window.location.href = 'login.html';
@@ -412,9 +416,9 @@
             }
 
             if (!window.sb?.auth) {
-                if (typeof window.dokeAlert === 'function') window.dokeAlert('Supabase nÃ£o inicializado.');
-                else if (typeof window.dokeToast === 'function') window.dokeToast('Supabase nÃ£o inicializado.', { type: 'error' });
-                else alert('Supabase nÃ£o inicializado.');
+                if (typeof window.dokeAlert === 'function') window.dokeAlert('Supabase não inicializado.');
+                else if (typeof window.dokeToast === 'function') window.dokeToast('Supabase não inicializado.', { type: 'error' });
+                else alert('Supabase não inicializado.');
                 return;
             }
 
@@ -436,7 +440,7 @@
             const uid = authUser.id;
             const email = authUser.email || perfilLocal.email || '';
 
-            // 2) usuários
+            // 2) usu�rios
             let usr = null;
             try {
                 const { data, error } = await window.sb
@@ -459,7 +463,7 @@
                 if (!error && Array.isArray(data) && data.length) val = data[0];
             } catch (_) {}
 
-            // 4) Merge (prioridade: usuários -> validação -> auth meta -> cache)
+            // 4) Merge (prioridade: usu�rios -> valida��o -> auth meta -> cache)
             const meta = authUser.user_metadata || {};
             const nome = pickBestName(
                 usr?.nome,
@@ -506,7 +510,7 @@
                 nome,
                 user: userHandle,
                 foto,
-                cpf_cnpj: cpfCnpj || 'NÃ£o informado',
+                cpf_cnpj: cpfCnpj || 'Não informado',
                 telefone,
                 data_nascimento: nasc,
             };
@@ -520,7 +524,7 @@
         if (document.readyState === 'loading') on(document, 'DOMContentLoaded', carregarPerfilReal);
         else carregarPerfilReal();
 
-        // FunÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÂ£o global para salvar (chamada pelo form)
+        // FunÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚£o global para salvar (chamada pelo form)
         window.salvarDados = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSalvar');
@@ -533,11 +537,11 @@
                 const perfilLocal = safeJSON('doke_usuario_perfil', {}) || {};
                 const { data: authData } = await window.sb.auth.getUser();
                 const authUser = authData?.user || null;
-                if (!authUser) throw new Error('SessÃƒÆ’Ã†â€™Ãƒâ€šÂ£o expirada. FaÃƒÆ’Ã†â€™Ãƒâ€šÂ§a login novamente.');
+                if (!authUser) throw new Error('SessÃƒÆ’Ã‚£o expirada. FaÃƒÆ’Ã‚§a login novamente.');
 
                 const uid = authUser.id;
                 const nome = String(document.getElementById('inputNome')?.value || '').trim().slice(0, 40);
-                if (!nome || nome.length < 2) throw new Error('Informe um nome vÃƒÆ’Ã†â€™Ãƒâ€šÂ¡lido (mÃƒÆ’Ã†â€™Ãƒâ€šÂ­nimo 2 caracteres).');
+                if (!nome || nome.length < 2) throw new Error('Informe um nome vÃƒÆ’Ã‚¡lido (mÃƒÆ’Ã‚­nimo 2 caracteres).');
                 const telefone = String(document.getElementById('inputTel')?.value || '').trim();
                 const nasc = document.getElementById('inputNasc')?.value || '';
                 const foto = document.getElementById('hiddenFotoBase64')?.value || perfilLocal.foto || '';
@@ -552,7 +556,7 @@
                 };
                 localStorage.setItem('doke_usuario_perfil', JSON.stringify(merged));
 
-                // Melhor esforÃƒÆ’Ã†â€™Ãƒâ€šÂ§o: atualiza tabela usuários (se existir colunas)
+                // Melhor esforÃƒÆ’Ã‚§o: atualiza tabela usu�rios (se existir colunas)
                 const patch = { nome, telefone, data_nascimento: nasc, foto };
                 try {
                     await window.sb
@@ -561,7 +565,7 @@
                         .or(`uid.eq.${uid},id.eq.${uid}`);
                 } catch (_) {}
 
-                // Melhor esforÃƒÆ’Ã†â€™Ãƒâ€šÂ§o: espelha no Auth metadata
+                // Melhor esforÃƒÆ’Ã‚§o: espelha no Auth metadata
                 try {
                     await window.sb.auth.updateUser({
                         data: {
@@ -591,11 +595,11 @@
         function previewImage(event) {
             const file = event.target.files[0];
             if(file) {
-                // Tamanho maximo 2MB para nÃƒÆ’Ã†â€™Ãƒâ€šÂ£o travar localStorage/Firestore
+                // Tamanho maximo 2MB para nÃƒÆ’Ã‚£o travar localStorage/Firestore
                 if(file.size > 2 * 1024 * 1024) {
-                    if (typeof window.dokeAlert === 'function') window.dokeAlert("A imagem Ã© muito grande. Escolha uma menor que 2MB.");
-                    else if (typeof window.dokeToast === 'function') window.dokeToast("A imagem Ã© muito grande. Escolha uma menor que 2MB.", { type: 'error' });
-                    else alert("A imagem Ã© muito grande. Escolha uma menor que 2MB.");
+                    if (typeof window.dokeAlert === 'function') window.dokeAlert("A imagem é muito grande. Escolha uma menor que 2MB.");
+                    else if (typeof window.dokeToast === 'function') window.dokeToast("A imagem é muito grande. Escolha uma menor que 2MB.", { type: 'error' });
+                    else alert("A imagem é muito grande. Escolha uma menor que 2MB.");
                     return;
                 }
 
@@ -681,8 +685,9 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260309v97"></script>
-<script defer="True" src="settings-pages.js?v=20260301v02"></script></body>
+<script src="doke-shell.js?v=20260312v99"></script>
+<script defer="True" src="settings-pages.js?v=20260301v02"></script>  <script src="site-global-polish.js"></script>
+</body>
 </html>
 
 

@@ -174,17 +174,6 @@
         const sessionUser = normalizeUser(data?.session?.user || null) || buildUserFromSessionToken(data?.session || null);
         if (sessionUser) return sessionUser;
 
-        if (typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
-          try {
-            const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
-            if (restored) {
-              const retry = await sb.auth.getSession();
-              const retryUser = normalizeUser(retry?.data?.session?.user || null) || buildUserFromSessionToken(retry?.data?.session || null);
-              if (retryUser) return retryUser;
-            }
-          } catch (_e) {}
-        }
-
         if (sb?.auth?.getUser) {
           try {
             const u = await sb.auth.getUser();
@@ -192,22 +181,9 @@
             if (gu) return gu;
           } catch (_e) {}
         }
-
-        if (sb?.auth?.getUser && typeof window.dokeGetStoredSupabaseSessionCandidate === "function") {
-          try {
-            const stored = window.dokeGetStoredSupabaseSessionCandidate(true);
-            const token = String(stored?.access_token || "").trim();
-            if (token) {
-              const byToken = await sb.auth.getUser(token);
-              const tokenUser = normalizeUser(byToken?.data?.user || null);
-              if (tokenUser) return tokenUser;
-            }
-          } catch (_e) {}
-        }
       }
     } catch (_e) {}
-    if (isStrictSessionMode()) return getCachedAuthUserFallback({ allowProfileFallback: false });
-    return getCachedAuthUserFallback({ allowProfileFallback: true });
+    return null;
   }
   const ensureRowState = Object.create(null);
   const authObj = { currentUser: null, signOut: () => window.signOut() };
@@ -444,11 +420,7 @@
     return user || null;
   };
   window.__dokeAuthCompat.ensureAuthUserFromCacheSync = function(){
-    const user = isStrictSessionMode()
-      ? getCachedAuthUserFallback({ allowProfileFallback: false })
-      : getCachedAuthUserFallback({ allowProfileFallback: true });
-    if (user) setCurrentUser(user);
-    return user || null;
+    return null;
   };
 
   if (typeof window.dokeResolveAuthUser !== "function") {

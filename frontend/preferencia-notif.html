@@ -1,17 +1,18 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="doke-nav-boot.js?v=20260309v09"></script>
-<title>PreferÃƒÂªncias de NotificaÃƒÂ§ÃƒÂ£o | Doke</title>
-<script defer="" src="script.js?v=20260307v61"></script>
+<script src="auth-guard.js?v=20260312v03"></script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
+<title>PreferÃªncias de NotificaÃ§Ã£o | Doke</title>
+<script defer="" src="script.js?v=20260312v62"></script>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
@@ -19,12 +20,12 @@
 <style>
         /* ================= ESTILOS LOCAIS ================= */
         
-        /* Ajuste fino para garantir que o conteÃƒÆ’Ã‚Âºdo desÃƒÆ’Ã‚Â§a (caso o style.css nÃƒÆ’Ã‚Â£o tenha padding suficiente no main) */
+        /* Ajuste fino para garantir que o conteÃƒÂºdo desÃƒÂ§a (caso o style.css nÃƒÂ£o tenha padding suficiente no main) */
         main {
             padding-bottom: 10px;
         }
 
-        /* Container do TÃƒÆ’Ã‚Â­tulo + Voltar */
+        /* Container do TÃƒÂ­tulo + Voltar */
         .page-header {
             width: 100%; 
             max-width: 600px; /* Largura fixa para alinhar com o card */
@@ -34,7 +35,7 @@
             gap: 15px;
         }
 
-        /* BotÃƒÆ’Ã‚Â£o Voltar Circular */
+        /* BotÃƒÂ£o Voltar Circular */
         .btn-back {
             background: rgba(255,255,255,0.25); 
             border: 1px solid rgba(255,255,255,0.4);
@@ -63,11 +64,11 @@
             margin: 0;
         }
 
-        /* CartÃƒÆ’Ã‚Â£o Branco Central */
+        /* CartÃƒÂ£o Branco Central */
         .settings-card {
             background: white; 
             width: 100%; 
-            max-width: 700px; /* Define a largura mÃƒÆ’Ã‚Â¡xima */
+            max-width: 700px; /* Define a largura mÃƒÂ¡xima */
             margin: 0 auto;   /* CENTRALIZA O CARD */
             border-radius: 16px; 
             box-shadow: 0 8px 25px rgba(0,0,0,0.04);
@@ -76,7 +77,7 @@
             box-sizing: border-box;
         }
 
-        /* TÃƒÆ’Ã‚Â­tulos das SeÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes */
+        /* TÃƒÂ­tulos das SeÃƒÂ§ÃƒÂµes */
         .section-title {
             font-size: 1.1rem; 
             color: var(--cor2); 
@@ -86,7 +87,7 @@
             border-bottom: 1px solid #eee;
         }
 
-        /* Linhas de OpÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o (Toggle) */
+        /* Linhas de OpÃƒÂ§ÃƒÂ£o (Toggle) */
         .toggle-row {
             display: flex; 
             justify-content: space-between; 
@@ -99,7 +100,7 @@
         .toggle-info h4 { margin: 0; font-size: 1rem; color: #333; font-weight: 600; }
         .toggle-info p { margin: 4px 0 0 0; font-size: 0.85rem; color: #888; }
         
-        /* BotÃƒÆ’Ã‚Â£o Switch Personalizado */
+        /* BotÃƒÂ£o Switch Personalizado */
         .switch { position: relative; display: inline-block; width: 52px; height: 28px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         
@@ -116,10 +117,10 @@
         input:checked + .slider { background-color: var(--cor0); }
         input:checked + .slider:before { transform: translateX(24px); }
 
-        /* EspaÃƒÆ’Ã‚Â§amento entre grupos */
+        /* EspaÃƒÂ§amento entre grupos */
         .group-spacer { margin-top: 40px; }
 
-        /* BotÃƒÆ’Ã‚Â£o Salvar */
+        /* BotÃƒÂ£o Salvar */
         .btn-save {
             width: 100%; 
             padding: 16px; 
@@ -147,7 +148,7 @@
             main { padding-top: 100px; padding-left: 20px; padding-right: 20px; }
         }
     
-        /* Preview de notificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o */
+        /* Preview de notificaÃƒÂ§ÃƒÂ£o */
         .notif-preview{padding:14px 14px; margin:18px 0 14px;}
         .np-head{display:flex;align-items:center;gap:10px;font-weight:900;color:#0f172a;margin-bottom:10px;}
         .np-head i{font-size:20px;color:var(--cor0);}
@@ -181,15 +182,17 @@
 <link href="page-ajustes.css?v=20260208v01" rel="stylesheet"/>
 <link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
-<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/></head>
+<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/><style>.popup{display:none!important;}</style>
+  <link rel="stylesheet" href="site-global-polish.css">
+</head>
 <body data-page="mais">
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">Ãƒâ€”</span>
+<span class="close-btn" onclick="fecharPopup()">Ã—</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                NÃƒÂ£o tem uma conta?
+                NÃ£o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -217,12 +220,12 @@
 </a>
 <a class="settings-nav-item" data-section="enderecos" href="enderecos.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-map"></i></span>
-<span class="settings-nav-text">EndereÃƒÂ§os</span>
+<span class="settings-nav-text">EndereÃ§os</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" data-section="senha" href="senha.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-lock-alt"></i></span>
-<span class="settings-nav-text">SeguranÃƒÂ§a e senha</span>
+<span class="settings-nav-text">SeguranÃ§a e senha</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" data-section="pagamentos" href="pagamentos.html">
@@ -232,7 +235,7 @@
 </a>
 </div>
 <div class="settings-side__group">
-<div class="settings-side__title">PREFERÃƒÅ NCIAS</div>
+<div class="settings-side__title">PREFERÃŠNCIAS</div>
 <div class="settings-toggle-row">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-moon"></i></span>
 <span class="settings-toggle-label">Modo escuro</span>
@@ -243,7 +246,7 @@
 </div>
 <a class="settings-nav-item" data-section="preferencia-notif" href="preferencia-notif.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-bell"></i></span>
-<span class="settings-nav-text">NotificaÃƒÂ§ÃƒÂµes</span>
+<span class="settings-nav-text">NotificaÃ§Ãµes</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" data-section="idioma" href="idioma.html">
@@ -275,11 +278,11 @@
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 </div>
-</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>NotificaÃƒÂ§ÃƒÂµes</h1><p>Escolha o que vocÃƒÂª quer receber e quando.</p></div></div><div class="settings-frame-card"><div class="settings-card">
-<div class="section-title">Canais de ComÃƒÂºnicaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o</div>
+</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>NotificaÃ§Ãµes</h1><p>Escolha o que vocÃª quer receber e quando.</p></div></div><div class="settings-frame-card"><div class="settings-card">
+<div class="section-title">Canais de ComÃºnicaÃƒÂ§ÃƒÂ£o</div>
 <div class="toggle-row">
 <div class="toggle-info">
-<h4>NotificaÃƒÂ§ÃƒÂµes Push</h4>
+<h4>NotificaÃ§Ãµes Push</h4>
 <p>Receber alertas no celular e navegador.</p>
 </div>
 <label class="switch">
@@ -300,7 +303,7 @@
 <div class="toggle-row">
 <div class="toggle-info">
 <h4>WhatsApp / SMS</h4>
-<p>Avisos urgentes sobre serviÃƒÂ§os e seguranÃƒÂ§a.</p>
+<p>Avisos urgentes sobre serviÃ§os e seguranÃ§a.</p>
 </div>
 <label class="switch">
 <input data-pref-key="whatsapp" id="prefWhatsapp" type="checkbox"/>
@@ -308,11 +311,11 @@
 </label>
 </div>
 <div class="group-spacer"></div>
-<div class="section-title">Tipos de NotificaÃƒÂ§ÃƒÂ£o</div>
+<div class="section-title">Tipos de NotificaÃ§Ã£o</div>
 <div class="toggle-row">
 <div class="toggle-info">
 <h4>Mensagens e Chat</h4>
-<p>Quando alguÃƒÂ©m envia uma mensagem direta.</p>
+<p>Quando alguÃ©m envia uma mensagem direta.</p>
 </div>
 <label class="switch">
 <input checked="" data-pref-key="mensagens_chat" id="prefMensagens" type="checkbox"/>
@@ -321,8 +324,8 @@
 </div>
 <div class="toggle-row">
 <div class="toggle-info">
-<h4>AtualizaÃƒÂ§ÃƒÂµes de Pedidos</h4>
-<p>MudanÃƒÂ§as de status, novos orÃƒÂ§amentos, etc.</p>
+<h4>AtualizaÃ§Ãµes de Pedidos</h4>
+<p>MudanÃ§as de status, novos orÃ§amentos, etc.</p>
 </div>
 <label class="switch">
 <input checked="" data-pref-key="pedidos" id="prefPedidos" type="checkbox"/>
@@ -332,7 +335,7 @@
 <div class="toggle-row">
 <div class="toggle-info">
 <h4>Dicas e Comunidade</h4>
-<p>Novidades nos grupos que vocÃƒÂª participa.</p>
+<p>Novidades nos grupos que vocÃª participa.</p>
 </div>
 <label class="switch">
 <input checked="" data-pref-key="comunidade" id="prefComunidade" type="checkbox"/>
@@ -341,7 +344,7 @@
 </div>
 <div class="toggle-row">
 <div class="toggle-info">
-<h4>PromoÃƒÂ§ÃƒÂµes e Ofertas</h4>
+<h4>PromoÃ§Ãµes e Ofertas</h4>
 <p>Descontos exclusivos e campanhas da Doke.</p>
 </div>
 <label class="switch">
@@ -354,17 +357,17 @@
 <div class="np-body">
 <div class="np-toast">
 <div class="np-title">Nova mensagem</div>
-<div class="np-text">JoÃƒÂ£o: Ã‚â€œOi! VocÃƒÂª estÃƒÂ¡ disponÃƒÂ­vel hoje?ÃƒÂ¢Ã‚â‚¬Ã‚Â</div>
+<div class="np-text">JoÃ£o: Â“Oi! VocÃª estÃ¡ disponÃ­vel hoje?Ã¢Â€Â</div>
 </div>
 <div class="np-channels" id="npChannels"></div>
 </div>
 </div>
-<button class="btn-save" onclick="salvarPreferencias()">Salvar AlteraÃƒÂ§ÃƒÂµes</button>
+<button class="btn-save" onclick="salvarPreferencias()">Salvar AlteraÃ§Ãµes</button>
 </div></div></section></div><div aria-hidden="true" class="settings-drawer-overlay" id="settingsDrawerOverlay"></div></div></main>
 <nav class="bottom-nav">
 <a class="item active" href="index.html">
-<img alt="InÃƒÂ­cio" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/>
-<span>InÃƒÂ­cio</span>
+<img alt="InÃ­cio" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/>
+<span>InÃ­cio</span>
 </a>
 <a class="item" href="busca.html">
 <img alt="Explorar" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/>
@@ -375,8 +378,8 @@
 <span>Anunciar</span>
 </a>
 <a class="item" href="notificacoes.html">
-<img alt="NotificaÃƒÂ§ÃƒÂµes" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/>
-<span>NotificaÃƒÂ§ÃƒÂµes</span>
+<img alt="NotificaÃ§Ãµes" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/>
+<span>NotificaÃ§Ãµes</span>
 </a>
 <a class="item" href="#" onclick="irParaMeuPerfil(event)">
 <img alt="Perfil" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/>
@@ -504,7 +507,7 @@
                 btn.style.background = "#199e63";
             } catch (error) {
                 console.error(error);
-                btn.innerText = "NÃƒÂ£o foi possivel salvar";
+                btn.innerText = "NÃ£o foi possivel salvar";
                 btn.style.background = "#d9534f";
             } finally {
                 setTimeout(() => {
@@ -560,8 +563,9 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260309v97"></script>
-<script defer="True" src="settings-pages.js?v=20260301v02"></script></body>
+<script src="doke-shell.js?v=20260312v99"></script>
+<script defer="True" src="settings-pages.js?v=20260301v02"></script>  <script src="site-global-polish.js"></script>
+</body>
 </html>
 
 

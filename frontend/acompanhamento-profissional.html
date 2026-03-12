@@ -1,12 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="doke-nav-boot.js?v=20260309v09"></script>
-<title>Andamento da ValidaÃ§Ã£o | Doke</title>
+  <script src="auth-guard.js?v=20260312v03"></script>
+  <script src="doke-nav-boot.js?v=20260312v11"></script>
+<title>Andamento da Validação | Doke</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js?v=20260218v43"></script>
+  <script src="supabase-init.js?v=20260312v44"></script>
   <link href="style.css?v=20260227v01" rel="stylesheet" />
   <link href="doke-a11y.css?v=20260207v21" rel="stylesheet" />
   <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet" />
@@ -177,6 +178,7 @@
       line-height: 1.45;
     }
   </style>
+  <link rel="stylesheet" href="site-global-polish.css">
 </head>
 <body data-page="mais">
   
@@ -189,37 +191,37 @@
 
   <main class="vp-wrap">
     <section class="vp-hero">
-      <h1>Andamento da validaÃ§Ã£o profissional</h1>
-      <p>Seu envio foi recebido e estÃ¡ em anÃ¡lise da equipe Doke. VocÃª serÃ¡ avisado quando a revisÃ£o terminar.</p>
+      <h1>Andamento da validação profissional</h1>
+      <p>Seu envio foi recebido e está em análise da equipe Doke. Você será avisado quando a revisão terminar.</p>
     </section>
 
     <section class="vp-content">
       <article class="vp-card">
-        <h2 class="vp-title"><i class='bx bx-check-shield'></i> Status da solicitaÃ§Ã£o</h2>
+        <h2 class="vp-title"><i class='bx bx-check-shield'></i> Status da solicitação</h2>
         <div id="vpStatusBadge" class="vp-badge" data-status="pendente"><i class='bx bx-time-five'></i> Carregando...</div>
-        <div class="vp-line" id="vpUpdatedLine">AtualizaÃ§Ã£o: --</div>
-        <div class="vp-estimate" id="vpEstimateLine">Estimativa de anÃ¡lise: atÃ© 2 dias Ãºteis.</div>
+        <div class="vp-line" id="vpUpdatedLine">Atualização: --</div>
+        <div class="vp-estimate" id="vpEstimateLine">Estimativa de análise: até 2 dias úteis.</div>
         <div class="vp-line" id="vpReasonLine" style="display:none;"></div>
 
         <div class="vp-steps" id="vpSteps">
           <div class="vp-step" data-step="enviado"><i class='bx bx-upload'></i> Dados e documento enviados</div>
-          <div class="vp-step" data-step="analise"><i class='bx bx-search-alt-2'></i> Em anÃ¡lise da equipe</div>
-          <div class="vp-step" data-step="resultado"><i class='bx bx-badge-check'></i> Resultado da validaÃ§Ã£o</div>
+          <div class="vp-step" data-step="analise"><i class='bx bx-search-alt-2'></i> Em análise da equipe</div>
+          <div class="vp-step" data-step="resultado"><i class='bx bx-badge-check'></i> Resultado da validação</div>
         </div>
 
         <div class="vp-actions">
           <button type="button" class="vp-btn secondary" id="vpRefreshBtn"><i class='bx bx-refresh'></i> Atualizar status</button>
           <button type="button" class="vp-btn secondary" id="vpBackBtn"><i class='bx bx-arrow-back'></i> Voltar</button>
           <a class="vp-btn secondary" id="vpFixBtn" href="tornar-profissional.html" style="display:none;"><i class='bx bx-edit-alt'></i> Ajustar envio</a>
-          <a class="vp-btn primary" id="vpAnnounceBtn" href="anunciar.html" style="display:none;"><i class='bx bx-plus-circle'></i> Criar anÃºncio</a>
+          <a class="vp-btn primary" id="vpAnnounceBtn" href="anunciar.html" style="display:none;"><i class='bx bx-plus-circle'></i> Criar anúncio</a>
         </div>
       </article>
 
       <article class="vp-card">
         <h2 class="vp-title"><i class='bx bx-info-circle'></i> Como funciona</h2>
-        <p class="vp-note">1. VocÃª envia seus dados e documento.</p>
-        <p class="vp-note">2. Um analista confere as informaÃ§Ãµes.</p>
-        <p class="vp-note">3. ApÃ³s aprovaÃ§Ã£o, seu perfil profissional Ã© liberado para anunciar.</p>
+        <p class="vp-note">1. Você envia seus dados e documento.</p>
+        <p class="vp-note">2. Um analista confere as informações.</p>
+        <p class="vp-note">3. Após aprovação, seu perfil profissional é liberado para anunciar.</p>
       </article>
     </section>
   </main>
@@ -257,7 +259,7 @@
       function setBadge(status){
         const map = {
           pendente: { icon: "bx bx-time-five", label: "Pendente" },
-          analise: { icon: "bx bx-loader-alt", label: "Em anÃ¡lise" },
+          analise: { icon: "bx bx-loader-alt", label: "Em análise" },
           aprovado: { icon: "bx bx-check-circle", label: "Aprovado" },
           rejeitado: { icon: "bx bx-x-circle", label: "Rejeitado" }
         };
@@ -301,13 +303,13 @@
         setBadge(status);
         setSteps(status);
         updateActions(status);
-        updatedLine.textContent = `AtualizaÃ§Ã£o: ${fmtDate(updatedAt)}`;
+        updatedLine.textContent = `Atualização: ${fmtDate(updatedAt)}`;
 
         if(estimateLine){
-          if(status === "aprovado") estimateLine.textContent = "Estimativa: processo concluÃ­do.";
-          else if(status === "rejeitado") estimateLine.textContent = "Estimativa: ajuste os dados e reenvie para nova anÃ¡lise.";
-          else if(status === "analise") estimateLine.textContent = "Estimativa de conclusÃ£o: atÃ© 2 dias Ãºteis.";
-          else estimateLine.textContent = "Estimativa de anÃ¡lise: atÃ© 2 dias Ãºteis.";
+          if(status === "aprovado") estimateLine.textContent = "Estimativa: processo concluído.";
+          else if(status === "rejeitado") estimateLine.textContent = "Estimativa: ajuste os dados e reenvie para nova análise.";
+          else if(status === "analise") estimateLine.textContent = "Estimativa de conclusão: até 2 dias úteis.";
+          else estimateLine.textContent = "Estimativa de análise: até 2 dias úteis.";
         }
 
         if(status === "rejeitado" && reason){
@@ -351,7 +353,7 @@
       async function loadStatus(){
         if(!sb || !sb.auth || !sb.from){
           setBadge("pendente");
-          updatedLine.textContent = "AtualizaÃ§Ã£o: Supabase indisponÃ­vel.";
+          updatedLine.textContent = "Atualização: Supabase indisponível.";
           return;
         }
 
@@ -360,7 +362,7 @@
           const uid = uRes?.data?.user?.id || "";
           if(!uid){
             setBadge("pendente");
-            updatedLine.textContent = "AtualizaÃ§Ã£o: faÃ§a login para acompanhar.";
+            updatedLine.textContent = "Atualização: faça login para acompanhar.";
             return;
           }
 
@@ -374,7 +376,7 @@
 
           if(res?.error){
             setBadge("pendente");
-            updatedLine.textContent = "AtualizaÃ§Ã£o: nÃ£o foi possÃ­vel carregar agora.";
+            updatedLine.textContent = "Atualização: não foi possível carregar agora.";
             return;
           }
 
@@ -385,7 +387,7 @@
             setBadge("pendente");
             setSteps("pendente");
             updateActions("pendente");
-            updatedLine.textContent = "AtualizaÃ§Ã£o: nenhuma solicitaÃ§Ã£o encontrada.";
+            updatedLine.textContent = "Atualização: nenhuma solicitação encontrada.";
             return;
           }
 
@@ -397,7 +399,7 @@
           cacheStatus(status, updatedAt);
         }catch(_){
           setBadge("pendente");
-          updatedLine.textContent = "AtualizaÃ§Ã£o: erro ao carregar o status.";
+          updatedLine.textContent = "Atualização: erro ao carregar o status.";
         }
       }
 
@@ -419,9 +421,9 @@
   <script src="doke-toast.js"></script>
   <script src="doke-alerts.js?v=20260217v33"></script>
   <script defer src="doke-config.js"></script><script defer src="doke-ux.js"></script>
-  <script defer src="script.js?v=20260307v61"></script>
-  <script src="doke-shell.js?v=20260309v97"></script>
+  <script defer src="script.js?v=20260312v62"></script>
+  <script src="doke-shell.js?v=20260312v99"></script>
+  <script src="site-global-polish.js"></script>
 </body>
 </html>
-
 

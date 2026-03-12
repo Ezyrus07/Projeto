@@ -915,3 +915,47 @@
   }
   .doke-search-results{ order: 4 !important; }
 }
+
+
+@media (max-width:1024px){
+  html.doke-home-mobile-fix,
+  html.doke-home-mobile-fix body,
+  html.doke-home-mobile-fix .doke-mobile-header{
+    background: #f4f7f6 !important;
+  }
+}
+
+/* UI System bridge */
+.doke-shell-main{background:var(--doke-bg,#f3f6fb)}
+@media (max-width:640px){.doke-shell-main{overflow-x:hidden}}
+
+/* === RESPONSIVE PHASE 2: shell mobile safe-area and floating controls === */
+@media (max-width: 768px){
+  :root{
+    --doke-mobile-safe-bottom: calc(var(--bottom-nav-height, 76px) + env(safe-area-inset-bottom, 0px) + 54px);
+  }
+
+  html, body{
+    overflow-x: hidden !important;
+  }
+
+  body.doke-shell-active,
+  body.has-bottom-nav,
+  body[data-page]{
+    padding-bottom: var(--doke-mobile-safe-bottom) !important;
+  }
+
+  .doke-shell-main,
+  .app-shell-main,
+  main,
+  #app,
+  #root{
+    padding-bottom: calc(var(--doke-mobile-safe-bottom) + 18px) !important;
+  }
+
+  .doke-bottom-nav,
+  .bottom-nav{
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+    min-height: calc(var(--bottom-nav-height, 76px) + env(safe-area-inset-bottom, 0px) + 8px) !important;
+  }
+}

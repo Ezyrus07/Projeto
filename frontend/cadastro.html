@@ -1,11 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <script>window.__DOKE_LEGACY_SHELL_DISABLED__=true;try{document.documentElement.classList.add("doke-no-shell");}catch(e){}</script>
-<script src="doke-nav-boot.js?v=20260309v09"></script>
+<script>(function(){try{var u=new URL(location.href);if(!u.searchParams.has("noshell")){u.searchParams.set("noshell","1");location.replace(u.toString());}}catch(e){}})();</script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
 <title>Criar Conta | Doke</title>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
@@ -13,7 +14,7 @@
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <!-- Supabase (UMD) + init -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <style>
     :root{
       --card-radius: 22px;
@@ -22,14 +23,18 @@
     }
 
     body{
-      background: radial-gradient(900px 600px at 15% 10%, rgba(255,255,255,.16), transparent 60%),
-                  linear-gradient(135deg, var(--cor0) 0%, #064e42 55%, #043a31 100%);
+      background: radial-gradient(900px 600px at 15% 10%, rgba(255,255,255,.12), transparent 60%),
+                  linear-gradient(135deg, #1f8a70 0%, #166b57 55%, #105447 100%);
       min-height: 100vh;
       display: grid;
       place-items: center;
       padding: 24px;
       overflow-x: hidden;
     }
+    html, body{margin:0;}
+    body > .doke-v2, body > header, body > nav, body > aside, body > .top-header, body > .menu-lateral, body > .sidebar-icones, body > .bottom-nav, body > .doke-shell, body > #overlay-menu, body > .popup{display:none !important;}
+    body.auth-page .auth-shell, body > .auth-shell{display:grid !important;}
+
 
     .auth-shell{
       width: 100%;
@@ -45,15 +50,7 @@
       .auth-aside{ display:none; }
     }
 
-    @media (max-width: 1024px){
-      body.doke-shell-active{
-        place-items: start center;
-        padding-top: calc(var(--doke-h, 56px) + 20px);
-      }
-      body.doke-shell-active .auth-shell{
-        margin-top: 10px;
-      }
-    }
+    
 
     .auth-card{
       background: #fff;
@@ -193,7 +190,7 @@
       color:#8a96a3;
     }
 
-    /* MantÃ¯Â¿Â½m apenas um indicador de forÃ¯Â¿Â½a nesta pÃ¯Â¿Â½gina (o .pw-meter). */
+    /* Mantï¿½m apenas um indicador de forï¿½a nesta pï¿½gina (o .pw-meter). */
     .auth-card .doke-pw-meter{ display: none !important; }
 
     .btn-primary{
@@ -363,27 +360,12 @@
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet">
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-<link href="doke-shell.css?v=20260207v21" rel="stylesheet"/>
-<link href="doke-responsive.css?v=20260207v21" rel="stylesheet"/>
-<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
-<link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
+  <link rel="stylesheet" href="ui-system.css">
+<style>html,body{margin:0;} body.auth-page, body.auth-page.doke-shell-active{background:radial-gradient(900px 600px at 15% 10%, rgba(255,255,255,.16), transparent 60%), linear-gradient(135deg, #1f8a70 0%, #0f6f5a 55%, #075346 100%) !important; min-height:100vh !important; display:grid !important; place-items:center !important; padding:24px !important; overflow-x:hidden !important;} body.auth-page > .doke-v2, body.auth-page > header, body.auth-page > nav, body.auth-page > aside, body.auth-page > .top-header, body.auth-page > .menu-lateral, body.auth-page > .sidebar-icones, body.auth-page > .bottom-nav, body.auth-page > .doke-shell, body.auth-page > #overlay-menu, body.auth-page > .popup{display:none !important;} body.auth-page .auth-shell{display:grid !important;} </style>
+<script>document.addEventListener('DOMContentLoaded',function(){try{document.body.classList.add('auth-page');var shell=document.querySelector('.auth-shell');if(shell)shell.style.display='grid';}catch(e){}});</script>
+  <link rel="stylesheet" href="site-global-polish.css">
 </head>
-<body>
-<div class="popup" id="popup">
-<div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">Ã—</span>
-<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
-<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
-<p class="criar">
-                NÃ£o tem uma conta?
-                <a href="cadastro.html">Criar conta</a>
-</p>
-</div>
-</div>
-
-<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
-
-<div class="auth-shell">
+<body class="auth-page"><div class="auth-shell">
 <div class="auth-card">
 <a aria-label="Voltar" class="btn-voltar" href="login.html"><i class="bx bx-arrow-back"></i></a>
 <div class="auth-card-inner">
@@ -392,16 +374,16 @@
 <span class="tag">Novo por aqui</span>
 </div>
 <h2 class="auth-title">Crie sua conta</h2>
-<p class="auth-subtitle">Junte-se Ã© comunidade Doke. Em menos de 1 minuto vocÃª jÃ¡ pode explorar e anunciar.</p>
+<p class="auth-subtitle">Junte-se é comunidade Doke. Em menos de 1 minuto você já pode explorar e anunciar.</p>
 <form data-guard-submit="" id="formCadastro" novalidate="">
 <div class="grid">
 <div class="form-group">
-<label for="usuario">Nome de UsuÃ¡rio (@)</label>
+<label for="usuario">Nome de Usuário (@)</label>
 <div class="input-icon">
 <i class="bx bx-at"></i>
-<input autocomplete="username" id="usuario" maxlength="20" placeholder="Seu usuÃ¡rio" required="" type="text"/>
+<input autocomplete="username" id="usuario" maxlength="20" placeholder="Seu usuário" required="" type="text"/>
 </div>
-<div class="hint">Sem espaÃ§os. Pode usar ponto e underline.</div>
+<div class="hint">Sem espaços. Pode usar ponto e underline.</div>
 </div>
 <div class="form-group">
 <label for="nome">Nome Completo</label>
@@ -417,7 +399,7 @@
 <i class="bx bx-calendar"></i>
 <input autocomplete="bday" id="dataNascimento" required="" type="date"/>
 </div>
-<div class="hint">VocÃª precisa ter pelo menos 18 anos.</div>
+<div class="hint">Você precisa ter pelo menos 18 anos.</div>
 </div>
 <div class="form-group">
 <label for="email">E-mail</label>
@@ -434,7 +416,7 @@
 </div>
 <div class="pw-meter">
 <div class="pw-bar"><div id="pwBar"></div></div>
-<div class="pw-label" id="pwLabel">Ã—</div>
+<div class="pw-label" id="pwLabel">�-</div>
 </div>
 </div>
 <div class="form-group">
@@ -447,34 +429,34 @@
 <button class="btn-primary" id="btnCriar" type="submit">Criar Conta</button>
 <div class="msg" id="msg"></div>
 <div class="footer-login">
-            JÃ¡ tem uma conta? <a href="login.html">Fazer login</a>
+            Já tem uma conta? <a href="login.html">Fazer login</a>
 </div>
 </form>
 </div>
 </div>
 <aside class="auth-aside">
-<h3 class="aside-title">Tudo pronto para comeÃ§ar</h3>
-<p class="aside-p">Seu perfil nasce como <b>Cliente</b>. Se quiser anunciar, vocÃª ativa o modo <b>Profissional</b> depois com 1 clique.</p>
+<h3 class="aside-title">Tudo pronto para começar</h3>
+<p class="aside-p">Seu perfil nasce como <b>Cliente</b>. Se quiser anunciar, você ativa o modo <b>Profissional</b> depois com 1 clique.</p>
 <div class="aside-list">
 <div class="aside-item">
 <i class="bx bx-check-shield"></i>
 <div>
 <b>Conta segura</b>
-<span>Cadastro via Supabase Auth. VocÃª mantÃ©m controle total.</span>
+<span>Cadastro via Supabase Auth. Você mantém controle total.</span>
 </div>
 </div>
 <div class="aside-item">
 <i class="bx bx-video"></i>
 <div>
 <b>Feed moderno</b>
-<span>Fotos/vÃ­deos e vÃ­deos-curtos com modais padronizados.</span>
+<span>Fotos/vídeos e vídeos-curtos com modais padronizados.</span>
 </div>
 </div>
 <div class="aside-item">
 <i class="bx bx-receipt"></i>
 <div>
-<b>OrÃ§amento em 1 clique</b>
-<span>Solicite orÃ§amento direto do anÃºncio.</span>
+<b>Orçamento em 1 clique</b>
+<span>Solicite orçamento direto do anúncio.</span>
 </div>
 </div>
 </div>
@@ -538,7 +520,7 @@
       bar.style.width = pct + "%";
       bar.style.background = score <= 1 ? "var(--cor3)" : (score <= 3 ? "var(--cor2)" : "var(--cor0)");
 
-      const text = ["â€”","Fraca","Ok","Boa","Forte","Muito forte"][score] || "â€”";
+      const text = ["�?"","Fraca","Ok","Boa","Forte","Muito forte"][score] || "�?"";
       label.textContent = text;
       label.style.color = score <= 1 ? "var(--cor3)" : (score <= 3 ? "#2a5f90" : "var(--cor0)");
     }
@@ -618,12 +600,12 @@
       const pick = () => window.sb || window.supabaseClient || window.sbClient || window.supabase;
       let sb = pick();
       if (!sb || typeof sb.from !== "function" || !sb.auth) {
-        // pequena espera para casos de carregamento assÃ³ncrono
+        // pequena espera para casos de carregamento assóncrono
         await new Promise((r) => setTimeout(r, 80));
         sb = pick();
       }
       if (!sb || typeof sb.from !== "function" || !sb.auth) {
-        throw new Error("Supabase nÃ£o inicializado. Verifique supabase-init.js?v=20260218v43");
+        throw new Error("Supabase não inicializado. Verifique supabase-init.js?v=20260312v44");
       }
       return sb;
     }
@@ -643,15 +625,15 @@
       const idade = calcAgeFromISO(dataNascimento);
 
       if (!nome || nome.length < 2) return showMsg("err", "Digite seu nome completo.");
-      if (handle === "__INVALID__") return showMsg("err", "Nome de usuÃ¡rio invÃ¡lido. Use apenas letras, nÃºmeros, ponto e underline.");
-      if (handle === "__SHORT__") return showMsg("err", "Nome de usuÃ¡rio muito curto.");
-      if (handle === "__LONG__") return showMsg("err", "Nome de usuÃ¡rio muito longo. Use atÃ© 20 caracteres.");
-      if (!email.includes("@")) return showMsg("err", "Digite um e-mail vÃ¡lido.");
+      if (handle === "__INVALID__") return showMsg("err", "Nome de usuário inválido. Use apenas letras, números, ponto e underline.");
+      if (handle === "__SHORT__") return showMsg("err", "Nome de usuário muito curto.");
+      if (handle === "__LONG__") return showMsg("err", "Nome de usuário muito longo. Use até 20 caracteres.");
+      if (!email.includes("@")) return showMsg("err", "Digite um e-mail válido.");
       if (!dataNascimento) return showMsg("err", "Informe sua data de nascimento.");
       if (!Number.isFinite(idade)) return showMsg("err", "Data de nascimento invalida.");
-      if (idade < 18) return showMsg("err", "VocÃª precisa ter pelo menos 18 anos para criar conta.");
-      if ((senha || "").length < 6) return showMsg("err", "A senha precisa ter no mÃ­nimo 6 caracteres.");
-      if (senha !== confirmarSenha) return showMsg("err", "As senhas nÃ£o coincidem.");
+      if (idade < 18) return showMsg("err", "Você precisa ter pelo menos 18 anos para criar conta.");
+      if ((senha || "").length < 6) return showMsg("err", "A senha precisa ter no mínimo 6 caracteres.");
+      if (senha !== confirmarSenha) return showMsg("err", "As senhas não coincidem.");
 
       btn.disabled = true;
       btn.textContent = "Criando...";
@@ -686,9 +668,10 @@
           localStorage.setItem("doke_usuario_perfil", JSON.stringify(perfil));
           localStorage.setItem("usuarioLogado", "true");
           localStorage.setItem("doke_uid", uid);
+          try { localStorage.setItem("doke_auth_verified_at", String(Date.now())); sessionStorage.setItem("doke_auth_verified_at", String(Date.now())); } catch (_) {}
         };
 
-        // Username uniqueness (table: usuÃ¡rios)
+        // Username uniqueness (table: usuários)
         let existing = null;
         let exErr = null;
         const firstCheck = await supabase
@@ -713,7 +696,7 @@
         // ignore "no rows" variations (maybeSingle can return "no rows" codes depending on version)
         if (exErr && exErr.code && exErr.code !== "PGRST116") {
           // If it's a real error, stop.
-          // If you get an RLS error here, fix policies on table 'usuÃ¡rios'.
+          // If you get an RLS error here, fix policies on table 'usuários'.
           throw exErr;
         }
 
@@ -723,7 +706,7 @@
           const isInactive = status === "excluida" || status === "desativada" || !!existing.conta_excluida_em || existing.conta_ativa === false;
 
           if (!isInactive && !sameEmail) {
-            showMsg("err", "Esse nome de usuÃ¡rio jÃ¡ estÃ¡ em uso.");
+            showMsg("err", "Esse nome de usuário já está em uso.");
             return;
           }
         }
@@ -737,7 +720,7 @@
 
         const uid = signData.user?.id;
         if (!uid) {
-          showMsg("ok", "Conta criada! Verifique seu e-mail para confirmar e depois faÃ§a login.");
+          showMsg("ok", "Conta criada! Verifique seu e-mail para confirmar e depois faça login.");
           return;
         }
 
@@ -745,14 +728,14 @@
         const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
 const novoPerfil = {
-  id: uid,          // Ã°Å¸â€Â¥ ESSENCIAL
+  id: uid,          // ðŸ�?�¥ ESSENCIAL
   uid: uid,         // opcional (se quiser manter)
   nome,
   user: handle,
   email,
   data_nascimento: dataNascimento,
   isProfissional: false,
-  bio: "OlÃ¡! Sou novo na comunidade Doke.",
+  bio: "Olá! Sou novo na comunidade Doke.",
   local: "Brasil",
   foto: "https://placehold.co/150x150?text=" + nome.charAt(0).toUpperCase(),
   conta_status: "ativa",
@@ -776,9 +759,11 @@ const novoPerfil = {
         const hasSession = !!signData?.session?.access_token;
         if (!hasSession) {
           try { localStorage.removeItem("usuarioLogado"); } catch (_) {}
-          try { localStorage.removeItem("doke_uid"); } catch (_) {}
+          try { localStorage.removeItem("doke_uid");
+            localStorage.removeItem("doke_auth_verified_at");
+            try { sessionStorage.removeItem("doke_auth_verified_at"); } catch (_) {} } catch (_) {}
           try { localStorage.removeItem("doke_usuario_perfil"); } catch (_) {}
-          showMsg("ok", "Conta criada. Confirme seu e-mail e depois faÃ§a login.");
+          showMsg("ok", "Conta criada. Confirme seu e-mail e depois faça login.");
           setTimeout(() => { window.location.href = "login.html?cadastro=ok"; }, 900);
           return;
         }
@@ -807,7 +792,7 @@ const novoPerfil = {
                 email,
                 data_nascimento: dataNascimento,
                 isProfissional: false,
-                bio: "OlÃ¡! Sou novo na comunidade Doke.",
+                bio: "Olá! Sou novo na comunidade Doke.",
                 local: "Brasil",
                 foto: "https://placehold.co/150x150?text=" + nome.charAt(0).toUpperCase(),
                 membroDesde: `${meses[now.getMonth()]} ${now.getFullYear()}`
@@ -816,27 +801,29 @@ const novoPerfil = {
               localStorage.setItem("doke_usuario_perfil", JSON.stringify(perfilBase));
               localStorage.setItem("usuarioLogado", "true");
               localStorage.setItem("doke_uid", relogUid);
-              showMsg("ok", "Conta jÃ¡ existia e foi acessada. Redirecionando...");
+              showMsg("ok", "Conta já existia e foi acessada. Redirecionando...");
               setTimeout(() => { window.location.href = "perfil-usuario.html"; }, 700);
               return;
             }
             try { await supabase.auth.resend({ type: "signup", email }); } catch (_) {}
           } catch (_) {}
           try { localStorage.removeItem("usuarioLogado"); } catch (_) {}
-          try { localStorage.removeItem("doke_uid"); } catch (_) {}
+          try { localStorage.removeItem("doke_uid");
+            localStorage.removeItem("doke_auth_verified_at");
+            try { sessionStorage.removeItem("doke_auth_verified_at"); } catch (_) {} } catch (_) {}
           try { localStorage.removeItem("doke_usuario_perfil"); } catch (_) {}
-          showMsg("err", "Este e-mail jÃ¡ estÃ¡ cadastrado. Se vocÃª acabou de criar, confirme o e-mail e faÃ§a login.");
+          showMsg("err", "Este e-mail já está cadastrado. Se você acabou de criar, confirme o e-mail e faça login.");
         } else if (isMissingColumnError(e) && errMsg.toLowerCase().includes("conta_ativa")) {
-          showMsg("err", "Seu banco ainda nÃ£o tem o campo conta_ativa. Rode o SQL de atualizacao e tente novamente.");
+          showMsg("err", "Seu banco ainda não tem o campo conta_ativa. Rode o SQL de atualizacao e tente novamente.");
         } else if (errMsg.toLowerCase().includes("password")) {
           showMsg("err", friendlyPasswordError(errMsg));
         } else if (errMsg.toLowerCase().includes("permission") || errMsg.toLowerCase().includes("rls")) {
-          showMsg("err", "PermissÃ³o negada. Verifique as polÃ­ticas (RLS) no Supabase para a tabela 'usuÃ¡rios'.");
+          showMsg("err", "Permissóo negada. Verifique as políticas (RLS) no Supabase para a tabela 'usuários'.");
         } else if (
           errMsg.toLowerCase().includes("duplicate key") ||
           errMsg.toLowerCase().includes("unique constraint")
         ) {
-          showMsg("err", "Esse nome de usuÃ¡rio ainda estÃ¡ reservado. Tente outro nome de usuÃ¡rio.");
+          showMsg("err", "Esse nome de usuário ainda está reservado. Tente outro nome de usuário.");
         } else {
           showMsg("err", errMsg || "Erro ao criar conta.");
         }
@@ -849,7 +836,8 @@ const novoPerfil = {
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260309v97"></script>
+
+  <script src="site-global-polish.js"></script>
 </body>
 </html>
 

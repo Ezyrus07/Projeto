@@ -1,27 +1,28 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="doke-nav-boot.js?v=20260309v09"></script>
+<script src="auth-guard.js?v=20260312v03"></script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
 <title>Dados Pessoais | Doke</title>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260307v61"></script>
+<script defer="" src="script.js?v=20260312v62"></script>
 <style>
-        /* ================= VARIÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃƒâ€šÃ‚ÂVEIS E RESET ================= */
+        /* ================= VARIÃƒÂƒÃ†Â’ÃƒÂ‚Ã‚ÂVEIS E RESET ================= */
         :root {
             --cor0: #0b7768; /* Verde Principal */
             --cor1: #737373; /* Cinza Texto */
-            --cor2: #2a5f90; /* Azul TÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃƒâ€šÃ‚Â­tulos */
+            --cor2: #2a5f90; /* Azul TÃƒÂƒÃ†Â’ÃƒÂ‚Ã‚Â­tulos */
             --cor3: #f35b5b; /* Vermelho/Alerta */
             --cor4: #ecedf2; /* Cinza Fundo Claro */
             --cor-borda: #e0e0e0;
@@ -40,7 +41,7 @@
 
         a { text-decoration: none; }
 
-        /* ================= ÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃƒâ€šÃ‚ÂREA PRINCIPAL (Direita) ================= */
+        /* ================= ÃƒÂƒÃ†Â’ÃƒÂ‚Ã‚ÂREA PRINCIPAL (Direita) ================= */
         .main-content {
             flex: 1; 
             padding: 40px;
@@ -55,7 +56,7 @@
             }
         }
 
-        /* Topo com BotÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃƒâ€šÃ‚Â£o Voltar */
+        /* Topo com BotÃƒÂƒÃ†Â’ÃƒÂ‚Ã‚Â£o Voltar */
         .page-header {
             width: 100%;
             max-width: 600px;
@@ -73,13 +74,13 @@
         }
         .btn-back:hover { background: white; color: var(--cor2); }
         .page-header h1 {
-            color: white; /* Ajustado para branco pois o fundo do topo ÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃƒâ€šÃ‚Â© escuro */
+            color: white; /* Ajustado para branco pois o fundo do topo ÃƒÂƒÃ†Â’ÃƒÂ‚Ã‚Â© escuro */
             font-size: 1.8rem;
             font-weight: 700;
             text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Card do FormulÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃƒâ€šÃ‚Â¡rio */
+        /* Card do FormulÃƒÂƒÃ†Â’ÃƒÂ‚Ã‚Â¡rio */
         .form-card {
             background: white;
             width: 100%;
@@ -220,15 +221,17 @@
 <link href="page-ajustes.css?v=20260208v01" rel="stylesheet"/>
 <link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
-<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/></head>
+<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/><style>.popup{display:none!important;}</style>
+  <link rel="stylesheet" href="site-global-polish.css">
+</head>
 <body data-page="mais">
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">Ãƒâ€”</span>
+<span class="close-btn" onclick="fecharPopup()">Ã—</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                NÃƒÂ£o tem uma conta?
+                NÃ£o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -256,12 +259,12 @@
 </a>
 <a class="settings-nav-item" data-section="enderecos" href="enderecos.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-map"></i></span>
-<span class="settings-nav-text">EndereÃƒÂ§os</span>
+<span class="settings-nav-text">EndereÃ§os</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" data-section="senha" href="senha.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-lock-alt"></i></span>
-<span class="settings-nav-text">SeguranÃƒÂ§a e senha</span>
+<span class="settings-nav-text">SeguranÃ§a e senha</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" data-section="pagamentos" href="pagamentos.html">
@@ -271,7 +274,7 @@
 </a>
 </div>
 <div class="settings-side__group">
-<div class="settings-side__title">PREFERÃƒÆ’Ã‚Æ’Ã‚Æ’Ãƒâ€¦Ã‚Â NCIAS</div>
+<div class="settings-side__title">PREFERÃƒÂƒÂƒÃ…Â NCIAS</div>
 <div class="settings-toggle-row">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-moon"></i></span>
 <span class="settings-toggle-label">Modo escuro</span>
@@ -282,7 +285,7 @@
 </div>
 <a class="settings-nav-item" data-section="preferencia-notif" href="preferencia-notif.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-bell"></i></span>
-<span class="settings-nav-text">NotificaÃƒÂ§ÃƒÂµes</span>
+<span class="settings-nav-text">NotificaÃ§Ãµes</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" data-section="idioma" href="idioma.html">
@@ -314,7 +317,7 @@
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 </div>
-</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>Dados pessoais</h1><p>Atualize suas informaÃƒÂ§ÃƒÂµes bÃƒÂ¡sicas e de contato.</p></div></div><div class="settings-frame-card"><div class="form-card">
+</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>Dados pessoais</h1><p>Atualize suas informaÃ§Ãµes bÃ¡sicas e de contato.</p></div></div><div class="settings-frame-card"><div class="form-card">
 <div class="profile-photo-area">
 <div class="avatar-container">
 <img class="avatar-img" decoding="async" id="profilePreview" loading="lazy" src="https://placehold.co/150"/>
@@ -324,7 +327,7 @@
 <input accept="image/*" hidden="" id="uploadFoto" onchange="previewImage(event)" type="file"/>
 <input id="hiddenFotoBase64" type="hidden"/>
 </div>
-<span>Toque no ÃƒÂ­cone para alterar</span>
+<span>Toque no Ã­cone para alterar</span>
 </div>
 <form onsubmit="salvarDados(event)">
 <div class="input-group">
@@ -334,11 +337,11 @@
 <div class="input-group">
 <label>E-mail</label>
 <input class="input-readonly" id="inputEmail" placeholder="Carregando..." readonly="" type="email"/>
-<small style="color:#999; font-size:0.8rem; margin-top:5px; display:block;">O e-mail nÃƒÂ£o pode ser alterado por aqui.</small>
+<small style="color:#999; font-size:0.8rem; margin-top:5px; display:block;">O e-mail nÃ£o pode ser alterado por aqui.</small>
 </div>
 <div class="input-group">
 <label>CPF / CNPJ</label>
-<input class="input-readonly" id="inputDoc" placeholder="NÃƒÂ£o informado" readonly="" type="text"/>
+<input class="input-readonly" id="inputDoc" placeholder="NÃ£o informado" readonly="" type="text"/>
 </div>
 <div class="input-group">
 <label>Telefone / WhatsApp</label>
@@ -348,19 +351,19 @@
 <label>Data de Nascimento</label>
 <input id="inputNasc" type="date"/>
 </div>
-<button class="btn-salvar" id="btnSalvar" type="submit">Salvar AlteraÃƒÂ§ÃƒÂµes</button>
+<button class="btn-salvar" id="btnSalvar" type="submit">Salvar AlteraÃ§Ãµes</button>
 </form>
 </div></div></section></div><div aria-hidden="true" class="settings-drawer-overlay" id="settingsDrawerOverlay"></div></div></main>
 <nav class="bottom-nav">
-<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>InÃƒÂ­cio</span></a>
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>InÃ­cio</span></a>
 <a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
 <a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
-<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>NotificaÃƒÂ§ÃƒÂµes</span></a>
+<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>NotificaÃ§Ãµes</span></a>
 <a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
 </nav>
 <script>
-        // Dados Pessoais (Supabase) - carrega do Auth + tabela usuÃƒÂ¡rios + validaÃƒÂ§ÃƒÂ£o (tornar-profissional)
-        // Objetivo: o que vocÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃ‚Âª preencheu no tornar-profissional aparecer aqui, e o nome/user ficarem consistentes.
+        // Dados Pessoais (Supabase) - carrega do Auth + tabela usuÃ¡rios + validaÃ§Ã£o (tornar-profissional)
+        // Objetivo: o que vocÃƒÂƒÃ†Â’ÃƒÂ‚Âª preencheu no tornar-profissional aparecer aqui, e o nome/user ficarem consistentes.
 
         const safeJSON = (k, fallback = null) => {
             try { return JSON.parse(localStorage.getItem(k) || '') || fallback; } catch { return fallback; }
@@ -402,7 +405,7 @@
                 dados.doc_num ||
                 dados.cpf ||
                 dados.cnpj ||
-                "NÃƒÂ£o informado"
+                "NÃ£o informado"
             );
             setValue('inputNome', String(dados.nome || "").slice(0, 40));
             setValue('inputEmail', dados.email || "");
@@ -418,7 +421,7 @@
         }
 
         async function carregarPerfilReal() {
-            // proteÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃƒâ€šÃ‚Â§ÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃ‚Â£o simples
+            // proteÃƒÂƒÃ†Â’ÃƒÂ‚Ã‚Â§ÃƒÂƒÃ†Â’ÃƒÂ‚Â£o simples
             const logado = localStorage.getItem('usuarioLogado') === 'true' || !!localStorage.getItem('doke_usuario_perfil');
             if (!logado) {
                 window.location.href = 'login.html';
@@ -426,7 +429,7 @@
             }
 
             if (!window.sb?.auth) {
-                alert('Supabase nÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃ‚Â£o inicializado.');
+                alert('Supabase nÃƒÂƒÃ†Â’ÃƒÂ‚Â£o inicializado.');
                 return;
             }
 
@@ -448,7 +451,7 @@
             const uid = authUser.id;
             const email = authUser.email || perfilLocal.email || '';
 
-            // 2) usuÃƒÂ¡rios
+            // 2) usuÃ¡rios
             let usr = null;
             try {
                 const { data, error } = await window.sb
@@ -471,7 +474,7 @@
                 if (!error && Array.isArray(data) && data.length) val = data[0];
             } catch (_) {}
 
-            // 4) Merge (prioridade: usuÃƒÂ¡rios -> validaÃƒÂ§ÃƒÂ£o -> auth meta -> cache)
+            // 4) Merge (prioridade: usuÃ¡rios -> validaÃ§Ã£o -> auth meta -> cache)
             const meta = authUser.user_metadata || {};
             const nome = pickBestName(
                 usr?.nome,
@@ -518,7 +521,7 @@
                 nome,
                 user: userHandle,
                 foto,
-                cpf_cnpj: cpfCnpj || 'NÃƒÂ£o informado',
+                cpf_cnpj: cpfCnpj || 'NÃ£o informado',
                 telefone,
                 data_nascimento: nasc,
             };
@@ -531,7 +534,7 @@
 
         document.addEventListener('DOMContentLoaded', carregarPerfilReal);
 
-        // FunÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃƒâ€šÃ‚Â§ÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃ‚Â£o global para salvar (chamada pelo form)
+        // FunÃƒÂƒÃ†Â’ÃƒÂ‚Ã‚Â§ÃƒÂƒÃ†Â’ÃƒÂ‚Â£o global para salvar (chamada pelo form)
         window.salvarDados = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSalvar');
@@ -544,11 +547,11 @@
                 const perfilLocal = safeJSON('doke_usuario_perfil', {}) || {};
                 const { data: authData } = await window.sb.auth.getUser();
                 const authUser = authData?.user || null;
-                if (!authUser) throw new Error('SessÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃ‚Â£o expirada. FaÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃ‚Â§a login novamente.');
+                if (!authUser) throw new Error('SessÃƒÂƒÃ†Â’ÃƒÂ‚Â£o expirada. FaÃƒÂƒÃ†Â’ÃƒÂ‚Â§a login novamente.');
 
                 const uid = authUser.id;
                 const nome = String(document.getElementById('inputNome')?.value || '').trim().slice(0, 40);
-                if (!nome || nome.length < 2) throw new Error('Informe um nome vÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃ‚Â¡lido (mÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃ‚Â­nimo 2 caracteres).');
+                if (!nome || nome.length < 2) throw new Error('Informe um nome vÃƒÂƒÃ†Â’ÃƒÂ‚Â¡lido (mÃƒÂƒÃ†Â’ÃƒÂ‚Â­nimo 2 caracteres).');
                 const telefone = String(document.getElementById('inputTel')?.value || '').trim();
                 const nasc = document.getElementById('inputNasc')?.value || '';
                 const foto = document.getElementById('hiddenFotoBase64')?.value || perfilLocal.foto || '';
@@ -563,7 +566,7 @@
                 };
                 localStorage.setItem('doke_usuario_perfil', JSON.stringify(merged));
 
-                // Melhor esforÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃ‚Â§o: atualiza tabela usuÃƒÂ¡rios (se existir colunas)
+                // Melhor esforÃƒÂƒÃ†Â’ÃƒÂ‚Â§o: atualiza tabela usuÃ¡rios (se existir colunas)
                 const patch = { nome, telefone, data_nascimento: nasc, foto };
                 try {
                     await window.sb
@@ -572,7 +575,7 @@
                         .or(`uid.eq.${uid},id.eq.${uid}`);
                 } catch (_) {}
 
-                // Melhor esforÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃ‚Â§o: espelha no Auth metadata
+                // Melhor esforÃƒÂƒÃ†Â’ÃƒÂ‚Â§o: espelha no Auth metadata
                 try {
                     await window.sb.auth.updateUser({
                         data: {
@@ -599,9 +602,9 @@
         function previewImage(event) {
             const file = event.target.files[0];
             if(file) {
-                // Tamanho maximo 2MB para nÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃ‚Â£o travar localStorage/Firestore
+                // Tamanho maximo 2MB para nÃƒÂƒÃ†Â’ÃƒÂ‚Â£o travar localStorage/Firestore
                 if(file.size > 2 * 1024 * 1024) {
-                    alert("A imagem ÃƒÆ’Ã‚Æ’Ãƒâ€ Ã‚â€™ÃƒÆ’Ã‚â€šÃ‚Â© muito grande. Escolha uma menor que 2MB.");
+                    alert("A imagem ÃƒÂƒÃ†Â’ÃƒÂ‚Â© muito grande. Escolha uma menor que 2MB.");
                     return;
                 }
 
@@ -628,8 +631,9 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260309v97"></script>
-<script defer="True" src="settings-pages.js?v=20260301v02"></script></body>
+<script src="doke-shell.js?v=20260312v99"></script>
+<script defer="True" src="settings-pages.js?v=20260301v02"></script>  <script src="site-global-polish.js"></script>
+</body>
 </html>
 
 

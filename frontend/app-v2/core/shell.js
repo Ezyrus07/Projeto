@@ -85,7 +85,10 @@
     const flagKeys = ["usuarioLogado", "logado", "isLoggedIn", "doke_logged_in"];
     const hasFlag = flagKeys.some((keyName) => String(localStorage.getItem(keyName) || "").toLowerCase() === "true");
     const hasIdentity = !!getIdentityFromProfile(p);
-    return hasFlag && hasIdentity;
+    const backup = String(localStorage.getItem("doke_auth_session_backup") || "").trim();
+    const hasSbToken = Object.keys(localStorage || {}).some((key) => /^sb-[a-z0-9-]+-auth-token$/i.test(String(key || "")) && String(localStorage.getItem(key) || "").trim());
+    const hasCookie = String(document.cookie || "").includes("doke_dev_session=");
+    return !!(hasFlag && hasIdentity && (backup || hasSbToken || hasCookie));
   }
 
   function readSavedAccounts() {
@@ -140,16 +143,16 @@
       }
     } catch (_e) {}
 
-    return "https://i.pravatar.cc/96?img=12";
+    return "";
   }
 
   function resolveProfileHref(state) {
-    if (!state?.authenticated) return "login.html";
+    if (!state?.authenticated) return "login.html?noshell=1";
     return state.isPro ? "meuperfil.html" : "perfil-usuario.html";
   }
 
   function resolveAnnounceHref(state) {
-    if (!state?.authenticated) return "login.html?next=escolheranuncio.html";
+    if (!state?.authenticated) return "login.html?noshell=1&next=escolheranuncio.html";
     return state.isPro ? "escolheranuncio.html" : "tornar-profissional.html";
   }
 
@@ -163,7 +166,7 @@
       profileName: authenticated
         ? (String(normalizedProfile.user || normalizedProfile.nome || normalizedProfile.name || "Minha conta").trim() || "Minha conta")
         : "Entrar",
-      avatar: authenticated ? readAvatar(normalizedProfile) : "assets/Imagens/user_placeholder.png",
+      avatar: authenticated ? readAvatar(normalizedProfile) : "",
       source: String(source || "local"),
       resolved: source === "resolved"
     };
@@ -345,7 +348,7 @@
 
           <div class="profile">
             <button type="button" class="profile-btn" aria-label="Perfil" data-v2-role="profile-button" data-profile-href="${authState.profileHref}" data-authenticated="${authState.authenticated ? "1" : "0"}">
-              <img src="${authState.avatar}" alt="Perfil" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png'">
+              ${authState.authenticated && authState.avatar ? `<img src="${authState.avatar}" alt="Perfil">` : `<i class='bx bx-user'></i>`}
             </button>
             <div class="profile-menu" hidden data-v2-role="profile-menu"></div>
           </div>
@@ -404,27 +407,29 @@
           <a href="${state.announceHref}" data-v2-link><i class='bx bx-plus-circle'></i><span>Anunciar</span></a>
           <a href="pedidos.html" data-v2-link><i class='bx bx-package'></i><span>Pedidos</span></a>
           <a href="mensagens.html" data-v2-link><i class='bx bx-chat'></i><span>Mensagens</span></a>
-          <a href="login.html?logout=1" class="pm-logout"><i class='bx bx-log-out'></i><span>Sair</span></a>
+          <a href="login.html?logout=1&noshell=1" class="pm-logout"><i class='bx bx-log-out'></i><span>Sair</span></a>
         `;
       }
       return         `
         <div class="pm-head">${name}</div>
-        <a href="login.html" data-v2-native><i class='bx bx-log-in-circle'></i><span>Entrar</span></a>
-        <a href="cadastro.html" data-v2-native><i class='bx bx-user-plus'></i><span>Criar conta</span></a>
+        <a href="login.html?noshell=1" data-v2-native><i class='bx bx-log-in-circle'></i><span>Entrar</span></a>
+        <a href="cadastro.html?noshell=1" data-v2-native><i class='bx bx-user-plus'></i><span>Criar conta</span></a>
         <a href="${state.announceHref}" data-v2-link><i class='bx bx-briefcase-alt-2'></i><span>Quero anunciar</span></a>
       `;
     }
 
     function renderAuthUi(nextState) {
       authState = nextState && typeof nextState === "object" ? nextState : authState;
+      const safeAvatar = String(authState.avatar || "").trim();
       if (profileBtn instanceof HTMLButtonElement) {
         profileBtn.dataset.profileHref = authState.profileHref;
         profileBtn.dataset.authenticated = authState.authenticated ? "1" : "0";
         profileBtn.setAttribute("aria-label", authState.authenticated ? "Abrir menu da conta" : "Entrar ou criar conta");
       }
       if (profileBtnImg instanceof HTMLImageElement) {
-        profileBtnImg.src = authState.avatar;
-        profileBtnImg.alt = authState.authenticated ? "Perfil" : "Entrar";
+        profileBtnImg.src = safeAvatar && !/undefined|null|^\s*$/.test(safeAvatar) ? safeAvatar : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='24' fill='%23f3f7fb'/%3E%3Cpath d='M24 25c4.97 0 9-4.03 9-9s-4.03-9-9-9-9 4.03-9 9 4.03 9 9 9Zm0 4c-6.08 0-18 3.05-18 9.13V42h36v-3.87C42 32.05 30.08 29 24 29Z' fill='%232d5d8f'/%3E%3C/svg%3E";
+        profileBtnImg.alt = authState.authenticated ? 'Perfil' : 'Entrar';
+        profileBtnImg.removeAttribute('srcset');
       }
       if (profileMenu instanceof HTMLElement) {
         profileMenu.innerHTML = buildProfileMenuMarkup(authState);

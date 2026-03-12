@@ -1,21 +1,22 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="doke-nav-boot.js?v=20260309v09"></script>
-<title>SeguranÃƒÂ§a e Senha | Doke</title>
+<script src="auth-guard.js?v=20260312v03"></script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
+<title>SeguranÃ§a e Senha | Doke</title>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260307v61"></script>
+<script defer="" src="script.js?v=20260312v62"></script>
 <style>
         /* ================= VARIAVEIS E RESET ================= */
         :root {
@@ -276,15 +277,17 @@
 <link href="page-ajustes.css?v=20260208v01" rel="stylesheet"/>
 <link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
-<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/></head>
+<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/><style>.popup{display:none!important;}</style>
+  <link rel="stylesheet" href="site-global-polish.css">
+</head>
 <body data-page="mais">
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">Ãƒâ€”</span>
+<span class="close-btn" onclick="fecharPopup()">Ã—</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                NÃƒÂ£o tem uma conta?
+                NÃ£o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -312,12 +315,12 @@
 </a>
 <a class="settings-nav-item" data-section="enderecos" href="enderecos.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-map"></i></span>
-<span class="settings-nav-text">EndereÃƒÂ§os</span>
+<span class="settings-nav-text">EndereÃ§os</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" data-section="senha" href="senha.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-lock-alt"></i></span>
-<span class="settings-nav-text">SeguranÃƒÂ§a e senha</span>
+<span class="settings-nav-text">SeguranÃ§a e senha</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" data-section="pagamentos" href="pagamentos.html">
@@ -327,7 +330,7 @@
 </a>
 </div>
 <div class="settings-side__group">
-<div class="settings-side__title">PREFERÃƒÅ NCIAS</div>
+<div class="settings-side__title">PREFERÃŠNCIAS</div>
 <div class="settings-toggle-row">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-moon"></i></span>
 <span class="settings-toggle-label">Modo escuro</span>
@@ -338,7 +341,7 @@
 </div>
 <a class="settings-nav-item" data-section="preferencia-notif" href="preferencia-notif.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-bell"></i></span>
-<span class="settings-nav-text">NotificaÃƒÂ§ÃƒÂµes</span>
+<span class="settings-nav-text">NotificaÃ§Ãµes</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" data-section="idioma" href="idioma.html">
@@ -370,7 +373,7 @@
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 </div>
-</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>SeguranÃƒÂ§a e senha</h1><p>Proteja sua conta e altere sua senha quando quiser.</p></div></div><div class="settings-frame-card"><div class="security-container">
+</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>SeguranÃ§a e senha</h1><p>Proteja sua conta e altere sua senha quando quiser.</p></div></div><div class="settings-frame-card"><div class="security-container">
 <div class="card-box">
 <div class="card-title"><i class="bx bx-lock-alt"></i> Alterar Senha</div>
 <button class="btn-expandir" id="btn-abrir-form" onclick="mostrarFormulario()">
@@ -432,7 +435,7 @@
 </div>
 <div class="card-box danger-zone">
 <div class="card-title"><i class="bx bx-error-circle"></i> Zona de Perigo</div>
-<p class="danger-copy">VocÃƒÂª pode desativar temporariamente ou excluir sua conta. Para confirmar, ser informar a senha novamente.</p>
+<p class="danger-copy">VocÃª pode desativar temporariamente ou excluir sua conta. Para confirmar, ser informar a senha novamente.</p>
 <div class="danger-actions">
 <button class="btn-danger" id="btnDesativarConta" style="margin-top:0;" type="button">Desativar minha conta</button>
 <button class="btn-danger" id="btnExcluirConta" type="button">Excluir minha conta</button>
@@ -538,7 +541,7 @@
                 email: user.email,
                 password: currentPass
             });
-            if (check.error) throw new Error("A senha atual estÃƒÂ¡ incorreta.");
+            if (check.error) throw new Error("A senha atual estÃ¡ incorreta.");
 
             const upd = await sb.auth.updateUser({ password: newPass });
             if (upd.error) throw upd.error;
@@ -570,7 +573,7 @@
                 return;
             }
             if (newPass !== confirmPass) {
-                setSenhaFeedback("As senhas nÃƒÂ£o conferem.", "error");
+                setSenhaFeedback("As senhas nÃ£o conferem.", "error");
                 return;
             }
             setSenhaFeedback("", "");
@@ -612,7 +615,7 @@
                     code.includes("wrong-password") ||
                     msg.includes("incorreta")
                 ) {
-                    setSenhaFeedback("A senha atual estÃƒÂ¡ incorreta.", "error");
+                    setSenhaFeedback("A senha atual estÃ¡ incorreta.", "error");
                 } else {
                     setSenhaFeedback("Erro ao alterar senha. Tente novamente.", "error");
                 }
@@ -689,7 +692,7 @@
                             return { ok: true, perfilRemovido: perfilOK, authRemovida: authOK, viaRpc: true };
                         }
                     } else {
-                        console.warn("[DOKE] RPC delete_my_account indisponÃƒÂ­vel ou falhou. Aplicando fallback.", rpcRes.error);
+                        console.warn("[DOKE] RPC delete_my_account indisponÃ­vel ou falhou. Aplicando fallback.", rpcRes.error);
                     }
                 }
             } catch (rpcErr) {
@@ -697,7 +700,7 @@
             }
 
             try {
-                // Libera o @usuÃƒÂ¡rio para reutilizacao e marca conta como excluida.
+                // Libera o @usuÃ¡rio para reutilizacao e marca conta como excluida.
                 const primaryUpdate = await sb.from("usuarios").update({
                     user: tombHandle,
                     conta_status: "excluida",
@@ -847,7 +850,7 @@
         });
         window.excluirContaReal = async function(inputPass) {
             try {
-                // Prioriza Supabase: no modo compat, deleteUser() apenas desloga e nÃƒÂ£o exclui.
+                // Prioriza Supabase: no modo compat, deleteUser() apenas desloga e nÃ£o exclui.
                 const removedBySupabase = await tryExcluirContaSupabase(inputPass);
                 let result = removedBySupabase;
                 if (!removedBySupabase) {
@@ -865,8 +868,8 @@
                     notifyAction("Conta  com sucesso.", "success", "Conta removida");
                     setFlashNotice("Conta  com sucesso.", "success", "Conta removida");
                 } else {
-                    notifyAction("Conta  no app e  encerrada com sucesso.", "success", "ExclusÃƒÂ³o ");
-                    setFlashNotice("Conta  no app e  encerrada com sucesso.", "success", "ExclusÃƒÂ³o ");
+                    notifyAction("Conta  no app e  encerrada com sucesso.", "success", "ExclusÃ³o ");
+                    setFlashNotice("Conta  no app e  encerrada com sucesso.", "success", "ExclusÃ³o ");
                 }
 
                 setTimeout(() => { window.location.href = "index.html"; }, 1200);
@@ -922,8 +925,9 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260309v97"></script>
-<script defer="True" src="settings-pages.js?v=20260301v02"></script></body>
+<script src="doke-shell.js?v=20260312v99"></script>
+<script defer="True" src="settings-pages.js?v=20260301v02"></script>  <script src="site-global-polish.js"></script>
+</body>
 </html>
 
 

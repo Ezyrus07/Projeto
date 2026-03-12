@@ -1,21 +1,22 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="doke-nav-boot.js?v=20260309v09"></script>
-<title>EstatÃ©sticas | Doke</title>
+<script src="auth-guard.js?v=20260312v03"></script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
+<title>Estatésticas | Doke</title>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<script defer="" src="https://cdn.jsdelivr.net/npm/chart.js"></script> <script defer="" src="script.js?v=20260307v61"></script>
+<script defer="" src="https://cdn.jsdelivr.net/npm/chart.js"></script> <script defer="" src="script.js?v=20260312v62"></script>
 <style>
         body { background: #f4f6f8; font-family: 'Segoe UI', sans-serif; }
         
@@ -60,13 +61,13 @@
         .kpi-info h4 { margin: 0 0 5px 0; font-size: 0.9rem; color: #888; text-transform: uppercase; }
         .kpi-info strong { font-size: 1.8rem; color: #333; font-weight: 800; }
 
-        /* ÃƒÂREA DO GRÃƒÂFICO */
+        /* �fREA DO GR�fFICO */
         .chart-container {
             background: white; padding: 30px; border-radius: 20px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.05); height: 400px; position: relative;
         }
 
-        /* TABELA DE TOP SERVIÃ¯Â¿Â½OS */
+        /* TABELA DE TOP SERVIï¿½OS */
         .top-services {
             margin-top: 30px; background: white; padding: 30px; border-radius: 20px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.05);
@@ -87,6 +88,7 @@
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+  <link rel="stylesheet" href="site-global-polish.css">
 </head>
 <body>
 <div class="popup" id="popup">
@@ -95,7 +97,7 @@
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                NÃ£o tem uma conta?
+                Não tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -110,12 +112,12 @@
 <div class="stats-header">
 <div>
 <h1>Painel de Desempenho</h1>
-<p style="color:#666; margin-top:5px;">Acompanhe faturamento, resposta e conversÃ³o.</p>
+<p style="color:#666; margin-top:5px;">Acompanhe faturamento, resposta e conversóo.</p>
 </div>
 <div class="date-filter">
 <button class="filter-btn active" onclick="filtrarDados('hoje', this)">Hoje</button>
 <button class="filter-btn" onclick="filtrarDados('semana', this)">Semana</button>
-<button class="filter-btn" onclick="filtrarDados('mes', this)">MÃªs</button>
+<button class="filter-btn" onclick="filtrarDados('mes', this)">Mês</button>
 <button class="filter-btn" onclick="filtrarDados('ano', this)">Ano</button>
 </div>
 </div>
@@ -130,14 +132,14 @@
 <div class="kpi-card">
 <div class="kpi-icon kpi-blue"><i class="bx bx-briefcase-alt-2"></i></div>
 <div class="kpi-info">
-<h4>ServiÃ§os Realizados</h4>
+<h4>Serviços Realizados</h4>
 <strong id="kpiServicos">0</strong>
 </div>
 </div>
 <div class="kpi-card">
 <div class="kpi-icon kpi-orange"><i class="bx bx-trending-up"></i></div>
 <div class="kpi-info">
-<h4>Ticket MÃ©dio</h4>
+<h4>Ticket Médio</h4>
 <strong id="kpiTicket">R$ 0,00</strong>
 </div>
 </div>
@@ -151,24 +153,24 @@
 <div class="kpi-card">
 <div class="kpi-icon kpi-orange"><i class="bx bx-time-five"></i></div>
 <div class="kpi-info">
-<h4>Tempo MÃ©dio de Resposta</h4>
+<h4>Tempo Médio de Resposta</h4>
 <strong id="kpiTempoResposta">0h</strong>
 </div>
 </div>
 <div class="kpi-card">
 <div class="kpi-icon kpi-green"><i class="bx bx-transfer-alt"></i></div>
 <div class="kpi-info">
-<h4>ConversÃ³o</h4>
+<h4>Conversóo</h4>
 <strong id="kpiConversao">0%</strong>
 </div>
 </div>
 </div>
 <div class="chart-container">
-<h3 style="margin-bottom:20px; color:#333;">EvoluÃ§Ã£o de Ganhos</h3>
+<h3 style="margin-bottom:20px; color:#333;">Evolução de Ganhos</h3>
 <canvas id="graficoGanhos"></canvas>
 </div>
 <div class="top-services">
-<h3 style="margin-bottom:20px; color:#333;">HistÃ³rico Recente</h3>
+<h3 style="margin-bottom:20px; color:#333;">Histórico Recente</h3>
 <div id="listaHistoricoRecente">
 <p style="color:#999; text-align:center;">Carregando...</p>
 </div>
@@ -231,7 +233,7 @@
                     servico: p.servico
                 }));
 
-            // Carrega 'hoje' por padrÃ£o
+            // Carrega 'hoje' por padrão
             filtrarDados('hoje', document.querySelector('.filter-btn.active'));
         }
 
@@ -257,7 +259,7 @@
         }
 
         window.filtrarDados = function(periodo, btn) {
-            // UI BotÃµes
+            // UI Botões
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             if(btn) btn.classList.add('active');
 
@@ -268,7 +270,7 @@
             const dadosBase = filtrarPorPeriodo(todosPedidos, periodo, 'data');
             const pedidosPeriodo = filtrarPorPeriodo(pedidosAll, periodo, 'dataPedido');
 
-            // LÃ³gica de Filtro e Agrupamento
+            // Lógica de Filtro e Agrupamento
             if(periodo === 'hoje') {
                 dadosFiltrados = dadosBase;
                 // Agrupar por hora (simplificado: mostra lista linear)
@@ -288,7 +290,7 @@
             }
             else if (periodo === 'mes') {
                 dadosFiltrados = dadosBase;
-                // Agrupar por dia do mÃªs
+                // Agrupar por dia do mês
                 const dias = {};
                 dadosFiltrados.forEach(p => {
                     const dia = p.data.getDate();
@@ -299,7 +301,7 @@
             }
             else if (periodo === 'ano') {
                 dadosFiltrados = dadosBase;
-                // Agrupar por mÃªs
+                // Agrupar por mês
                 const meses = {};
                 dadosFiltrados.forEach(p => {
                     const mes = p.data.toLocaleDateString('pt-BR', {month:'short'});
@@ -373,16 +375,16 @@
 
         function renderizarLista(dados) {
             const lista = document.getElementById('listaHistoricoRecente');
-            if(dados.length === 0) { lista.innerHTML = "<p style='color:#999; text-align:center;'>Nenhum dado neste perÃ­odo.</p>"; return; }
+            if(dados.length === 0) { lista.innerHTML = "<p style='color:#999; text-align:center;'>Nenhum dado neste período.</p>"; return; }
             
             lista.innerHTML = "";
-            // Ordena mais recente primeiro e pega os Ãºltimos 5
+            // Ordena mais recente primeiro e pega os últimos 5
             dados.sort((a,b) => b.data - a.data).slice(0,5).forEach(p => {
                 lista.innerHTML += `
                     <div class="ts-item">
                         <div>
                             <strong style="display:block; color:#333;">${p.servico}</strong>
-                            <small style="color:#999;">${p.data.toLocaleDateString()} Ã s ${p.data.toLocaleTimeString()}</small>
+                            <small style="color:#999;">${p.data.toLocaleDateString()} às ${p.data.toLocaleTimeString()}</small>
                         </div>
                         <div style="font-weight:bold; color:#2e7d32;">
                             + ${p.valor.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
@@ -395,10 +397,10 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260309v97"></script>
+<script src="doke-shell.js?v=20260312v99"></script>
+  <script src="site-global-polish.js"></script>
 </body>
 </html>
-
 
 
 

@@ -6256,6 +6256,8 @@ if(!rangeSel || !refreshBtn) return;
     }finally{
       rootEl?.classList.remove("dp-loading");
       rootEl?.classList.add("dp-ready");
+      try { window.dispatchEvent(new CustomEvent("doke:screen-ready", { detail: { screen: "perfil" } })); } catch(_e) {}
+      try { if (typeof window.dokeReleaseBootTransition === "function") window.dokeReleaseBootTransition("perfil"); } catch(_e) {}
     }
   }
 

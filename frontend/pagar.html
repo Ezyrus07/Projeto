@@ -1,24 +1,25 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="doke-nav-boot.js?v=20260309v09"></script>
+<script src="auth-guard.js?v=20260312v03"></script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
 <title>Finalizar Pagamento | Doke</title>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260307v61"></script>
+<script defer="" src="script.js?v=20260312v62"></script>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <style>
         /* ======================================================
-           ESTILOS ESPECÃƒÆ’Ã‚ÂFICOS DE PAGAMENTO
+           ESTILOS ESPEC�f�'�,FICOS DE PAGAMENTO
            ====================================================== */
         body { background-color: #f4f6f8; }
 
@@ -165,7 +166,7 @@
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-    /* --- CartÃƒÂ¯Ã‚Â¿Ã‚Â½es salvos (pagar.html) --- */
+    /* --- Cart�f¯�,¿�,½es salvos (pagar.html) --- */
 .saved-cards-panel{
   background:#fff;
   border:1px solid #eef2f7;
@@ -255,6 +256,7 @@
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+  <link rel="stylesheet" href="site-global-polish.css">
 </head>
 <body data-page="pagar">
 <div class="popup" id="popup">
@@ -263,7 +265,7 @@
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                NÃƒÂ£o tem uma conta?
+                N�f£o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -296,7 +298,7 @@
   <div class="saved-cards-head">
     <div class="saved-cards-title">
       <i class="bx bx-wallet"></i>
-      <span>CartÃƒÂµes salvos</span>
+      <span>Cart�fµes salvos</span>
     </div>
     <a class="saved-cards-manage" href="pagamentos.html">Gerenciar</a>
   </div>
@@ -379,7 +381,7 @@
     <div class="loader-circle" id="circuloLoader"></div>
     <i class="bx bxs-check-circle success-icon" id="iconeSucesso"></i>
     <div class="payment-status-text" id="textoStatus">Processando Pagamento...</div>
-    <p id="subTextoStatus" style="color:#666;">Por favor, nÃƒÂ£o feche esta janela.</p>
+    <p id="subTextoStatus" style="color:#666;">Por favor, n�f£o feche esta janela.</p>
   </div>
 </div>
 </main>
@@ -389,7 +391,7 @@
     const { initializeApp } = window;
     const { getFirestore, doc, updateDoc, getDoc, getDocs, collection, query, where, orderBy, limit, addDoc } = window;
 
-    // Suas configuraÃƒÂ§ÃƒÂµes
+    // Suas configura�f§�fµes
     const firebaseConfig = {
         apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
         authDomain: "doke-site.firebaseapp.com",
@@ -402,7 +404,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // VariÃƒÂ¡vel global para armazenar o valor numÃ‚â€“rico correto
+    // Vari�f¡vel global para armazenar o valor num�,�?"rico correto
     let valorGlobalParaSalvar = 0;
 
     const resumoDefaults = {
@@ -499,7 +501,7 @@
             const snap = await getDoc(doc(db, "usuarios", uid));
             return snap.exists() ? (snap.data() || {}) : null;
         } catch (e) {
-            console.warn("Erro ao carregar usuÃƒÂ¡rio:", e);
+            console.warn("Erro ao carregar usu�f¡rio:", e);
             return null;
         }
     };
@@ -534,7 +536,7 @@
         }
     };
 
-    // FunÃƒÂ§ÃƒÂ£o de abas (CartÃƒÂ£o/Pix)
+    // Fun�f§�f£o de abas (Cart�f£o/Pix)
     window.mudarMetodo = (metodo) => {
         document.querySelectorAll('.tab-method').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.credit-card-form, .pix-area').forEach(f => f.classList.remove('active'));
@@ -547,7 +549,7 @@
         }
     };
 
-    // --- CARREGAMENTO E CÃƒÂLCULOS ---
+    // --- CARREGAMENTO E C�fLCULOS ---
     window.onload = function() {
         const params = new URLSearchParams(window.location.search);
         const pedidoId = params.get('pedidoId');
@@ -566,15 +568,15 @@
         let maxParcelas = parseInt(params.get('parcelas') || params.get('maxparcelas') || pagamentoTemp.parcelas) || 1;
 
         // 1. Limpeza robusta do valor (transforma "R$ 23,00" ou "23" em float 23.00)
-        // Remove tudo que nÃƒÂ£o for nÃƒÂºmero ou vÃƒÂ­rgula
+        // Remove tudo que n�f£o for n�fºmero ou v�f­rgula
         let valorLimpo = valorBruto.replace(/[^\d,]/g, ''); 
-        // Se tiver vÃƒÂ­rgula, troca por ponto para o JS entender
+        // Se tiver v�f­rgula, troca por ponto para o JS entender
         valorLimpo = valorLimpo.replace(',', '.');
         
-        // Corrige caso o nÃƒÂºmero venha sem centavos (ex: "23" vira 23)
+        // Corrige caso o n�fºmero venha sem centavos (ex: "23" vira 23)
         // Mas se vier "23.00" (milhar) precisa tratar. 
-        // Assumindo padrÃƒÂ£o brasileiro: ultimos 2 digitos sÃƒÂ³o centavos se tiver pontuaÃƒÂ§ÃƒÂ£o?
-        // SimplificaÃƒÂ§ÃƒÂ£o: Se o valor veio do prompt do script.js?v=20260307v61, ele estÃƒÂ¡ formatado como "23,00".
+        // Assumindo padr�f£o brasileiro: ultimos 2 digitos s�f³o centavos se tiver pontua�f§�f£o?
+        // Simplifica�f§�f£o: Se o valor veio do prompt do script.js?v=20260312v62, ele est�f¡ formatado como "23,00".
         
         valorGlobalParaSalvar = parseFloat(valorLimpo);
         if (isNaN(valorGlobalParaSalvar)) valorGlobalParaSalvar = 0;
@@ -597,7 +599,7 @@
             }
         }
 
-        // Atualiza botÃƒÂ£o
+        // Atualiza bot�f£o
         const btnConfirmar = document.getElementById('btn-finalizar');
         if (btnConfirmar) {
             btnConfirmar.innerHTML = `Pagar ${valorFormatado}`;
@@ -625,7 +627,7 @@
                 if (error) return false;
                 const user = data?.user || null;
                 if (!user) return false;
-                const nomeFallback = user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "UsuÃƒÂ¡rio");
+                const nomeFallback = user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usu�f¡rio");
                 localStorage.setItem('doke_usuario_perfil', JSON.stringify({
                     nome: nomeFallback,
                     user: user.user_metadata?.user || nomeFallback,
@@ -813,7 +815,7 @@
             }
         }
 
-        // MÃƒÂªscaras visuais do cartÃƒÂ£o
+        // M�fªscaras visuais do cart�f£o
         document.getElementById('cardNumber')?.addEventListener('input', (e) => {
             let v = e.target.value.replace(/\D/g, '');
             v = v.replace(/(\d{4})(?=\d)/g, '$1 ');
@@ -828,7 +830,7 @@
             e.target.value = e.target.value.replace(/\D/g, '');
         });
 
-                // --- CARTÃƒâ€¢ES SALVOS (localStorage) ---
+                // --- CART�f�?�ES SALVOS (localStorage) ---
         const initSavedCardsUI = () => {
             const panel = document.getElementById('savedCardsPanel');
             const listEl = document.getElementById('savedCardsList');
@@ -866,11 +868,11 @@
                     if (!el) return;
                     el.value = '';
                     el.disabled = true;
-                    el.placeholder = 'Usando cartÃƒÂ£o salvo';
+                    el.placeholder = 'Usando cart�f£o salvo';
                 });
 
                 if (hintEl) {
-                    const label = `${card.brand || 'CartÃƒÂ£o'} final ${card.last4 || '----'}`;
+                    const label = `${card.brand || 'Cart�f£o'} final ${card.last4 || '----'}`;
                     hintEl.textContent = `Selecionado: ${label}. Para trocar, use "Gerenciar".`;
                 }
             };
@@ -892,13 +894,13 @@
         };
         initSavedCardsUI();
 
-        // --- LÃƒâ€œGICA DE CONFIRMAÃƒÂ¯Ã‚Â¿Ã‚Â½ÃƒÆ’Ã‚Æ’O DE PAGAMENTO ---
+        // --- L�f�?oGICA DE CONFIRMA�f¯�,¿�,½�f�'�,�'O DE PAGAMENTO ---
         const btnFinalizar = document.getElementById('btn-finalizar');
         if (!btnFinalizar) return;
         btnFinalizar.addEventListener('click', async () => {
             const pedidoId = params.get('pedidoId');
             
-            // 1. ValidaÃƒÂ§ÃƒÂ£o ANTES de mostrar loading
+            // 1. Valida�f§�f£o ANTES de mostrar loading
             if (!pedidoId) {
                 alert("Erro cr\u00EDtico: ID do pedido n\u00E3o encontrado. Volte ao chat e tente novamente.");
                 return;
@@ -909,7 +911,7 @@
                 return;
             }
 
-            // ValidaÃƒÂ§ÃƒÂ£o simples de campos do cartÃƒÂ£o (se a aba cartÃƒÂ£o estiver ativa)
+            // Valida�f§�f£o simples de campos do cart�f£o (se a aba cart�f£o estiver ativa)
             const abaCartaoAtiva = document.getElementById('tab-cartao').classList.contains('active');
             const selectedCardId = window.__dokeSelectedCardId || null;
             const selectedCardMeta = window.__dokeSelectedCardMeta || null;
@@ -927,14 +929,14 @@
             const subTexto = document.getElementById('subTextoStatus');
 
             overlay.style.display = 'flex';
-            circulo.style.display = 'block'; // Garante que o spinner apareÃ‚â€“a
+            circulo.style.display = 'block'; // Garante que o spinner apare�,�?"a
             icone.style.display = 'none';
             texto.innerText = "Processando Pagamento...";
             texto.style.color = "var(--cor2)";
             subTexto.innerText = "Por favor, n\u00E3o feche esta janela.";
 
             try {
-                // Simula processamento bancÃ‚â€“rio
+                // Simula processamento banc�,�?"rio
                 await new Promise(r => setTimeout(r, 2000));
 
                 // 3. Atualiza no Firebase
@@ -952,12 +954,12 @@
                     dataAtualizacao: new Date().toISOString()
                 });
 
-                // 4.1 Registra transaÃƒÂ§ÃƒÂ£o local (HistÃƒÂ³rico em Pagamentos)
+                // 4.1 Registra transa�f§�f£o local (Hist�f³rico em Pagamentos)
                 try {
                     const metodoAtivo = document.getElementById('tab-pix')?.classList.contains('active') ? 'pix' : 'card';
                     const cardMeta = window.__dokeSelectedCardMeta || null;
 
-                    let methodLabel = metodoAtivo === 'pix' ? 'PIX' : 'CartÃƒÂ£o';
+                    let methodLabel = metodoAtivo === 'pix' ? 'PIX' : 'Cart�f£o';
                     let last4 = '';
                     let brand = '';
 
@@ -969,12 +971,12 @@
                             const rawNum = (document.getElementById('cardNumber')?.value || '').replace(/\D/g,'');
                             last4 = rawNum.slice(-4);
                         }
-                        if (brand && last4) methodLabel = `${brand} Ã‚â€¢Ã‚â€¢Ã‚â€¢Ã‚â€¢ ${last4}`;
-                        else if (last4) methodLabel = `CartÃƒÂ£o Ã‚â€¢Ã‚â€¢Ã‚â€¢Ã‚â€¢ ${last4}`;
+                        if (brand && last4) methodLabel = `${brand} �,�?��,�?��,�?��,�?� ${last4}`;
+                        else if (last4) methodLabel = `Cart�f£o �,�?��,�?��,�?��,�?� ${last4}`;
                     }
 
                     const titulo = resumo.servico ? `Pagamento - ${resumo.servico}` : 'Pagamento';
-                    const subtitulo = resumo.profissional ? `Para ${resumo.profissional}` : 'TransaÃƒÂ§ÃƒÂ£o concluÃ‚â€“da';
+                    const subtitulo = resumo.profissional ? `Para ${resumo.profissional}` : 'Transa�f§�f£o conclu�,�?"da';
 
                     if (window.DokePayments?.addTransaction) {
                         window.DokePayments.addTransaction({
@@ -987,7 +989,7 @@
                         });
                     }
                 } catch (e) {
-                    console.warn('Falha ao registrar transaÃƒÂ§ÃƒÂ£o local:', e);
+                    console.warn('Falha ao registrar transa�f§�f£o local:', e);
                 }
 
                 // 4. Sucesso Visual
@@ -1025,10 +1027,10 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260309v97"></script>
+<script src="doke-shell.js?v=20260312v99"></script>
+  <script src="site-global-polish.js"></script>
 </body>
 </html>
-
 
 
 

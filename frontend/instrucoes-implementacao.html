@@ -1,10 +1,10 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Ã°Å¸â€œâ€¹ InstruÃ§Ãµes de ImplementaÃ§Ã£o - Doke Fix</title>
+<title>ğY"< Instruções de Implementação - Doke Fix</title>
 <style>
         * {
             margin: 0;
@@ -237,16 +237,17 @@
             font-weight: 600;
         }
     </style>
+  <link rel="stylesheet" href="site-global-polish.css">
 </head>
 <body>
 <div class="container">
-<h1>Ã°Å¸â€œâ€¹ Guia de ImplementaÃ§Ã£o</h1>
+<h1>ğY"< Guia de Implementação</h1>
 <p class="subtitle">Siga estes passos para corrigir seu site Doke</p>
 <div class="alert alert-info">
-<span class="icon">Ã¢â€Â¹Ã¯Â¸Â</span>
+<span class="icon">â"¹ï¸</span>
 <div>
 <strong>Tempo estimado:</strong> 15-20 minutos<br/>
-<strong>Dificuldade:</strong> â­â­ FÃ¡cil/MÃ©dio<br/>
+<strong>Dificuldade:</strong> ?? Fácil/Médio<br/>
 <strong>Arquivos gerados:</strong> 4 novos arquivos prontos para usar
             </div>
 </div>
@@ -256,7 +257,7 @@
 <span class="step-number">1</span>
                 Executar SQL no Supabase
             </div>
-<p><strong>O que faz:</strong> Corrige as polÃ­ticas de seguranÃ§a (RLS) que estÃ£o impedindo o site de acessar os dados dos usuÃ¡rios.</p>
+<p><strong>O que faz:</strong> Corrige as políticas de segurança (RLS) que estão impedindo o site de acessar os dados dos usuários.</p>
 <ol style="margin: 15px 0; padding-left: 30px;">
 <li>Acesse: <a href="https://app.supabase.com" target="_blank">https://app.supabase.com</a></li>
 <li>Entre no seu projeto</li>
@@ -265,32 +266,32 @@
 </ol>
 <div class="code-block">
 <button class="copy-btn" onclick="copiar('sql1')">Copiar</button>
-<pre id="sql1">-- CorreÃ§Ã£o RLS - Tabela UsuÃ¡rios
-alter table if exists public.usuÃ¡rios enable row level security;
+<pre id="sql1">-- Correção RLS - Tabela Usuários
+alter table if exists public.usuários enable row level security;
 
 -- Remove policies antigas
-drop policy if exists "usuÃ¡rios_upsert_own" on public.usuÃ¡rios;
-drop policy if exists "usuÃ¡rios_update_own" on public.usuÃ¡rios;
-drop policy if exists "usuÃ¡rios_select_own" on public.usuÃ¡rios;
-drop policy if exists "usuÃ¡rios_select_authenticated" on public.usuÃ¡rios;
+drop policy if exists "usuários_upsert_own" on public.usuários;
+drop policy if exists "usuários_update_own" on public.usuários;
+drop policy if exists "usuários_select_own" on public.usuários;
+drop policy if exists "usuários_select_authenticated" on public.usuários;
 
--- SELECT (permite usuÃ¡rios autenticados lerem perfis)
-create policy "usuÃ¡rios_select_authenticated"
-  on public.usuÃ¡rios for select to authenticated using (true);
+-- SELECT (permite usuários autenticados lerem perfis)
+create policy "usuários_select_authenticated"
+  on public.usuários for select to authenticated using (true);
 
--- INSERT (permite criar prÃ³prio perfil)
-create policy "usuÃ¡rios_upsert_own"
-  on public.usuÃ¡rios for insert to authenticated
+-- INSERT (permite criar próprio perfil)
+create policy "usuários_upsert_own"
+  on public.usuários for insert to authenticated
   with check (uid::text = auth.uid()::text);
 
--- UPDATE (permite atualizar prÃ³prio perfil)
-create policy "usuÃ¡rios_update_own"
-  on public.usuÃ¡rios for update to authenticated
+-- UPDATE (permite atualizar próprio perfil)
+create policy "usuários_update_own"
+  on public.usuários for update to authenticated
   using (uid::text = auth.uid()::text)
   with check (uid::text = auth.uid()::text);</pre>
 </div>
 <div class="alert alert-success">
-<span class="icon">âœ…</span>
+<span class="icon">?</span>
 <div>
 <strong>Como saber que funcionou:</strong><br/>
                     Deve aparecer "Success. No rows returned" ou similar
@@ -301,58 +302,58 @@ create policy "usuÃ¡rios_update_own"
 <div class="step">
 <div class="step-title">
 <span class="step-number">2</span>
-                Adicionar Script de CorreÃ§Ã£o AutomÃ¡tica
+                Adicionar Script de Correção Automática
             </div>
 <p><strong>O que faz:</strong> Adiciona um script que automaticamente limpa cache corrompido e sincroniza o login.</p>
 <div class="alert alert-warning">
-<span class="icon">Ã¢Å¡Â Ã¯Â¸Â</span>
+<span class="icon">âs ï¸</span>
 <div>
-<strong>Importante:</strong> O arquivo <span class="highlight">doke-auto-fix.js</span> jÃ¡ foi criado para vocÃª! 
-                    Ele estÃ¡ na pasta de outputs junto com este guia.
+<strong>Importante:</strong> O arquivo <span class="highlight">doke-auto-fix.js</span> já foi criado para você! 
+                    Ele está na pasta de outputs junto com este guia.
                 </div>
 </div>
-<p style="margin: 20px 0;"><strong>VocÃª precisa adicionar UMA LINHA em cada pÃ¡gina HTML:</strong></p>
+<p style="margin: 20px 0;"><strong>Você precisa adicionar UMA LINHA em cada página HTML:</strong></p>
 <div class="before-after">
 <div class="before">
-<strong>Ã¢ÂÅ’ Antes (cÃ³digo atual):</strong>
+<strong>âO Antes (código atual):</strong>
 <div class="code-block" style="margin-top: 10px;">
 <pre>&lt;head&gt;
   &lt;script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"&gt;&lt;/script&gt;
-  &lt;script src="supabase-init.js?v=20260218v43"&gt;&lt;/script&gt;
-  &lt;!-- resto do cÃ³digo --&gt;
+  &lt;script src="supabase-init.js?v=20260312v44"&gt;&lt;/script&gt;
+  &lt;!-- resto do código --&gt;
 &lt;/head&gt;</pre>
 </div>
 </div>
 <div class="after">
-<strong>âœ… Depois (com correÃ§Ã£o):</strong>
+<strong>? Depois (com correção):</strong>
 <div class="code-block" style="margin-top: 10px;">
 <pre>&lt;head&gt;
   &lt;script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"&gt;&lt;/script&gt;
-  &lt;script src="supabase-init.js?v=20260218v43"&gt;&lt;/script&gt;
+  &lt;script src="supabase-init.js?v=20260312v44"&gt;&lt;/script&gt;
   &lt;script src="doke-auto-fix.js?v=20260215v10"&gt;&lt;/script&gt; <span style="background: #fef08a; padding: 2px 6px; border-radius: 3px;">&lt;-- NOVA LINHA</span>
-  &lt;!-- resto do cÃ³digo --&gt;
+  &lt;!-- resto do código --&gt;
 &lt;/head&gt;</pre>
 </div>
 </div>
 </div>
-<p style="margin-top: 15px;"><strong>PÃ¡ginas que precisam desta linha:</strong></p>
+<p style="margin-top: 15px;"><strong>Páginas que precisam desta linha:</strong></p>
 <div class="file-list">
-<div class="file-item">Ã°Å¸â€œâ€ index.html</div>
-<div class="file-item">Ã°Å¸â€œâ€ login.html</div>
-<div class="file-item">Ã°Å¸â€œâ€ cadastro.html</div>
-<div class="file-item">Ã°Å¸â€œâ€ meuperfil.html</div>
-<div class="file-item">Ã°Å¸â€œâ€ mensagens.html</div>
-<div class="file-item">Ã°Å¸â€œâ€ feed.html</div>
-<div class="file-item">Ã°Å¸â€œâ€ comunidade.html</div>
-<div class="file-item">Ã°Å¸â€œâ€ mais.html</div>
-<div class="file-item">Ã°Å¸â€Â (e qualquer outra pÃ¡gina principal)</div>
+<div class="file-item">ğY"" index.html</div>
+<div class="file-item">ğY"" login.html</div>
+<div class="file-item">ğY"" cadastro.html</div>
+<div class="file-item">ğY"" meuperfil.html</div>
+<div class="file-item">ğY"" mensagens.html</div>
+<div class="file-item">ğY"" feed.html</div>
+<div class="file-item">ğY"" comunidade.html</div>
+<div class="file-item">ğY"" mais.html</div>
+<div class="file-item">ğY" (e qualquer outra página principal)</div>
 </div>
 <div class="alert alert-info">
-<span class="icon">Ã°Å¸â€™Â¡</span>
+<span class="icon">ğY'¡</span>
 <div>
-<strong>Dica:</strong> Use "Find and Replace" (Ctrl+H) no seu editor de cÃ³digo:<br/>
-<strong>Procurar:</strong> <code>&lt;script src="supabase-init.js?v=20260218v43"&gt;&lt;/script&gt;</code><br/>
-<strong>Substituir por:</strong> <code>&lt;script src="supabase-init.js?v=20260218v43"&gt;&lt;/script&gt;
+<strong>Dica:</strong> Use "Find and Replace" (Ctrl+H) no seu editor de código:<br/>
+<strong>Procurar:</strong> <code>&lt;script src="supabase-init.js?v=20260312v44"&gt;&lt;/script&gt;</code><br/>
+<strong>Substituir por:</strong> <code>&lt;script src="supabase-init.js?v=20260312v44"&gt;&lt;/script&gt;
 &lt;script src="doke-auto-fix.js?v=20260215v10"&gt;&lt;/script&gt;</code>
 </div>
 </div>
@@ -363,19 +364,19 @@ create policy "usuÃ¡rios_update_own"
 <span class="step-number">3</span>
                 Limpar Cache do Navegador
             </div>
-<p><strong>O que faz:</strong> Remove dados antigos e corrompidos que estÃ£o fazendo o site falhar.</p>
-<p style="margin: 15px 0;"><strong>Escolha uma opÃ§Ã£o:</strong></p>
+<p><strong>O que faz:</strong> Remove dados antigos e corrompidos que estão fazendo o site falhar.</p>
+<p style="margin: 15px 0;"><strong>Escolha uma opção:</strong></p>
 <div style="background: #edf2f7; padding: 20px; border-radius: 8px; margin: 15px 0;">
-<strong>OpÃ§Ã£o A: Limpar manualmente (Chrome/Edge)</strong>
+<strong>Opção A: Limpar manualmente (Chrome/Edge)</strong>
 <ol style="margin: 10px 0; padding-left: 25px;">
 <li>Pressione <strong>Ctrl + Shift + Delete</strong></li>
-<li>Selecione "Todo o perÃ­odo"</li>
+<li>Selecione "Todo o período"</li>
 <li>Marque: "Cookies" e "Cache"</li>
 <li>Clique em "Limpar dados"</li>
 </ol>
 </div>
 <div style="background: #edf2f7; padding: 20px; border-radius: 8px; margin: 15px 0;">
-<strong>OpÃ§Ã£o B: Usar ferramenta de diagnÃ³stico</strong>
+<strong>Opção B: Usar ferramenta de diagnóstico</strong>
 <ol style="margin: 10px 0; padding-left: 25px;">
 <li>Abra: <code>diagnostico-avancado.html</code></li>
 <li>Clique: "Limpar Todo o Cache"</li>
@@ -391,32 +392,32 @@ create policy "usuÃ¡rios_update_own"
             </div>
 <div class="file-list">
 <div class="file-item">
-<strong>1Ã¯Â¸ÂÃ¢Æ’Â£ Teste de DiagnÃ³stico:</strong><br/>
-                    Abra <code>diagnostico-avancado.html</code> Ã¢â€ â€™ Clique "Iniciar DiagnÃ³stico"<br/>
-                    âœ… Esperado: Todos os 5 testes passam
+<strong>1ï¸âf£ Teste de Diagnóstico:</strong><br/>
+                    Abra <code>diagnostico-avancado.html</code> â?' Clique "Iniciar Diagnóstico"<br/>
+                    ? Esperado: Todos os 5 testes passam
                 </div>
 <div class="file-item">
-<strong>2Ã¯Â¸ÂÃ¢Æ’Â£ Teste de Login:</strong><br/>
-                    Abra <code>login.html</code> Ã¢â€ â€™ FaÃ§a login<br/>
-                    âœ… Esperado: Redireciona para index.html logado
+<strong>2ï¸âf£ Teste de Login:</strong><br/>
+                    Abra <code>login.html</code> â?' Faça login<br/>
+                    ? Esperado: Redireciona para index.html logado
                 </div>
 <div class="file-item">
-<strong>3Ã¯Â¸ÂÃ¢Æ’Â£ Teste de Perfil:</strong><br/>
-                    Clique na foto do perfil Ã¢â€ â€™ Ver Perfil<br/>
-                    âœ… Esperado: Dados do perfil aparecem
+<strong>3ï¸âf£ Teste de Perfil:</strong><br/>
+                    Clique na foto do perfil â?' Ver Perfil<br/>
+                    ? Esperado: Dados do perfil aparecem
                 </div>
 <div class="file-item">
-<strong>4Ã¯Â¸ÂÃ¢Æ’Â£ Teste de Mensagens:</strong><br/>
-                    VÃ¡ em Mais Ã¢â€ â€™ Mensagens<br/>
-                    âœ… Esperado: Lista de conversas carrega
+<strong>4ï¸âf£ Teste de Mensagens:</strong><br/>
+                    Vá em Mais â?' Mensagens<br/>
+                    ? Esperado: Lista de conversas carrega
                 </div>
 </div>
 </div>
 <!-- CHECKLIST -->
 <div class="step">
 <div class="step-title">
-<span class="step-number">âœ“</span>
-                Checklist de ImplementaÃ§Ã£o
+<span class="step-number">?</span>
+                Checklist de Implementação
             </div>
 <ul class="checklist">
 <li>
@@ -429,7 +430,7 @@ create policy "usuÃ¡rios_update_own"
 </li>
 <li>
 <input id="check3" type="checkbox"/>
-<label for="check3">Linha do script adicionada nas pÃ¡ginas HTML (Passo 2)</label>
+<label for="check3">Linha do script adicionada nas páginas HTML (Passo 2)</label>
 </li>
 <li>
 <input id="check4" type="checkbox"/>
@@ -437,19 +438,19 @@ create policy "usuÃ¡rios_update_own"
 </li>
 <li>
 <input id="check5" type="checkbox"/>
-<label for="check5">Ferramenta de diagnÃ³stico testada</label>
+<label for="check5">Ferramenta de diagnóstico testada</label>
 </li>
 <li>
 <input id="check6" type="checkbox"/>
-<label for="check6">Login funcionando âœ…</label>
+<label for="check6">Login funcionando ?</label>
 </li>
 <li>
 <input id="check7" type="checkbox"/>
-<label for="check7">Perfil carregando âœ…</label>
+<label for="check7">Perfil carregando ?</label>
 </li>
 <li>
 <input id="check8" type="checkbox"/>
-<label for="check8">Mensagens funcionando âœ…</label>
+<label for="check8">Mensagens funcionando ?</label>
 </li>
 </ul>
 <button class="btn-primary" onclick="verificarChecklist()" style="width: 100%; margin-top: 20px;">
@@ -459,45 +460,45 @@ create policy "usuÃ¡rios_update_own"
 <!-- ARQUIVOS -->
 <div class="step">
 <div class="step-title">
-<span class="step-number">Ã°Å¸â€œÂ</span>
-                Arquivos IncluÃ­dos
+<span class="step-number">ğY"</span>
+                Arquivos Incluídos
             </div>
 <div class="file-list">
 <div class="file-item">
-<strong>Ã°Å¸â€œâ€ doke-auto-fix.js</strong><br/>
-                    Script de correÃ§Ã£o automÃ¡tica (adicionar nas pÃ¡ginas HTML)
+<strong>ğY"" doke-auto-fix.js</strong><br/>
+                    Script de correção automática (adicionar nas páginas HTML)
                 </div>
 <div class="file-item">
-<strong>Ã°Å¸â€œâ€ diagnostico-avancado.html</strong><br/>
+<strong>ğY"" diagnostico-avancado.html</strong><br/>
                     Ferramenta visual para testar e diagnosticar problemas
                 </div>
 <div class="file-item">
-<strong>Ã°Å¸â€œâ€ GUIA_CORREÃƒâ€¡ÃƒÆ’O_RAPIDA.md</strong><br/>
-                    Guia completo em texto (versÃ£o alternativa)
+<strong>ğY"" GUIA_CORREÃ?ÃfO_RAPIDA.md</strong><br/>
+                    Guia completo em texto (versão alternativa)
                 </div>
 <div class="file-item">
-<strong>Ã°Å¸â€œâ€ DIAGNOSTICO_E_CORREÃƒâ€¡Ãƒâ€¢ES.md</strong><br/>
-                    RelatÃ³rio tÃ©cnico detalhado dos problemas encontrados
+<strong>ğY"" DIAGNOSTICO_E_CORREÃ?Ã.ES.md</strong><br/>
+                    Relatório técnico detalhado dos problemas encontrados
                 </div>
 <div class="file-item">
-<strong>Ã°Å¸â€œâ€ instruÃ§Ãµes-implementaÃ§Ã£o.html</strong><br/>
-                    Este arquivo (instruÃ§Ãµes visuais)
+<strong>ğY"" instruções-implementação.html</strong><br/>
+                    Este arquivo (instruções visuais)
                 </div>
 </div>
 </div>
 <!-- AJUDA -->
 <div class="alert alert-info" style="margin-top: 30px;">
-<span class="icon">Ã°Å¸â€™Â¬</span>
+<span class="icon">ğY'¬</span>
 <div>
 <strong>Precisa de ajuda?</strong><br/>
-                Se algo nÃ£o funcionar, abra <code>diagnostico-avancado.html</code> e veja quais testes falharam.
+                Se algo não funcionar, abra <code>diagnostico-avancado.html</code> e veja quais testes falharam.
                 Isso vai mostrar exatamente o que precisa ser corrigido.
             </div>
 </div>
 <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #e2e8f0;">
 <p style="color: #718096; font-size: 0.9rem;">
-                CorreÃ§Ãµes geradas automaticamente em 15/02/2026<br/>
-                Sistema de diagnÃ³stico e correÃ§Ã£o automÃ¡tica v1.0
+                Correções geradas automaticamente em 15/02/2026<br/>
+                Sistema de diagnóstico e correção automática v1.0
             </p>
 </div>
 </div>
@@ -509,7 +510,7 @@ create policy "usuÃ¡rios_update_own"
             navigator.clipboard.writeText(texto).then(() => {
                 const btn = event.target;
                 const textoOriginal = btn.textContent;
-                btn.textContent = 'âœ“ Copiado!';
+                btn.textContent = '? Copiado!';
                 btn.style.background = '#48bb78';
                 
                 setTimeout(() => {
@@ -528,13 +529,13 @@ create policy "usuÃ¡rios_update_own"
             const progresso = Math.round((marcados / total) * 100);
 
             if (progresso === 100) {
-                alert(`Ã°Å¸Å½â€° ParabÃ©ns! VocÃª completou todas as etapas (${marcados}/${total})!\n\nSeu site deve estar funcionando agora.`);
+                alert(`ğYZ? Parabéns! Você completou todas as etapas (${marcados}/${total})!\n\nSeu site deve estar funcionando agora.`);
             } else if (progresso >= 75) {
-                alert(`Ã°Å¸â€˜Â Quase lÃ¡! VocÃª completou ${progresso}% (${marcados}/${total})\n\nFaltam apenas alguns passos.`);
+                alert(`ğY' Quase lá! Você completou ${progresso}% (${marcados}/${total})\n\nFaltam apenas alguns passos.`);
             } else if (progresso >= 50) {
-                alert(`Ã°Å¸â€Â§ No meio do caminho! ${progresso}% concluÃ­do (${marcados}/${total})\n\nContinue seguindo os passos.`);
+                alert(`ğY"§ No meio do caminho! ${progresso}% concluído (${marcados}/${total})\n\nContinue seguindo os passos.`);
             } else {
-                alert(`Ã°Å¸â€œâ€¹ Progresso: ${progresso}% (${marcados}/${total})\n\nSiga o guia passo a passo acima.`);
+                alert(`ğY"< Progresso: ${progresso}% (${marcados}/${total})\n\nSiga o guia passo a passo acima.`);
             }
         }
 
@@ -552,6 +553,7 @@ create policy "usuÃ¡rios_update_own"
             });
         });
     </script>
+  <script src="site-global-polish.js"></script>
 </body>
 </html>
 

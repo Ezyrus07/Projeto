@@ -292,67 +292,6 @@
     }
   }
 
-
-
-  async function resolveVerifiedAuthUser() {
-    try {
-      if (typeof window.dokeResolveAuthUser === "function") {
-        const resolved = await window.dokeResolveAuthUser();
-        if (resolved && String(resolved.uid || resolved.id || "").trim()) return resolved;
-      }
-    } catch (_e) {}
-
-    try {
-      const auth = window.sb?.auth || window.supabaseClient?.auth || window.supabase?.auth || null;
-      if (auth?.getSession) {
-        const { data, error } = await auth.getSession();
-        if (!error && data?.session?.user) return data.session.user;
-      }
-      if (typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
-        const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
-        if (restored && auth?.getSession) {
-          const retry = await auth.getSession();
-          if (!retry?.error && retry?.data?.session?.user) return retry.data.session.user;
-        }
-      }
-      if (auth?.getUser) {
-        const { data, error } = await auth.getUser();
-        if (!error && data?.user) return data.user;
-      }
-    } catch (_e) {}
-
-    const fbUser = window.auth?.currentUser || window.firebaseAuth?.currentUser || null;
-    if (fbUser && String(fbUser.uid || fbUser.id || "").trim()) return fbUser;
-    return null;
-  }
-
-  async function ensureAuthenticatedOrRedirect() {
-    const user = await resolveVerifiedAuthUser();
-    const hasUser = !!String(user?.uid || user?.id || "").trim();
-    if (hasUser) {
-      try {
-        localStorage.setItem("usuarioLogado", "true");
-        const uid = String(user.uid || user.id || "").trim();
-        if (uid) localStorage.setItem("doke_uid", uid);
-      } catch (_e) {}
-      return true;
-    }
-    try {
-      [
-        "usuarioLogado","logado","isLoggedIn","doke_logged_in","doke_uid","doke_usuario_perfil",
-        "perfil_usuario","doke_usuario_logado","userLogado"
-      ].forEach((keyName) => localStorage.removeItem(keyName));
-    } catch (_e) {}
-    const next = encodeURIComponent(`${location.pathname.split('/').pop() || 'pedidos.html'}${location.search || ''}`);
-    const target = `login.html?next=${next}`;
-    if (typeof window.__DOKE_V2_HARD_NAVIGATE__ === "function") {
-      window.__DOKE_V2_HARD_NAVIGATE__(target);
-    } else {
-      location.href = target;
-    }
-    return false;
-  }
-
   function counters(list) {
     return {
       total: list.length,
@@ -411,6 +350,9 @@
 
   function cardMarkup(p) {
     const avatar = esc(normalizeMediaUrl(p.avatar) || "assets/Imagens/user_placeholder.png");
+    const serviceTitle = esc(p.titulo || 'Pedido');
+    const description = esc(p.descricao || 'Sem detalhes adicionais.');
+    const unreadLabel = Number(p.naoLidas || 0) > 0 ? `${Number(p.naoLidas)} nova${Number(p.naoLidas || 0) > 1 ? 's' : ''} mensagem${Number(p.naoLidas || 0) > 1 ? 'ens' : ''}` : 'Sem mensagens pendentes';
     return `
       <article class="v2-orders-card" data-order-id="${esc(p.id)}">
         <div class="v2-orders-card-top">
@@ -427,15 +369,15 @@
             <small>${esc(p.usuario || p.id)} • ${esc(p.categoria || "Geral")}</small>
           </div>
         </div>
-        <h3 class="v2-orders-card-title">${esc(p.titulo || "Pedido")}</h3>
-        <p class="v2-orders-card-desc">${esc(p.descricao || "Sem detalhes adicionais.")}</p>
+        <h3 class="v2-orders-card-title">${serviceTitle}</h3>
+        <p class="v2-orders-card-desc">${description}</p>
         <div class="v2-orders-card-meta">
           <div class="v2-orders-card-meta-item"><small>Prazo</small><strong>${esc(p.prazo || "A combinar")}</strong></div>
           <div class="v2-orders-card-meta-item"><small>Atualizado</small><strong>${esc(p.atualizado || "recentemente")}</strong></div>
           <div class="v2-orders-card-meta-item"><small>Valor</small><strong>${esc(String(p.valor ?? "Sob orçamento"))}</strong></div>
         </div>
         <div class="v2-orders-card-footer">
-          <small>${Number(p.naoLidas || 0) > 0 ? `${Number(p.naoLidas)} novas mensagens` : "Sem mensagens pendentes"}</small>
+          <small>${unreadLabel}</small>
           <div class="v2-orders-card-actions">
             <button type="button" class="v2-orders-card-action" data-order-action="details" data-order-id="${esc(p.id)}">Detalhes</button>
             <button type="button" class="v2-orders-card-action v2-orders-card-action--primary" data-order-action="chat" data-order-id="${esc(p.id)}">Abrir chat</button>
@@ -547,8 +489,6 @@
   }
 
   async function mountOrders(ctx) {
-    const allowed = await ensureAuthenticatedOrRedirect();
-    if (!allowed) return { unmount() {} };
     await ensureCss();
     const html = await loadTemplate();
     const tpl = document.createElement("template");

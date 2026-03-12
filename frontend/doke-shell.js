@@ -53,6 +53,57 @@
   };
 
   const LOGO_SRC = "assets/Imagens/doke-logo.png";
+  const TRANSITION_MIN_MS = 420;
+  const TRANSITION_FADE_MS = 180;
+  const HAS_GLOBAL_BOOT_SCRIPT = !!document.querySelector('script[src*="doke-nav-boot.js"]');
+  let bootScreenShownAt = 0;
+  let bootHideTimer = 0;
+  let pendingShownAt = 0;
+  let pendingHideTimer = 0;
+
+  function getNavSkeletonMarkup(){
+    return `
+      <div class="doke-nav-skeleton-shell">
+        <div class="doke-nav-skeleton-topbar">
+          <div class="doke-nav-skeleton-brand">
+            <img src="${LOGO_SRC}" alt="Doke">
+            <span class="doke-nav-skeleton-line is-brand"></span>
+          </div>
+          <div class="doke-nav-skeleton-actions">
+            <span class="doke-nav-skeleton-chip"></span>
+            <span class="doke-nav-skeleton-chip short"></span>
+            <span class="doke-nav-skeleton-avatar"></span>
+          </div>
+        </div>
+        <div class="doke-nav-skeleton-status" aria-hidden="true">
+          <span class="doke-nav-skeleton-status-dot"></span>
+          <span class="doke-nav-skeleton-status-text">Carregando pagina</span>
+        </div>
+        <div class="doke-nav-skeleton-body">
+          <div class="doke-nav-skeleton-sidebar">
+            <span class="doke-nav-skeleton-avatar large"></span>
+            <span class="doke-nav-skeleton-line"></span>
+            <span class="doke-nav-skeleton-line short"></span>
+            <span class="doke-nav-skeleton-box"></span>
+            <span class="doke-nav-skeleton-box"></span>
+          </div>
+          <div class="doke-nav-skeleton-main">
+            <div class="doke-nav-skeleton-hero"></div>
+            <div class="doke-nav-skeleton-grid">
+              <span class="doke-nav-skeleton-card"></span>
+              <span class="doke-nav-skeleton-card"></span>
+              <span class="doke-nav-skeleton-card"></span>
+            </div>
+            <div class="doke-nav-skeleton-list">
+              <span class="doke-nav-skeleton-row"></span>
+              <span class="doke-nav-skeleton-row"></span>
+              <span class="doke-nav-skeleton-row"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   function showBootScreen(){
     try{
@@ -60,8 +111,9 @@
       const overlay=document.createElement("div");
       overlay.id="dokeBootScreen";
       overlay.setAttribute("aria-hidden","true");
-      overlay.style.cssText="position:fixed;inset:0;z-index:999999;background:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .18s ease;";
-      overlay.innerHTML=`<img src="${LOGO_SRC}" alt="Doke" style="width:120px;max-width:34vw;height:auto;display:block;">`;
+      overlay.style.cssText="position:fixed;inset:0;z-index:999999;background:linear-gradient(180deg,#f7fbff 0%,#eef5fb 100%);display:block;transition:opacity .18s ease;";
+      overlay.innerHTML=getNavSkeletonMarkup();
+      bootScreenShownAt = Date.now();
       document.documentElement.appendChild(overlay);
     }catch(_e){}
   }
@@ -70,15 +122,47 @@
     try{
       const overlay=document.getElementById("dokeBootScreen");
       if(!overlay) return;
-      overlay.style.opacity='0';
-      setTimeout(()=>{ try{ overlay.remove(); }catch(_e){} },180);
+      if (overlay.dataset.closing === "1") return;
+      const waitMs = Math.max(0, TRANSITION_MIN_MS - (Date.now() - bootScreenShownAt));
+      clearTimeout(bootHideTimer);
+      bootHideTimer = window.setTimeout(() => {
+        try {
+          const liveOverlay = document.getElementById("dokeBootScreen");
+          if (!liveOverlay || liveOverlay.dataset.closing === "1") return;
+          liveOverlay.dataset.closing = "1";
+          liveOverlay.style.opacity = "0";
+          window.setTimeout(() => { try{ liveOverlay.remove(); }catch(_e){} }, TRANSITION_FADE_MS);
+        } catch(_e){}
+      }, waitMs);
     }catch(_e){}
   }
 
-  showBootScreen();
-  window.addEventListener("load", hideBootScreen, { once:true });
-  window.addEventListener("doke:v2-route-end", hideBootScreen);
+  function setPendingTransition(active){
+    try{
+      if(!document.body) return;
+      if(active){
+        clearTimeout(pendingHideTimer);
+        pendingHideTimer = 0;
+        pendingShownAt = Date.now();
+        document.body.classList.add("doke-nav-pending");
+        return;
+      }
+      if(!document.body.classList.contains("doke-nav-pending")) return;
+      const waitMs = Math.max(0, TRANSITION_MIN_MS - (Date.now() - pendingShownAt));
+      clearTimeout(pendingHideTimer);
+      pendingHideTimer = window.setTimeout(() => {
+        try { document.body.classList.remove("doke-nav-pending"); } catch(_e){}
+        pendingHideTimer = 0;
+      }, waitMs);
+    }catch(_e){}
+  }
+
   const NAV_PREBOOT_KEY = "doke_nav_preboot_target_v1";
+  if (!HAS_GLOBAL_BOOT_SCRIPT) {
+    showBootScreen();
+    window.addEventListener("load", hideBootScreen, { once:true });
+    window.addEventListener("doke:v2-route-end", hideBootScreen);
+  }
 
   function markNextHtmlNavigation(urlObj){
     try{
@@ -94,6 +178,17 @@
       if(typeof window.mostrarToast === "function") return window.mostrarToast(msg, type);
     }catch(e){}
     try{ console[type==="error"?"error":"log"]("[DOKE]", msg); }catch(e){}
+  }
+
+  function ensureStructureReformCss(){
+    try{
+      if(document.getElementById("dokeStructureReformCss")) return;
+      const link = document.createElement("link");
+      link.id = "dokeStructureReformCss";
+      link.rel = "stylesheet";
+      link.href = "doke-structure-reform.css?v=20260312v01";
+      document.head.appendChild(link);
+    }catch(_e){}
   }
 
   function ensureProUpsellModal(){
@@ -183,7 +278,8 @@
     "userLogado",
     "doke_uid",
     "doke_auth_session_backup",
-    "doke_next_account"
+    "doke_next_account",
+    "doke_auth_verified_at"
   ];
   const DOKE_SAVED_ACCOUNTS_KEY = "doke_saved_accounts";
   const DOKE_SAVED_ACCOUNTS_LIMIT = 6;
@@ -326,8 +422,12 @@
 
     try {
       localStorage.setItem("doke_usuario_perfil", JSON.stringify(p));
-      localStorage.setItem("usuarioLogado", "true");
-      if (uid) localStorage.setItem("doke_uid", uid);
+      if (uid && sessionUser?.id && String(sessionUser.id).trim() === String(uid).trim()) {
+        localStorage.setItem("usuarioLogado", "true");
+        localStorage.setItem("doke_auth_verified_at", String(Date.now()));
+        try { sessionStorage.setItem("doke_auth_verified_at", String(Date.now())); } catch (_e) {}
+        localStorage.setItem("doke_uid", uid);
+      }
     } catch (_e) {}
     try {
       rememberSavedAccount({
@@ -539,11 +639,12 @@
     if(email) params.set("email", email);
     if(uid) params.set("uid", uid);
     params.set("switch", "1");
+    params.set("noshell", "1");
     return `login.html?${params.toString()}`;
   }
 
   async function performShellSignOut(targetHref){
-    const nextHref = String(targetHref || "login.html");
+    const nextHref = String(targetHref || "login.html?noshell=1");
     const fromPath = String(window.location.pathname || "").toLowerCase();
     window.__dokeLogoutInProgress = true;
     try { localStorage.setItem("doke_force_logged_out_at", String(Date.now())); } catch (_e) {}
@@ -645,10 +746,10 @@
     modal.querySelector("#dokeSwitchClose")?.addEventListener("click", close);
     modal.addEventListener("click", (ev) => { if(ev.target === modal) close(); });
     modal.querySelector("#dokeSwitchOther")?.addEventListener("click", async () => {
-      await performShellSignOut("login.html?switch=1");
+      await performShellSignOut("login.html?switch=1&noshell=1");
     });
     modal.querySelector("#dokeSwitchLogout")?.addEventListener("click", async () => {
-      await performShellSignOut("login.html?logout=1");
+      await performShellSignOut("login.html?logout=1&noshell=1");
     });
   }
 
@@ -665,7 +766,7 @@
           confirmed = window.confirm("Tem certeza que deseja sair?");
         }
         if(!confirmed) return false;
-        await performShellSignOut("login.html?logout=1");
+        await performShellSignOut("login.html?logout=1&noshell=1");
         return true;
       };
     }
@@ -674,7 +775,7 @@
       window.alternarConta = async function(){
         const saved = readSavedAccounts();
         if(!saved.length){
-          await performShellSignOut("login.html?switch=1");
+          await performShellSignOut("login.html?switch=1&noshell=1");
           return false;
         }
         openSwitchAccountModalFallback(saved);
@@ -704,7 +805,7 @@
     const buildProfileDropdown = (photo) => `
       <div class="profile-container doke-shell-profile-container">
         <button type="button" class="doke-shell-profile-btn" onclick="return dokeShellToggleProfile(this, event)" aria-label="Abrir menu de perfil" style="all:unset;cursor:pointer;display:inline-flex;align-items:center;">
-          <img src="${photo}" class="profile-img-btn" alt="Perfil" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid #ddd;">
+          ${photo ? `<img src="${photo}" class="profile-img-btn" alt="Perfil" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid #ddd;">` : `<span class="profile-img-btn" style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:2px solid #ddd;background:#fff;color:#2f5f8f;"><i class='bx bx-user'></i></span>`}
         </button>
         <div class="doke-shell-profile-menu" hidden>
           <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">${nomePerfilSafe}</div>
@@ -721,11 +822,11 @@
 
     containers.forEach((container) => {
       if(!isLogged){
-        container.innerHTML = `<a href="login.html" class="entrar" data-v2-native>Entrar</a>`;
+        container.innerHTML = `<a href="login.html?noshell=1" class="entrar">Entrar</a>`;
         return;
       }
 
-      const photo = avatarUrl || "https://i.pravatar.cc/150?img=12";
+      const photo = avatarUrl || "";
       container.innerHTML = buildProfileDropdown(photo);
     });
 
@@ -733,11 +834,11 @@
     topAuthNodes.forEach((node) => {
       if (!(node instanceof HTMLElement)) return;
       if (!isLogged) {
-        node.setAttribute("href", "login.html");
+        node.setAttribute("href", "login.html?noshell=1");
         node.innerHTML = `<button class="btn-login" onclick="realizarLogin()">Fazer login</button>`;
         return;
       }
-      const photo = avatarUrl || "https://i.pravatar.cc/150?img=12";
+      const photo = avatarUrl || "";
       node.removeAttribute("href");
       node.setAttribute("role", "button");
       node.setAttribute("aria-label", "Abrir menu de perfil");
@@ -745,7 +846,7 @@
     });
 
     const lockedAnnounceHref = !isLogged
-      ? "login.html"
+      ? "login.html?noshell=1"
       : (isPro ? null : "tornar-profissional.html");
     const headerAnnounceAnchors = Array.from(document.querySelectorAll("header a, nav a, .menu a"))
       .filter((a) => a instanceof HTMLAnchorElement)
@@ -769,7 +870,7 @@
       link.addEventListener("click", (e) => {
         if (link.dataset.requiresLogin === "1") {
           e.preventDefault();
-          location.href = "login.html";
+          location.href = "login.html?noshell=1";
           return;
         }
         if (link.dataset.requiresProfessional === "1") {
@@ -804,7 +905,7 @@
         if (nameEl) nameEl.textContent = nomePerfil || "Minha conta";
         if (menu instanceof HTMLElement) {
           if (!isLogged) {
-            menu.innerHTML = `<a href="login.html" class="dropdown-item" data-v2-native><i class='bx bx-log-in'></i> Entrar</a>`;
+            menu.innerHTML = `<a href="login.html?noshell=1" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
           } else {
             menu.innerHTML = `
               <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">${nomePerfilSafe}</div>
@@ -900,7 +1001,7 @@
     <a href="comunidade.html" ${topTarget === "comunidade.html" ? "class=\"active\" aria-current=\"page\"" : ""}>Comunidades <span class="badge-novo1">NOVO</span></a>
     <a href="novidades.html" ${topTarget === "novidades.html" ? "class=\"active\" aria-current=\"page\"" : ""}>Novidades</a>
   </nav>
-  <div class="botoes-direita doke-header-right"><a class="entrar" href="login.html" data-v2-native>Entrar</a></div>
+  <div class="botoes-direita doke-header-right"><a class="entrar" href="login.html?noshell=1">Entrar</a></div>
 </header>`;
 const sidebarMarkup = `
 <aside class="sidebar-icones" data-shell="unified-desktop">
@@ -908,11 +1009,11 @@ const sidebarMarkup = `
   ${item("index.html", "bx-home-alt", "azul", "Início")}
   <div class="item ${file === "busca.html" ? "active" : ""}" id="pvSearchSidebarItem"><a href="#" class="pv-search-toggle" aria-label="Pesquisar"><i class="bx bx-search-alt-2 icon azul"></i><span>Pesquisar</span></a></div>
   ${item("negocios.html", "bx-store", "verde", "Negócios")}
-  ${item("notificacoes.html", "bx-bell", "azul", "Notificações")}
-  ${item("mensagens.html?aba=conversas", "bx-message-rounded-dots", "azul", "Mensagens")}
-  ${item("pedidos.html", "bx-package", "verde", "Pedidos")}
+  ${item(protectedHref("notificacoes.html"), "bx-bell", "azul", "Notificações")}
+  ${item(protectedHref("mensagens.html?aba=conversas"), "bx-message-rounded-dots", "azul", "Mensagens")}
+  ${item(protectedHref("pedidos.html"), "bx-package", "verde", "Pedidos")}
   ${item("comunidade.html", "bx-group", "verde", "Comunidades")}
-  ${item("meuperfil.html", "bx-user", "verde", "Perfil")}
+  ${item(profileHref, "bx-user", "verde", "Perfil")}
   ${item("mais.html", "bx-menu", "azul", "Mais")}
 </aside>`;
 
@@ -1313,8 +1414,11 @@ function isVisibleModalLayer(el){
 
     const isExpanded = () => body.classList.contains("doke-sidebar-expanded");
     const readMode = () => {
-      try { return localStorage.getItem(STORAGE_KEY) === "expanded" ? "expanded" : "compact"; }
-      catch(_e){ return "compact"; }
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return saved === "compact" ? "compact" : "expanded";
+      }
+      catch(_e){ return "expanded"; }
     };
     const writeMode = (mode) => {
       try { localStorage.setItem(STORAGE_KEY, mode === "expanded" ? "expanded" : "compact"); } catch(_e){}
@@ -1359,13 +1463,49 @@ function isVisibleModalLayer(el){
       syncBtn(btn);
     });
   }
+  function clearUnifiedDesktopChrome(){
+    try{
+      const body = document.body;
+      if (body) {
+        body.classList.remove(
+          "doke-structure-reform",
+          "has-doke-sidebar",
+          "doke-sidebar-expanded",
+          "doke-sidebar-search-open"
+        );
+      }
+      document
+        .querySelectorAll('header.navbar-desktop[data-shell="unified-desktop"], aside.sidebar-icones[data-shell="unified-desktop"]')
+        .forEach((el) => {
+          try { el.remove(); } catch(_e){}
+        });
+      ["doke-unified-desktop-lock", "dokeSidebarCompactCss", "dokeStructureReformCss"].forEach((id) => {
+        const node = document.getElementById(id);
+        if (node) {
+          try { node.remove(); } catch(_e){}
+        }
+      });
+    }catch(_e){}
+  }
+
 async function ensureShell(){
     setShellAuthStateReady(false);
     const body = document.body;
-    try { ensureUnifiedDesktopCssLock(); } catch(_e) {}
-    try { ensureUnifiedDesktopChrome(); } catch(_e) {}
-    try { forceUnifiedDesktopHeaderLayout(); } catch(_e) {}
-    try { ensureCompactSidebarMode(); } catch(_e) {}
+    const homeChromeDisabled = String(body?.getAttribute("data-page") || "").toLowerCase() === "home";
+    const unifiedDesktopDisabled = String(body?.getAttribute("data-doke-unified-desktop") || "").toLowerCase() === "off";
+    if (homeChromeDisabled || unifiedDesktopDisabled) {
+      clearUnifiedDesktopChrome();
+      if (homeChromeDisabled) {
+        return;
+      }
+    } else {
+      try { ensureStructureReformCss(); } catch(_e) {}
+      if (body) body.classList.add("doke-structure-reform");
+      try { ensureUnifiedDesktopCssLock(); } catch(_e) {}
+      try { ensureUnifiedDesktopChrome(); } catch(_e) {}
+      try { forceUnifiedDesktopHeaderLayout(); } catch(_e) {}
+      try { ensureCompactSidebarMode(); } catch(_e) {}
+    }
     const mode = (body && body.getAttribute("data-doke-shell")) || "";
     const force = (mode === "1" || mode === "force");
     let profile = getProfile();
@@ -1393,23 +1533,33 @@ async function ensureShell(){
       try { localStorage.removeItem("doke_usuario_logado"); } catch (_e) {}
       try { localStorage.removeItem("userLogado"); } catch (_e) {}
     } else {
-      try { localStorage.setItem("usuarioLogado", "true"); } catch (_e) {}
       try {
-        const uid = String(profile?.uid || profile?.id || sessionUser?.id || "").trim();
-        if (uid) localStorage.setItem("doke_uid", uid);
+        const uid = String(sessionUser?.id || "").trim();
+        if (uid) {
+          localStorage.setItem("usuarioLogado", "true");
+          localStorage.setItem("doke_auth_verified_at", String(Date.now()));
+          try { sessionStorage.setItem("doke_auth_verified_at", String(Date.now())); } catch (_e) {}
+          localStorage.setItem("doke_uid", uid);
+        } else {
+          localStorage.removeItem("usuarioLogado");
+          localStorage.removeItem("doke_uid");
+          localStorage.removeItem("doke_auth_verified_at");
+          try { sessionStorage.removeItem("doke_auth_verified_at"); } catch (_e) {}
+        }
       } catch (_e) {}
     }
 const isPro = profile && (profile.isProfissional === true || profile.tipo === "profissional" || profile.role === "profissional");
     const nomePerfil = sanitizePlainText((profile && (profile.user || profile.nome || profile.name)) || (isLogged ? "Minha conta" : "Visitante"));
     const nomePerfilSafe = escapeHtml(nomePerfil);
     const profileHref = isLogged ? PAGES.perfil : "login.html";
+    const protectedHref = (href) => isLogged ? href : "login.html";
     const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
     const labelAnunciar = "Anunciar";
     const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
     const itemAlternar = isLogged ? `<a href="#" class="dropdown-item" data-action="alternar-conta"><i class='bx bx-user-pin'></i> Alternar Conta</a>` : "";
     const itemSair = `<a href="#" class="dropdown-item item-sair" data-action="logout"><i class='bx bx-log-out'></i> Sair</a>`;
     const profileItemHTML = `<a href="${profileHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>`;
-    const guestItemHTML = `<a href="login.html" class="dropdown-item" data-v2-native><i class='bx bx-log-in'></i> Entrar</a>`;
+    const guestItemHTML = `<a href="login.html?noshell=1" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
     const dropdownItemsHTML = isLogged
       ? `${profileItemHTML}${itemCarteira}${itemAlternar}<a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${labelAnunciar}</a>${itemSair}`
       : guestItemHTML;
@@ -1483,7 +1633,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         card.addEventListener("click", (e) => {
           if (card.dataset.requiresLogin === "1") {
             e.preventDefault();
-            location.href = "login.html";
+            location.href = "login.html?noshell=1";
             return;
           }
           if (card.dataset.requiresProfessional === "1") {
@@ -1613,9 +1763,9 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
           <a href="${PAGES.negocios}"><i class='bx bx-store-alt'></i> Negócios</a>
           <a href="empresas.html"><i class='bx bx-buildings'></i> Empresas</a>
           <a href="${PAGES.comunidades}"><i class='bx bx-group'></i> Comunidades</a>
-          <a href="${PAGES.notif}"><i class='bx bx-bell'></i> Notificações</a>
-          <a href="${PAGES.chat}"><i class='bx bx-message-rounded-dots'></i> Mensagens</a>
-          <a href="${PAGES.pedidos}"><i class='bx bx-package'></i> Pedidos</a>
+          <a href="${protectedHref(PAGES.notif)}"><i class='bx bx-bell'></i> Notificações</a>
+          <a href="${protectedHref(PAGES.chat)}"><i class='bx bx-message-rounded-dots'></i> Mensagens</a>
+          <a href="${protectedHref(PAGES.pedidos)}"><i class='bx bx-package'></i> Pedidos</a>
           <a href="${profileHref}"><i class='bx bx-user'></i> Perfil</a>
           <a href="${PAGES.mais}"><i class='bx bx-dots-horizontal-rounded'></i> Mais</a>
         </nav>
@@ -2116,7 +2266,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
                 out.catch(async ()=> {
                   await signOutEverywhereFallback();
                   clearAuthCache();
-                  location.href = "login.html";
+                  location.href = "login.html?noshell=1";
                 });
               }
               return out;
@@ -2124,7 +2274,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
           }
           await signOutEverywhereFallback();
           clearAuthCache();
-          location.href = "login.html";
+          location.href = "login.html?noshell=1";
         }
       });
     }
@@ -2322,29 +2472,165 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     const style = document.createElement("style");
     style.id = "dokeNavPerfStyle";
     style.textContent = `
-      body.doke-nav-pending::before{
-        content:"";
-        position:fixed;
-        left:0;
-        top:0;
-        height:3px;
-        width:38%;
-        z-index:2147483647;
-        background:linear-gradient(90deg,#2e68a6,#0b7768);
-        box-shadow:0 0 12px rgba(11,119,104,.35);
-        animation:dokeNavLoad 900ms ease-in-out infinite;
+      #dokeBootScreen,
+      #dokeNavPendingOverlay{
+        --doke-skel-base:#e8eef5;
+        --doke-skel-glow:rgba(255,255,255,.8);
       }
-      body.doke-nav-cloak::before{
-        content:"";
+      #dokeBootScreen,
+      #dokeNavPendingOverlay{
         position:fixed;
-        left:0;
-        top:0;
-        height:3px;
-        width:38%;
-        z-index:2147483647;
-        background:linear-gradient(90deg,#2e68a6,#0b7768);
-        box-shadow:0 0 12px rgba(11,119,104,.35);
-        animation:dokeNavLoad 900ms ease-in-out infinite;
+        inset:0;
+        background:linear-gradient(180deg,#f7fbff 0%,#eef5fb 100%);
+        backdrop-filter:saturate(1.05);
+        -webkit-backdrop-filter:saturate(1.05);
+      }
+      #dokeNavPendingOverlay{
+        z-index:2147483646;
+        opacity:0;
+        pointer-events:none;
+        transition:opacity .14s ease;
+      }
+      body.doke-nav-pending #dokeNavPendingOverlay{
+        opacity:1;
+      }
+      .doke-nav-skeleton-shell{
+        min-height:100%;
+        padding:26px;
+        display:grid;
+        grid-template-rows:auto 1fr;
+        gap:22px;
+      }
+      .doke-nav-skeleton-topbar{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:16px;
+        padding:18px 22px;
+        border-radius:24px;
+        background:rgba(255,255,255,.72);
+        border:1px solid rgba(214,226,238,.9);
+        box-shadow:0 20px 50px rgba(18,49,83,.08);
+      }
+      .doke-nav-skeleton-brand,
+      .doke-nav-skeleton-actions{
+        display:flex;
+        align-items:center;
+        gap:12px;
+      }
+      .doke-nav-skeleton-brand img{
+        width:38px;
+        height:38px;
+        object-fit:contain;
+        opacity:.9;
+      }
+      .doke-nav-skeleton-body{
+        display:grid;
+        grid-template-columns:minmax(220px,270px) minmax(0,1fr);
+        gap:22px;
+        min-height:0;
+      }
+      .doke-nav-skeleton-status{
+        display:inline-flex;
+        align-items:center;
+        gap:10px;
+        width:max-content;
+        margin:0 4px;
+        padding:10px 14px;
+        border-radius:999px;
+        background:rgba(255,255,255,.82);
+        border:1px solid rgba(214,226,238,.92);
+        box-shadow:0 14px 32px rgba(18,49,83,.08);
+      }
+      .doke-nav-skeleton-status-dot{
+        width:10px;
+        height:10px;
+        border-radius:50%;
+        background:#0b7768;
+        box-shadow:0 0 0 0 rgba(11,119,104,.28);
+        animation:dokeNavPulse 1.1s ease-out infinite;
+      }
+      .doke-nav-skeleton-status-text{
+        color:#23415f;
+        font-size:.94rem;
+        font-weight:800;
+        letter-spacing:.01em;
+      }
+      .doke-nav-skeleton-sidebar,
+      .doke-nav-skeleton-main{
+        background:rgba(255,255,255,.68);
+        border:1px solid rgba(214,226,238,.88);
+        box-shadow:0 20px 50px rgba(18,49,83,.08);
+        border-radius:28px;
+        padding:24px;
+        display:grid;
+        align-content:start;
+        gap:16px;
+      }
+      .doke-nav-skeleton-main{ gap:18px; }
+      .doke-nav-skeleton-grid{
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:16px;
+      }
+      .doke-nav-skeleton-list{
+        display:grid;
+        gap:14px;
+      }
+      .doke-nav-skeleton-line,
+      .doke-nav-skeleton-chip,
+      .doke-nav-skeleton-avatar,
+      .doke-nav-skeleton-box,
+      .doke-nav-skeleton-hero,
+      .doke-nav-skeleton-card,
+      .doke-nav-skeleton-row{
+        position:relative;
+        overflow:hidden;
+        background:var(--doke-skel-base);
+      }
+      .doke-nav-skeleton-line::after,
+      .doke-nav-skeleton-chip::after,
+      .doke-nav-skeleton-avatar::after,
+      .doke-nav-skeleton-box::after,
+      .doke-nav-skeleton-hero::after,
+      .doke-nav-skeleton-card::after,
+      .doke-nav-skeleton-row::after{
+        content:"";
+        position:absolute;
+        inset:0;
+        transform:translateX(-100%);
+        background:linear-gradient(90deg,transparent 0%, var(--doke-skel-glow) 50%, transparent 100%);
+        animation:dokeNavSkeletonShimmer 1.05s linear infinite;
+      }
+      .doke-nav-skeleton-line{ height:14px; width:100%; border-radius:999px; }
+      .doke-nav-skeleton-line.short{ width:62%; }
+      .doke-nav-skeleton-line.is-brand{ width:128px; }
+      .doke-nav-skeleton-chip{ width:96px; height:34px; border-radius:999px; }
+      .doke-nav-skeleton-chip.short{ width:66px; }
+      .doke-nav-skeleton-avatar{ width:42px; height:42px; border-radius:50%; }
+      .doke-nav-skeleton-avatar.large{ width:78px; height:78px; }
+      .doke-nav-skeleton-box{ height:92px; border-radius:22px; }
+      .doke-nav-skeleton-hero{ height:180px; border-radius:26px; }
+      .doke-nav-skeleton-card{ height:126px; border-radius:22px; }
+      .doke-nav-skeleton-row{ height:76px; border-radius:20px; }
+      @keyframes dokeNavSkeletonShimmer{
+        100%{ transform:translateX(100%); }
+      }
+      @keyframes dokeNavPulse{
+        70%{ box-shadow:0 0 0 10px rgba(11,119,104,0); }
+        100%{ box-shadow:0 0 0 0 rgba(11,119,104,0); }
+      }
+      @media (max-width: 900px){
+        .doke-nav-skeleton-shell{ padding:18px; gap:16px; }
+        .doke-nav-skeleton-body{ grid-template-columns:1fr; }
+        .doke-nav-skeleton-sidebar{ display:none; }
+        .doke-nav-skeleton-grid{ grid-template-columns:1fr; }
+        .doke-nav-skeleton-topbar{ padding:16px 18px; }
+      }
+      body.doke-nav-pending::before,
+      body.doke-nav-cloak::before{
+        content:none;
+        display:none;
       }
       body.doke-nav-pending::after{
         content:none;
@@ -2365,19 +2651,14 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
       body.doke-nav-cloak .orders-page{
         visibility:hidden !important;
       }
-      @keyframes dokeNavLoad{
-        0%{ transform:translateX(0); width:24%; }
-        50%{ transform:translateX(115%); width:48%; }
-        100%{ transform:translateX(265%); width:24%; }
-      }
       .doke-page-swap-leave{
-        opacity:.14;
-        transform:translateY(-4px);
-        transition:opacity .12s ease, transform .12s ease;
+        opacity:.82;
+        transform:translateY(-2px);
+        transition:opacity .16s ease, transform .16s ease;
       }
       .doke-page-swap-enter{
-        opacity:0;
-        transform:translateY(8px);
+        opacity:.01;
+        transform:translateY(6px);
         transition:opacity .18s ease, transform .18s ease;
       }
       .doke-page-swap-enter.doke-page-swap-enter--ready{
@@ -2386,6 +2667,13 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
       }
     `;
     if(!document.getElementById(style.id)) document.head.appendChild(style);
+    if(!document.getElementById("dokeNavPendingOverlay")){
+      const overlay = document.createElement("div");
+      overlay.id = "dokeNavPendingOverlay";
+      overlay.setAttribute("aria-hidden","true");
+      overlay.innerHTML = getNavSkeletonMarkup();
+      (document.body || document.documentElement).appendChild(overlay);
+    }
 
     function setNavCloak(active){}
 
@@ -2486,11 +2774,11 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
       if(!isInternalPageUrl(url)) return;
       markNextHtmlNavigation(url);
       try { sessionStorage.setItem(`doke_scroll_pos_v1:${url.pathname}${url.search}`, "0"); } catch(_e) {}
-      document.body.classList.add("doke-nav-pending");
+      setPendingTransition(true);
     }, true);
 
     window.addEventListener("pageshow", () => {
-      document.body.classList.remove("doke-nav-pending");
+      setPendingTransition(false);
     });
 
     if (typeof requestIdleCallback === "function") {
@@ -2610,7 +2898,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     try { localStorage.removeItem("doke_disable_pjax"); } catch(_e){}
     const forcedOff = (document.body?.getAttribute("data-doke-pjax") === "0");
     if (forcedOff) {
-      try { document.body.classList.remove("doke-nav-pending"); } catch(_e) {}
+      setPendingTransition(false);
       return;
     }
 
@@ -3087,7 +3375,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         try { inflightController.abort(); } catch(_e) {}
       }
       inflightController = new AbortController();
-      document.body.classList.add("doke-nav-pending");
+      setPendingTransition(true);
       try { currentRoot.classList.add("doke-page-swap-leave"); } catch(_e) {}
       try { window.scrollTo({ top: 0, behavior: "auto" }); } catch(_e) {}
       try{
@@ -3144,7 +3432,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         return false;
       }finally{
         inflightController = null;
-        document.body.classList.remove("doke-nav-pending");
+        setPendingTransition(false);
       }
     }
 
@@ -3212,4 +3500,35 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     initPersistentShellNavigation();
     ensureShell();
   }
+})();
+
+
+;(()=>{
+  try {
+    window.addEventListener('DOMContentLoaded', function(){
+      try {
+        var popup=document.getElementById('popup');
+        if(popup){
+          var close=popup.querySelector('.close-btn');
+          if(!close){
+            close=document.createElement('button');
+            close.type='button'; close.className='close-btn'; close.textContent='×';
+            close.style.cssText='position:absolute;top:10px;right:12px;border:none;background:transparent;font-size:24px;cursor:pointer;line-height:1;color:#6b7280;';
+            var content=popup.querySelector('.popup-content'); if(content){content.style.position='relative'; content.appendChild(close);} }
+          close.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); popup.style.display='none'; try{localStorage.setItem('doke_guest_popup_dismissed','1');}catch(_e){} });
+          if(localStorage.getItem('doke_guest_popup_dismissed')==='1') popup.style.display='none';
+        }
+      } catch(_e){}
+    });
+    document.addEventListener('click', function(ev){
+      var t = ev.target && ev.target.closest ? ev.target.closest('a,button,[data-route]') : null;
+      if(!t) return;
+      var href = t.getAttribute('href') || t.dataset.route || '';
+      if(!href) return;
+      var guest = !((window.__DOKE_SHELL_AUTH_STATE__||{}).authenticated);
+      if(guest && (/anunciar(\.html|\?|$)|escolheranuncio|tornar-profissional/i.test(href))){
+        ev.preventDefault(); ev.stopPropagation(); location.href='login.html?noshell=1&next='+encodeURIComponent('anunciar.html');
+      }
+    }, true);
+  } catch(_e){}
 })();

@@ -2,7 +2,7 @@
 // Não faça cache de requests cross-origin (ex: Supabase / CDNs). Isso causa erros
 // intermitentes (incluindo CORS/520) porque o SW pode servir respostas antigas/ruins.
 // Mantemos cache APENAS para assets do próprio site.
-const CACHE_NAME = 'doke-cache-v3';
+const CACHE_NAME = 'doke-cache-v4';
 const CORE_ASSETS = [
   './',
   './index.html',

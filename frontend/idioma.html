@@ -1,27 +1,28 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="doke-nav-boot.js?v=20260309v09"></script>
+<script src="auth-guard.js?v=20260312v03"></script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
 <title>Idioma | Doke</title>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260307v61"></script>
+<script defer="" src="script.js?v=20260312v62"></script>
 <style>
-        /* ================= VARIÃƒÆ’Ã‚Æ’Ãƒâ€šÃ‚ÂVEIS E RESET ================= */
+        /* ================= VARIÃƒÂƒÃ‚ÂVEIS E RESET ================= */
         :root {
             --cor0: #0b7768; /* Verde Principal */
             --cor1: #737373; /* Cinza Texto */
-            --cor2: #2a5f90; /* Azul TÃƒÆ’Ã‚Â­tulos */
+            --cor2: #2a5f90; /* Azul TÃƒÂ­tulos */
             --cor3: #f35b5b; /* Vermelho/Alerta */
             --cor4: #ecedf2; /* Cinza Fundo Claro */
             --fonte-padrao: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -40,7 +41,7 @@
         a { text-decoration: none; }
 
 
-        /* ================= CONTEÃƒÆ’Ã‚Å¡DO PRINCIPAL ================= */
+        /* ================= CONTEÃƒÂšDO PRINCIPAL ================= */
         .main-content {
             flex: 1;
             padding: 40px;
@@ -76,7 +77,7 @@
             color: var(--cor1); font-size: 0.95rem; margin-bottom: 25px;
         }
 
-        /* Lista de OpÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes */
+        /* Lista de OpÃƒÂ§ÃƒÂµes */
         .lang-option {
             display: flex; align-items: center; justify-content: space-between;
             padding: 18px;
@@ -106,14 +107,14 @@
         .check-icon {
             color: var(--cor0);
             font-size: 1.5rem;
-            display: none; /* Escondido por padrÃƒÆ’Ã‚Â£o */
+            display: none; /* Escondido por padrÃƒÂ£o */
         }
         
         .lang-option.active .check-icon {
             display: block; /* Aparece quando ativo */
         }
 
-        /* BotÃƒÆ’Ã‚Â£o Salvar */
+        /* BotÃƒÂ£o Salvar */
         .btn-save {
             width: 100%; padding: 16px; background: var(--cor0); color: white;
             border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
@@ -149,15 +150,17 @@
 <link href="doke-responsive.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
-<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/></head>
+<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/><style>.popup{display:none!important;}</style>
+  <link rel="stylesheet" href="site-global-polish.css">
+</head>
 <body data-page="mais">
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">Ãƒâ€”</span>
+<span class="close-btn" onclick="fecharPopup()">Ã—</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                NÃƒÂ£o tem uma conta?
+                NÃ£o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -185,12 +188,12 @@
 </a>
 <a class="settings-nav-item" data-section="enderecos" href="enderecos.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-map"></i></span>
-<span class="settings-nav-text">EndereÃƒÂ§os</span>
+<span class="settings-nav-text">EndereÃ§os</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" data-section="senha" href="senha.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-lock-alt"></i></span>
-<span class="settings-nav-text">SeguranÃƒÂ§a e senha</span>
+<span class="settings-nav-text">SeguranÃ§a e senha</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" data-section="pagamentos" href="pagamentos.html">
@@ -200,7 +203,7 @@
 </a>
 </div>
 <div class="settings-side__group">
-<div class="settings-side__title">PREFERÃƒÅ NCIAS</div>
+<div class="settings-side__title">PREFERÃŠNCIAS</div>
 <div class="settings-toggle-row">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-moon"></i></span>
 <span class="settings-toggle-label">Modo escuro</span>
@@ -211,7 +214,7 @@
 </div>
 <a class="settings-nav-item" data-section="preferencia-notif" href="preferencia-notif.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-bell"></i></span>
-<span class="settings-nav-text">NotificaÃƒÂ§ÃƒÂµes</span>
+<span class="settings-nav-text">NotificaÃ§Ãµes</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 <a class="settings-nav-item" data-section="idioma" href="idioma.html">
@@ -243,37 +246,37 @@
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
 </div>
-</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>Idioma</h1><p>Defina o idioma do app para melhorar sua experiÃƒÂªncia.</p></div></div><div class="settings-frame-card"><div class="lang-container">
+</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>Idioma</h1><p>Defina o idioma do app para melhorar sua experiÃªncia.</p></div></div><div class="settings-frame-card"><div class="lang-container">
 <div class="card-box">
-<p class="description">Selecione o idioma que vocÃƒÂª prefere usar na Doke. Isso afetarÃƒÂ¡ textos, menus e notificaÃƒÂ§ÃƒÂµes.</p>
+<p class="description">Selecione o idioma que vocÃª prefere usar na Doke. Isso afetarÃ¡ textos, menus e notificaÃ§Ãµes.</p>
 <div class="lang-option active" onclick="selectLang(this)">
 <div class="lang-info">
-<span class="flag">ÃƒÂ°Ã‚Å¸Ã‚â€¡Ã‚Â§ÃƒÂ°Ã‚Å¸Ã‚â€¡Ã‚Â·</span>
-<span class="lang-name">PortuguÃƒÂªs (Brasil)</span>
+<span class="flag">Ã°ÂŸÂ‡Â§Ã°ÂŸÂ‡Â·</span>
+<span class="lang-name">PortuguÃªs (Brasil)</span>
 </div>
 <i class="bx bx-check check-icon"></i>
 </div>
 <div class="lang-option" onclick="selectLang(this)">
 <div class="lang-info">
-<span class="flag">ÃƒÂ°Ã‚Å¸Ã‚â€¡Ã‚ÂºÃƒÂ°Ã‚Å¸Ã‚â€¡Ã‚Â¸</span>
+<span class="flag">Ã°ÂŸÂ‡ÂºÃ°ÂŸÂ‡Â¸</span>
 <span class="lang-name">English (US)</span>
 </div>
 <i class="bx bx-check check-icon"></i>
 </div>
 <div class="lang-option" onclick="selectLang(this)">
 <div class="lang-info">
-<span class="flag">ÃƒÂ°Ã‚Å¸Ã‚â€¡Ã‚ÂªÃƒÂ°Ã‚Å¸Ã‚â€¡Ã‚Â¸</span>
-<span class="lang-name">EspaÃƒÂ±ol</span>
+<span class="flag">Ã°ÂŸÂ‡ÂªÃ°ÂŸÂ‡Â¸</span>
+<span class="lang-name">EspaÃ±ol</span>
 </div>
 <i class="bx bx-check check-icon"></i>
 </div>
-<button class="btn-save" onclick="salvarIdioma()">Salvar PreferÃƒÂªncia</button>
+<button class="btn-save" onclick="salvarIdioma()">Salvar PreferÃªncia</button>
 </div>
 </div></div></section></div><div aria-hidden="true" class="settings-drawer-overlay" id="settingsDrawerOverlay"></div></div></main>
 <nav class="bottom-nav">
 <a class="item active" href="index.html">
-<img alt="InÃƒÂ­cio" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/>
-<span>InÃƒÂ­cio</span>
+<img alt="InÃ­cio" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/>
+<span>InÃ­cio</span>
 </a>
 <a class="item" href="busca.html">
 <img alt="Explorar" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/>
@@ -284,16 +287,16 @@
 <span>Anunciar</span>
 </a>
 <a class="item" href="notificacoes.html">
-<img alt="NotificaÃƒÂ§ÃƒÂµes" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/>
-<span>NotificaÃƒÂ§ÃƒÂµes</span>
+<img alt="NotificaÃ§Ãµes" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/>
+<span>NotificaÃ§Ãµes</span>
 </a>
-<a class="item" href="perfil.html">
+<a class="item" href="meuperfil.html">
 <img alt="Perfil" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/>
 <span>Perfil</span>
 </a>
 </nav>
 <script>
-        // FunÃƒÂ§ÃƒÂ£o para selecionar o idioma
+        // FunÃ§Ã£o para selecionar o idioma
         function selectLang(element) {
             // Remove a classe 'active' de todos
             document.querySelectorAll('.lang-option').forEach(el => el.classList.remove('active'));
@@ -301,7 +304,7 @@
             element.classList.add('active');
         }
 
-        // FunÃƒÂ§ÃƒÂ£o Fake de Salvar
+        // FunÃ§Ã£o Fake de Salvar
         function salvarIdioma() {
             const btn = document.querySelector('.btn-save');
             const originalText = btn.innerText;
@@ -319,8 +322,9 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260309v97"></script>
-<script defer="True" src="settings-pages.js?v=20260301v02"></script></body>
+<script src="doke-shell.js?v=20260312v99"></script>
+<script defer="True" src="settings-pages.js?v=20260301v02"></script>  <script src="site-global-polish.js"></script>
+</body>
 </html>
 
 

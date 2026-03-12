@@ -1,9 +1,10 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>√∞≈∏‚Äù¬ß Diagn√≥stico Avan√ßado - Doke</title>
+    <script src="doke-nav-boot.js?v=20260312v11"></script>
+    <title>Y"ß DiagnÛstico AvanÁado - Doke</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <style>
         * {
@@ -247,25 +248,26 @@
             }
         }
     </style>
+  <link rel="stylesheet" href="site-global-polish.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class='bx bx-wrench'></i> Diagn√≥stico Avan√ßado do Sistema</h1>
+            <h1><i class='bx bx-wrench'></i> DiagnÛstico AvanÁado do Sistema</h1>
             <p>Ferramenta para identificar e corrigir problemas do Doke</p>
         </div>
 
         <div class="card">
-            <h2><i class='bx bx-info-circle'></i> Instru√ß√µes</h2>
+            <h2><i class='bx bx-info-circle'></i> InstruÁıes</h2>
             <div class="alert alert-info">
                 <i class='bx bx-help-circle' style="font-size: 1.5rem;"></i>
                 <div>
                     <strong>Como usar esta ferramenta:</strong>
                     <ol style="margin-top: 8px; padding-left: 20px;">
-                        <li>Clique em "Iniciar Diagn√≥stico Completo"</li>
+                        <li>Clique em "Iniciar DiagnÛstico Completo"</li>
                         <li>Aguarde os testes serem executados</li>
-                        <li>Veja os resultados e corre√ß√µes sugeridas</li>
-                        <li>Use os bot√µes de a√ß√£o para corrigir problemas</li>
+                        <li>Veja os resultados e correÁıes sugeridas</li>
+                        <li>Use os botıes de aÁ„o para corrigir problemas</li>
                     </ol>
                 </div>
             </div>
@@ -282,19 +284,19 @@
             <div id="testsContainer"></div>
             <div class="actions">
                 <button class="btn btn-primary" onclick="iniciarDiagnostico()">
-                    <i class='bx bx-play-circle'></i> Iniciar Diagn√≥stico Completo
+                    <i class='bx bx-play-circle'></i> Iniciar DiagnÛstico Completo
                 </button>
             </div>
         </div>
 
         <div class="card" id="resultsCard" class="hidden">
-            <h2><i class='bx bx-clipboard-check'></i> Resumo e A√ß√µes</h2>
+            <h2><i class='bx bx-clipboard-check'></i> Resumo e AÁıes</h2>
             <div id="resultsContainer"></div>
             <div class="actions" id="actionsContainer"></div>
         </div>
 
         <div class="card">
-            <h2><i class='bx bx-cog'></i> A√ß√µes R√°pidas</h2>
+            <h2><i class='bx bx-cog'></i> AÁıes R·pidas</h2>
             <div class="actions">
                 <button class="btn btn-danger" onclick="limparCacheCompleto()">
                     <i class='bx bx-trash'></i> Limpar Todo o Cache
@@ -303,36 +305,36 @@
                     <i class='bx bx-wifi'></i> Testar Supabase
                 </button>
                 <button class="btn btn-primary" onclick="exportarDiagnostico()">
-                    <i class='bx bx-download'></i> Exportar Relat√≥rio
+                    <i class='bx bx-download'></i> Exportar RelatÛrio
                 </button>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-init.js?v=20260218v43"></script>
+    <script src="supabase-init.js?v=20260312v44"></script>
 <script src="doke-auto-fix.js?v=20260215v10"></script>
     <script>
         const testes = [
             {
                 id: 'supabase-connection',
-                nome: 'Conex√£o com Supabase',
+                nome: 'Conex„o com Supabase',
                 teste: async () => {
                     const sb = window.sb || window.supabaseClient;
-                    if (!sb) throw new Error('Cliente Supabase n√£o inicializado');
+                    if (!sb) throw new Error('Cliente Supabase n„o inicializado');
                     
                     const url = window.SUPABASE_URL || window.DOKE_SUPABASE_URL;
                     const key = window.SUPABASE_ANON_KEY || window.DOKE_SUPABASE_ANON_KEY;
                     
                     if (!url || url.includes('YOURPROJECT')) {
-                        throw new Error('URL do Supabase n√£o configurada corretamente');
+                        throw new Error('URL do Supabase n„o configurada corretamente');
                     }
                     
                     if (!key || key.length < 100) {
-                        throw new Error('Chave do Supabase inv√°lida');
+                        throw new Error('Chave do Supabase inv·lida');
                     }
 
-                    // Testa conex√£o real
+                    // Testa conex„o real
                     const response = await fetch(`${url}/auth/v1/health`, {
                         headers: { 'apikey': key }
                     });
@@ -346,10 +348,10 @@
             },
             {
                 id: 'auth-session',
-                nome: 'Sess√£o de Autentica√ß√£o',
+                nome: 'Sess„o de AutenticaÁ„o',
                 teste: async () => {
                     const sb = window.sb || window.supabaseClient;
-                    if (!sb) throw new Error('Cliente Supabase n√£o dispon√≠vel');
+                    if (!sb) throw new Error('Cliente Supabase n„o disponÌvel');
 
                     const { data, error } = await sb.auth.getSession();
                     
@@ -358,19 +360,19 @@
                     const user = data?.session?.user;
                     
                     if (!user) {
-                        return { ok: false, aviso: 'Nenhum usu√°rio logado (normal se estiver deslogado)' };
+                        return { ok: false, aviso: 'Nenhum usu·rio logado (normal se estiver deslogado)' };
                     }
 
                     return { 
                         ok: true, 
-                        detalhes: `Usu√°rio logado: ${user.email}`,
+                        detalhes: `Usu·rio logado: ${user.email}`,
                         dados: { uid: user.id, email: user.email }
                     };
                 }
             },
             {
                 id: 'localstorage-check',
-                nome: 'Verifica√ß√£o do LocalStorage',
+                nome: 'VerificaÁ„o do LocalStorage',
                 teste: async () => {
                     const perfil = localStorage.getItem('doke_usuario_perfil');
                     const logado = localStorage.getItem('usuarioLogado');
@@ -386,10 +388,10 @@
                         try {
                             const p = JSON.parse(perfil);
                             if (!p.nome && !p.user) {
-                                problemas.push('Perfil sem dados b√°sicos');
+                                problemas.push('Perfil sem dados b·sicos');
                             }
                         } catch (e) {
-                            problemas.push('Perfil corrompido (JSON inv√°lido)');
+                            problemas.push('Perfil corrompido (JSON inv·lido)');
                         }
                     }
 
@@ -409,9 +411,9 @@
                 nome: 'Acesso ao Banco de Dados',
                 teste: async () => {
                     const sb = window.sb || window.supabaseClient;
-                    if (!sb) throw new Error('Cliente Supabase n√£o dispon√≠vel');
+                    if (!sb) throw new Error('Cliente Supabase n„o disponÌvel');
 
-                    // Tenta ler da tabela usu√°rios (teste de RLS)
+                    // Tenta ler da tabela usu·rios (teste de RLS)
                     const { data, error } = await sb
                         .from('usuarios')
                         .select('uid')
@@ -419,28 +421,28 @@
 
                     if (error) {
                         if (error.code === '42P01') {
-                            throw new Error('Tabela "usu√°rios" n√£o existe no banco');
+                            throw new Error('Tabela "usu·rios" n„o existe no banco');
                         }
                         throw new Error(`Erro RLS: ${error.message}`);
                     }
 
                     return { 
                         ok: true, 
-                        detalhes: 'Pol√≠ticas RLS configuradas corretamente'
+                        detalhes: 'PolÌticas RLS configuradas corretamente'
                     };
                 }
             },
             {
                 id: 'cache-versions',
-                nome: 'Vers√µes de Cache',
+                nome: 'Versıes de Cache',
                 teste: async () => {
                     const buildTag = window.__DOKE_BUILD__;
                     
                     if (!buildTag) {
-                        throw new Error('Build tag n√£o encontrada');
+                        throw new Error('Build tag n„o encontrada');
                     }
 
-                    // Verifica se h√° conflito de vers√µes
+                    // Verifica se h· conflito de versıes
                     const scripts = Array.from(document.querySelectorAll('script[src]'));
                     const versoes = scripts
                         .map(s => s.src.match(/v=([^&]+)/)?.[1])
@@ -451,14 +453,14 @@
                     if (versoesUnicas.length > 3) {
                         return {
                             ok: false,
-                            aviso: `${versoesUnicas.length} vers√µes diferentes detectadas`,
+                            aviso: `${versoesUnicas.length} versıes diferentes detectadas`,
                             detalhes: versoesUnicas.join(', ')
                         };
                     }
 
                     return { 
                         ok: true, 
-                        detalhes: `Build: ${buildTag}, Vers√µes: ${versoesUnicas.length}`
+                        detalhes: `Build: ${buildTag}, Versıes: ${versoesUnicas.length}`
                     };
                 }
             }
@@ -506,7 +508,7 @@
                 await new Promise(resolve => setTimeout(resolve, 300));
             }
 
-            progressText.textContent = 'Diagn√≥stico conclu√≠do!';
+            progressText.textContent = 'DiagnÛstico concluÌdo!';
             setTimeout(() => {
                 progressContainer.classList.add('hidden');
             }, 2000);
@@ -561,7 +563,7 @@
                     <div class="alert alert-success">
                         <i class='bx bx-check-circle' style="font-size: 1.5rem;"></i>
                         <div>
-                            <strong>‚úÖ Sistema Funcionando Perfeitamente!</strong>
+                            <strong>? Sistema Funcionando Perfeitamente!</strong>
                             <p style="margin-top: 5px;">Todos os ${sucessos} testes passaram. Seu site deve estar operacional.</p>
                         </div>
                     </div>
@@ -571,13 +573,13 @@
                     <div class="alert alert-danger">
                         <i class='bx bx-error-circle' style="font-size: 1.5rem;"></i>
                         <div>
-                            <strong>√¢≈°¬†√Ø¬∏¬è ${falhas} Problema(s) Encontrado(s)</strong>
+                            <strong>‚s†Ô∏è ${falhas} Problema(s) Encontrado(s)</strong>
                             <p style="margin-top: 5px;">${sucessos} testes passaram, ${falhas} falharam.</p>
                         </div>
                     </div>
                 `;
 
-                // A√ß√µes espec√≠ficas baseadas nos erros
+                // AÁıes especÌficas baseadas nos erros
                 if (!resultadosTestes['supabase-connection']?.ok) {
                     acoes += `
                         <button class="btn btn-danger" onclick="corrigirSupabase()">
@@ -597,7 +599,7 @@
                 if (!resultadosTestes['database-access']?.ok) {
                     acoes += `
                         <button class="btn btn-danger" onclick="mostrarSqlFix()">
-                            <i class='bx bx-data'></i> Ver Script SQL de Corre√ß√£o
+                            <i class='bx bx-data'></i> Ver Script SQL de CorreÁ„o
                         </button>
                     `;
                 }
@@ -608,7 +610,7 @@
         }
 
         async function limparCacheCompleto() {
-            if (!confirm('Isso ir√° limpar TODOS os dados salvos (login, perfil, prefer√™ncias). Continuar?')) {
+            if (!confirm('Isso ir· limpar TODOS os dados salvos (login, perfil, preferÍncias). Continuar?')) {
                 return;
             }
 
@@ -632,12 +634,12 @@
                     await sb.auth.signOut();
                 }
 
-                alert('‚úÖ Cache limpo com sucesso! Recarregando a p√°gina...');
+                alert('? Cache limpo com sucesso! Recarregando a p·gina...');
                 setTimeout(() => {
                     window.location.reload();
                 }, 1000);
             } catch (error) {
-                alert('√¢¬ù≈í Erro ao limpar cache: ' + error.message);
+                alert('‚ùO Erro ao limpar cache: ' + error.message);
             }
         }
 
@@ -645,7 +647,7 @@
             const sb = window.sb || window.supabaseClient;
             
             if (!sb) {
-                alert('√¢¬ù≈í Cliente Supabase n√£o inicializado');
+                alert('‚ùO Cliente Supabase n„o inicializado');
                 return;
             }
 
@@ -654,9 +656,9 @@
                 
                 if (error) throw error;
 
-                alert(`‚úÖ Conex√£o OK!\n\nUsu√°rio: ${data.session?.user?.email || 'Nenhum usu√°rio logado'}`);
+                alert(`? Conex„o OK!\n\nUsu·rio: ${data.session?.user?.email || 'Nenhum usu·rio logado'}`);
             } catch (error) {
-                alert(`√¢¬ù≈í Erro na conex√£o:\n\n${error.message}`);
+                alert(`‚ùO Erro na conex„o:\n\n${error.message}`);
             }
         }
 
@@ -667,7 +669,7 @@
                         <h2 style="margin-bottom: 20px;"><i class='bx bx-wrench'></i> Reconfigurar Supabase</h2>
                         <p style="margin-bottom: 15px;">Acesse seu projeto Supabase e copie as credenciais:</p>
                         <ol style="margin-bottom: 20px; padding-left: 20px; line-height: 1.8;">
-                            <li>V√° em <strong>Settings > API</strong></li>
+                            <li>V· em <strong>Settings > API</strong></li>
                             <li>Copie a <strong>Project URL</strong></li>
                             <li>Copie a <strong>anon/public key</strong> (JWT grande)</li>
                             <li>Cole no arquivo <code>supabase-init.js</code> (linhas 14-15)</li>
@@ -686,28 +688,28 @@ const DEFAULT_KEY = "SUA_CHAVE_AQUI";
         function mostrarSqlFix() {
             const sql = `-- Execute este SQL no Supabase (aba SQL Editor):
 
--- 1. Habilitar RLS na tabela usu√°rios
-ALTER TABLE usu√°rios ENABLE ROW LEVEL SECURITY;
+-- 1. Habilitar RLS na tabela usu·rios
+ALTER TABLE usu·rios ENABLE ROW LEVEL SECURITY;
 
--- 2. Permitir leitura p√∫blica de perfis
-CREATE POLICY "Perfis p√∫blicos s√£o vis√≠veis"
-ON usu√°rios FOR SELECT
+-- 2. Permitir leitura p˙blica de perfis
+CREATE POLICY "Perfis p˙blicos s„o visÌveis"
+ON usu·rios FOR SELECT
 USING (true);
 
--- 3. Usu√°rios podem atualizar pr√≥prio perfil
-CREATE POLICY "Usu√°rios podem atualizar pr√≥prio perfil"
-ON usu√°rios FOR UPDATE
+-- 3. Usu·rios podem atualizar prÛprio perfil
+CREATE POLICY "Usu·rios podem atualizar prÛprio perfil"
+ON usu·rios FOR UPDATE
 USING (auth.uid() = uid);
 
--- 4. Permitir cria√ß√£o de novo perfil no signup
-CREATE POLICY "Usu√°rios podem criar pr√≥prio perfil"
-ON usu√°rios FOR INSERT
+-- 4. Permitir criaÁ„o de novo perfil no signup
+CREATE POLICY "Usu·rios podem criar prÛprio perfil"
+ON usu·rios FOR INSERT
 WITH CHECK (auth.uid() = uid);`;
 
             const modal = `
                 <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999;" onclick="this.remove()">
                     <div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; max-height: 80vh; overflow-y: auto;" onclick="event.stopPropagation()">
-                        <h2 style="margin-bottom: 20px;"><i class='bx bx-data'></i> Script SQL de Corre√ß√£o</h2>
+                        <h2 style="margin-bottom: 20px;"><i class='bx bx-data'></i> Script SQL de CorreÁ„o</h2>
                         <p style="margin-bottom: 15px;">Copie e execute este SQL no Supabase:</p>
                         <div class="code-block" style="white-space: pre-wrap;">${sql}</div>
                         <button class="btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="copiarSQL(\`${sql}\`)">
@@ -721,9 +723,9 @@ WITH CHECK (auth.uid() = uid);`;
 
         function copiarSQL(sql) {
             navigator.clipboard.writeText(sql).then(() => {
-                alert('‚úÖ SQL copiado! Cole no Supabase > SQL Editor');
+                alert('? SQL copiado! Cole no Supabase > SQL Editor');
             }).catch(() => {
-                alert('√¢¬ù≈í Erro ao copiar. Copie manualmente.');
+                alert('‚ùO Erro ao copiar. Copie manualmente.');
             });
         }
 
@@ -744,7 +746,7 @@ WITH CHECK (auth.uid() = uid);`;
             URL.revokeObjectURL(url);
         }
 
-        // Executa um teste r√°pido ao carregar
+        // Executa um teste r·pido ao carregar
         window.addEventListener('load', () => {
             setTimeout(() => {
                 const sb = window.sb || window.supabaseClient;
@@ -754,8 +756,8 @@ WITH CHECK (auth.uid() = uid);`;
                         <div class="alert alert-danger">
                             <i class='bx bx-error-circle' style="font-size: 1.5rem;"></i>
                             <div>
-                                <strong>√¢≈°¬†√Ø¬∏¬è Supabase n√£o inicializado!</strong>
-                                <p style="margin-top: 5px;">O cliente Supabase n√£o foi carregado. Verifique se o arquivo supabase-init.js existe e est√° configurado.</p>
+                                <strong>‚s†Ô∏è Supabase n„o inicializado!</strong>
+                                <p style="margin-top: 5px;">O cliente Supabase n„o foi carregado. Verifique se o arquivo supabase-init.js existe e est· configurado.</p>
                             </div>
                         </div>
                     `);
@@ -763,6 +765,7 @@ WITH CHECK (auth.uid() = uid);`;
             }, 1000);
         });
     </script>
+  <script src="site-global-polish.js"></script>
 </body>
 </html>
 

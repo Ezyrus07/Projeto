@@ -8,23 +8,19 @@ window.__DOKE_BUILD__ = "20260303v61";
 try { console.log("[DOKE] build:", window.__DOKE_BUILD__); } catch(_e) {}
 
 function dokeApplyAppPageEnter(){
-    try {
-        const qs = new URLSearchParams(location.search || "");
-        const isAppV2 = qs.get("appv2") === "1" || localStorage.getItem("doke_app_v2") === "1" || document.documentElement.classList.contains("doke-v2-active");
-        if (isAppV2) return;
-        const body = document.body;
-        if (!body || body.classList.contains('doke-app-page-enter')) return;
-        if (body.dataset && body.dataset.page === "home") return;
-        body.classList.add('doke-app-page-enter');
-        setTimeout(() => {
-            try { body.classList.remove('doke-app-page-enter'); } catch (_) {}
-        }, 420);
-    } catch (_) {}
+    return;
 }
 
 function dokeNavigateHtml(targetUrl) {
     const to = String(targetUrl || '').trim();
     if (!to) return;
+    try {
+        const url = new URL(to, window.location.href);
+        if (url.origin === window.location.origin && /\.html$/i.test(String(url.pathname || ''))) {
+            sessionStorage.setItem('doke_nav_preboot_target_v1', `${url.pathname || ''}${url.search || ''}`);
+            if (document.body) document.body.classList.add('doke-nav-pending');
+        }
+    } catch (_) {}
     try {
         if (typeof window.__DOKE_V2_NAVIGATE__ === 'function') {
             window.__DOKE_V2_NAVIGATE__(to);
@@ -4674,7 +4670,10 @@ setTimeout(() => {
     if (typeof window.__dokeFixHeaderClickBlock === 'function') window.__dokeFixHeaderClickBlock();
 }, 80);
 
-window.abrirPopup = function() { const p = document.getElementById("popup"); if(p) p.style.display = "block"; }
+window.abrirPopup = function() {
+    const p = document.getElementById("popup");
+    if (p) p.style.display = "none";
+}
 window.fecharPopup = function() { const p = document.getElementById("popup"); if(p) p.style.display = "none"; }
 
 function setFiltrosExtrasState(open) {
@@ -6566,13 +6565,9 @@ document.addEventListener("DOMContentLoaded", async function() {
     var dataHoje = new Date().toDateString();
     
     // Verifica se o usu?rio J? est? logado
-    const estaLogado = localStorage.getItem('usuarioLogado') === 'true'; 
-
-    // S? abre o popup se a data for nova E se N?O estiver logado
-    if (localStorage.getItem("popupVistoData") !== dataHoje && !estaLogado) {
-        window.abrirPopup();
-        localStorage.setItem("popupVistoData", dataHoje);
-    }
+    const popup = document.getElementById('popup');
+    if (popup) popup.style.display = 'none';
+    localStorage.setItem("popupVistoData", dataHoje);
     // 7. Efeito Typewriter
     const elementoTexto = document.getElementById('typewriter');
     if (elementoTexto) {
@@ -16467,10 +16462,27 @@ document.addEventListener('DOMContentLoaded', function(){
 
   const perfil = getPerfilLocal();
   const isPro = perfil && perfil.isProfissional === true;
-  if (isPro) return;
+
+  function hasVerifiedAuthForAnnounce(){
+    try {
+      var verifiedAt = Number(localStorage.getItem('doke_auth_verified_at') || sessionStorage.getItem('doke_auth_verified_at') || 0);
+      if (!Number.isFinite(verifiedAt) || verifiedAt <= 0) return false;
+      var uid = String(localStorage.getItem('doke_uid') || perfil.uid || perfil.id || '').trim();
+      var flag = String(localStorage.getItem('usuarioLogado') || '').toLowerCase() === 'true';
+      return !!(uid && flag);
+    } catch(_) { return false; }
+  }
 
   const toUpgrade = function(){
     try{
+      if (!hasVerifiedAuthForAnnounce()) {
+        window.location.href = 'login.html?noshell=1&next=' + encodeURIComponent('anunciar.html');
+        return;
+      }
+      if (isPro) {
+        window.location.href = 'anunciar.html';
+        return;
+      }
       openProUpsellModal();
     }catch(_){}
   };
@@ -16488,6 +16500,14 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 
   // Guarda extra para cliques em botoes/links dinamicos.
+  document.addEventListener('click', function(ev){
+    var act = ev.target && ev.target.closest ? ev.target.closest('.doke-pro-upsell-btn.secondary,[data-action="close"],.doke-promo__close') : null;
+    if(act){
+      try{ var overlay = document.querySelector('.doke-pro-upsell-overlay'); if(overlay) overlay.remove(); }catch(_e){}
+      try{ var promo = document.getElementById('dokePromo'); if(promo) promo.style.display='none'; localStorage.setItem('doke_promo_seen_v1','1'); }catch(_e){}
+    }
+  }, true);
+
   document.addEventListener('click', function(ev){
     const el = ev.target && ev.target.closest ? ev.target.closest('a,button') : null;
     if (!el) return;
@@ -16709,4 +16729,16 @@ document.addEventListener('DOMContentLoaded', function(){
   window.addEventListener("doke:page-ready", () => {
     setTimeout(run, 0);
   });
+})();
+
+window.addEventListener('DOMContentLoaded', function(){
+  try{ var p=document.getElementById('popup'); if(p && localStorage.getItem('doke_guest_popup_dismissed')==='1'){ p.style.display='none'; }}catch(_e){}
+});
+(function(){
+  var oldFechar = window.fecharPopup;
+  window.fecharPopup = function(){ try{localStorage.setItem('doke_guest_popup_dismissed','1');}catch(_e){} if(typeof oldFechar==='function') return oldFechar(); var p=document.getElementById('popup'); if(p) p.style.display='none'; };
+  document.addEventListener('click', function(ev){
+    var act = ev.target && ev.target.closest ? ev.target.closest('.doke-pro-upsell-btn.secondary,[data-action="close"]') : null;
+    if(act){ var overlay = document.querySelector('.doke-pro-upsell-overlay'); if(overlay) overlay.remove(); }
+  }, true);
 })();

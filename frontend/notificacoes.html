@@ -1,18 +1,19 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="doke-nav-boot.js?v=20260309v09"></script>
-<title>Notificações | Doke</title>
+<script src="auth-guard.js?v=20260312v03"></script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
+<title>Notifica��es | Doke</title>
 <meta content="Acompanhe mensagens, novidades e alertas em um feed organizado." name="description"/>
-<meta content="Doke - Notificações" property="og:title"/>
+<meta content="Doke - Notifica��es" property="og:title"/>
 <meta content="Acompanhe mensagens, novidades e alertas em um feed organizado." property="og:description"/>
 <meta content="website" property="og:type"/>
 <meta content="assets/Imagens/doke-logo.png" property="og:image"/>
@@ -21,10 +22,10 @@
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet">
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260307v61"></script>
+<script defer="" src="script.js?v=20260312v62"></script>
 <style>
         /* ======================================================
-           ESTILOS ESPECIFICOS DA PÁGINA NOTIFICAÇÕES
+           ESTILOS ESPECIFICOS DA P�GINA NOTIFICA��ES
            ====================================================== */
         
         @media (min-width: 1024px) {
@@ -275,7 +276,7 @@
         .notif-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
         .notif-card.read { opacity: 0.88; }
         
-        /* Marcador de Não Lido */
+        /* Marcador de N�o Lido */
         .notif-card.unread { border-left: 5px solid var(--cor0); background: #faffff; }
         .notif-card.unread::after {
             content: ''; position: absolute; top: 20px; right: 20px;
@@ -398,15 +399,18 @@ main{padding-top:20px !important;}
 .summary-card{border:1px solid #dbe5f0 !important;}
 @media (max-width:768px){.notif-hero-container{padding:20px !important;}.hero-actions{width:100%;}.btn-hero-action{flex:1 1 100%;justify-content:center;}}
 </style>
+  <link rel="stylesheet" href="ui-system.css">
+<style>.popup{display:none!important;}</style>
+  <link rel="stylesheet" href="site-global-polish.css">
 </head>
 <body data-page="notificacoes">
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">×</span>
+<span class="close-btn" onclick="fecharPopup()">�</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                Não tem uma conta?
+                N�o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -420,8 +424,8 @@ main{padding-top:20px !important;}
 <div class="notif-hero-container">
 <div class="hero-content">
 <span class="notif-kicker">Central</span>
-<h1>Notificações <span class="badge-count" id="badge-count" style="display:none;">0</span></h1>
-<p>Acompanhe alertas, pedidos e interações em um painel mais clean e com leitura mais rápida.</p>
+<h1>Notifica��es <span class="badge-count" id="badge-count" style="display:none;">0</span></h1>
+<p>Acompanhe alertas, pedidos e intera��es em um painel mais clean e com leitura mais r�pida.</p>
 </div>
 <div class="hero-actions">
 <button class="btn-hero-action" onclick="marcarTodasLidas()"><i class="bx bx-check-double"></i> Marcar como lidas</button>
@@ -434,7 +438,7 @@ main{padding-top:20px !important;}
 <strong id="summary-total">0</strong>
 </div>
 <div class="summary-card">
-<span>Não lidas</span>
+<span>N�o lidas</span>
 <strong id="summary-unread">0</strong>
 </div>
 <div class="summary-card">
@@ -443,12 +447,12 @@ main{padding-top:20px !important;}
 </div>
 </div>
 <div id="lista-notificacoes">
-<div class="notif-loading"><div><i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i><p>Buscando atualizações...</p></div></div>
+<div class="notif-loading"><div><i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i><p>Buscando atualiza��es...</p></div></div>
 </div>
 <div class="empty-state" id="empty-state">
 <i class="bx bx-bell-off"></i>
 <h3>Tudo limpo por aqui!</h3>
-<p>Você não tem novas notificações no momento.</p>
+<p>Voc� n�o tem novas notifica��es no momento.</p>
 </div>
 </div>
 </main>
@@ -456,22 +460,22 @@ main{padding-top:20px !important;}
 <div class="settings-card">
 <div class="settings-header">
 <div>
-<h3>Ajustes rápidos</h3>
-<p>Escolha como você prefere receber alertas.</p>
+<h3>Ajustes r�pidos</h3>
+<p>Escolha como voc� prefere receber alertas.</p>
 </div>
-<button class="settings-close" onclick="fecharAjustesNotif()" type="button">×</button>
+<button class="settings-close" onclick="fecharAjustesNotif()" type="button">�</button>
 </div>
 <div class="settings-grid">
 <label class="setting-item">
-<span>Som de notificação</span>
+<span>Som de notifica��o</span>
 <input checked="" type="checkbox"/>
 </label>
 <label class="setting-item">
-<span>Vibração no celular</span>
+<span>Vibra��o no celular</span>
 <input checked="" type="checkbox"/>
 </label>
 <label class="setting-item">
-<span>Resumo diário</span>
+<span>Resumo di�rio</span>
 <input type="checkbox"/>
 </label>
 <label class="setting-item">
@@ -486,10 +490,10 @@ main{padding-top:20px !important;}
 </div>
 </div>
 <nav class="bottom-nav">
-<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>In�cio</span></a>
 <a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
 <a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
-<a class="item active" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
+<a class="item active" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notifica��es</span></a>
 <a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
 </nav>
 <script>
@@ -531,7 +535,7 @@ main{padding-top:20px !important;}
             const nomeFallback = user.user_metadata?.nome
                 || user.displayName
                 || perfilLocal?.nome
-                || (user.email ? user.email.split('@')[0] : "Usuário");
+                || (user.email ? user.email.split('@')[0] : "Usu�rio");
             return {
                 uid: user.uid || user.id || perfilLocal?.uid || localStorage.getItem('doke_uid') || null,
                 email: user.email || perfilLocal?.email || null,
@@ -628,8 +632,8 @@ main{padding-top:20px !important;}
                 const perfilLocal = parsePerfilLocal();
                 if (!localStorage.getItem('doke_usuario_perfil')) {
                     localStorage.setItem('doke_usuario_perfil', JSON.stringify({
-                        nome: user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usuário"),
-                        user: user.user_metadata?.user || user.user_metadata?.nome || "Usuário",
+                        nome: user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usu�rio"),
+                        user: user.user_metadata?.user || user.user_metadata?.nome || "Usu�rio",
                         foto: user.user_metadata?.foto || "",
                         uid: user.uid
                     }));
@@ -680,7 +684,7 @@ main{padding-top:20px !important;}
             const comentarioId = data.comentarioId || data.comentarioid || null;
             const deUid = data.deUid || data.deuid || null;
             let titulo = "Atualizacao";
-            let desc = "Você recebeu uma interacao.";
+            let desc = "Voc� recebeu uma interacao.";
             let iconClass = "bx-bell";
             let colorClass = "ni-info";
             let tipoCategoria = "social";
@@ -722,30 +726,30 @@ main{padding-top:20px !important;}
                 colorClass = "ni-info";
             } else if (data.acao === "seguir_usuario") {
                 titulo = "Novo seguidor";
-                desc = `${actor} começou a seguir você.`;
+                desc = `${actor} come�ou a seguir voc�.`;
                 iconClass = "bx-heart";
                 colorClass = "ni-success";
             } else if (data.acao === "portfolio_consent_request") {
-                titulo = "Autorização de portfólio";
-                desc = `${actor} pediu permissão para usar a mídia no portfólio.`;
+                titulo = "Autoriza��o de portf�lio";
+                desc = `${actor} pediu permiss�o para usar a m�dia no portf�lio.`;
                 iconClass = "bx-collection";
                 colorClass = "ni-pedido";
                 tipoCategoria = "pedidos";
             } else if (data.acao === "portfolio_consent_approved") {
-                titulo = "Portfólio autorizado";
-                desc = "Cliente autorizou o uso da mídia no portfólio.";
+                titulo = "Portf�lio autorizado";
+                desc = "Cliente autorizou o uso da m�dia no portf�lio.";
                 iconClass = "bx-check-circle";
                 colorClass = "ni-success";
                 tipoCategoria = "pedidos";
             } else if (data.acao === "portfolio_consent_rejected") {
-                titulo = "Portfólio recusado";
-                desc = "Cliente recusou o uso da mídia no portfólio.";
+                titulo = "Portf�lio recusado";
+                desc = "Cliente recusou o uso da m�dia no portf�lio.";
                 iconClass = "bx-x-circle";
                 colorClass = "ni-alerta";
                 tipoCategoria = "pedidos";
             } else if (data.acao === "portfolio_published") {
-                titulo = "Mídia publicada";
-                desc = `${actor} publicou a mídia no portfólio.`;
+                titulo = "M�dia publicada";
+                desc = `${actor} publicou a m�dia no portf�lio.`;
                 iconClass = "bx-check-shield";
                 colorClass = "ni-info";
                 tipoCategoria = "pedidos";
@@ -764,7 +768,7 @@ main{padding-top:20px !important;}
                 time: timeValue,
                 iconClass,
                 colorClass,
-                link: data.link || (deUid ? `perfil-usuário.html?id=${encodeURIComponent(deUid)}` : "index.html"),
+                link: data.link || (deUid ? `perfil-usu�rio.html?id=${encodeURIComponent(deUid)}` : "index.html"),
                 actor,
                 avatar,
                 postId,
@@ -773,7 +777,7 @@ main{padding-top:20px !important;}
             };
         }
 
-// EM NOTIFICAÇÕES.HTML
+// EM NOTIFICA��ES.HTML
 
 function parseNotifDate(v) {
     if (!v) return new Date();
@@ -832,12 +836,12 @@ async function carregarNotificacoes(uid) {
             const statusLido = data.notificacaoLidaProfissional === true ? 'read' : 'unread';
 
             if(data.status === 'pendente') {
-                const servico = data.servicoReferencia || data.descricaoBase || data.titulo || 'Serviço';
+                const servico = data.servicoReferencia || data.descricaoBase || data.titulo || 'Servi�o';
                 todasNotificacoes.push({
                     id: doc.id,
                     role: 'profissional',
-                    titulo: "Novo Orçamento",
-                    desc: `${data.clienteNome || 'Cliente'} solicitou um orçamento de ${servico}.`,
+                    titulo: "Novo Or�amento",
+                    desc: `${data.clienteNome || 'Cliente'} solicitou um or�amento de ${servico}.`,
                     tipo: 'pedidos',
                     status: statusLido,
                     time: parseNotifDate(data.dataPedido),
@@ -865,7 +869,7 @@ async function carregarNotificacoes(uid) {
                     id: doc.id,
                     role: 'profissional',
                     titulo: "Pagamento Liberado!",
-                    desc: `Serviço concluído! O valor de ${data.valorFinal || ''} foi liberado.`,
+                    desc: `Servi�o conclu�do! O valor de ${data.valorFinal || ''} foi liberado.`,
                     tipo: 'financeiro',
                     status: statusLido,
                     time: parseNotifDate(data.dataConclusao || new Date()),
@@ -878,14 +882,14 @@ async function carregarNotificacoes(uid) {
 
         // --- CLIENTE (Enviados) ---
         snapEnviados.forEach(doc => {
-            const data = doc.data(); // <--- GARANTINDO AQUI TAMBÉM
+            const data = doc.data(); // <--- GARANTINDO AQUI TAMB�M
             const statusLido = data.notificacaoLidaCliente === true ? 'read' : 'unread';
 
             if (data.status === 'aceito') {
                 todasNotificacoes.push({
                     id: doc.id,
                     role: 'cliente',
-                    titulo: "Orçamento Aceito!",
+                    titulo: "Or�amento Aceito!",
                     desc: `O profissional aceitou seu pedido.`,
                     tipo: 'pedidos',
                     status: statusLido,
@@ -895,7 +899,7 @@ async function carregarNotificacoes(uid) {
                     avatar: data.profissionalFoto || data.paraFoto || data.fotoProfissional || ''
                 });
             } else if (data.status === 'recusado') {
-                const motivo = data.motivoRecusa ? `Motivo: ${data.motivoRecusa}` : "O profissional não pode atender no momento.";
+                const motivo = data.motivoRecusa ? `Motivo: ${data.motivoRecusa}` : "O profissional n�o pode atender no momento.";
                 todasNotificacoes.push({
                     id: doc.id,
                     role: 'cliente',
@@ -912,8 +916,8 @@ async function carregarNotificacoes(uid) {
                 todasNotificacoes.push({
                     id: doc.id,
                     role: 'cliente',
-                    titulo: "Avalie o Serviço",
-                    desc: "O serviço foi concluído. Deixe sua avaliação.",
+                    titulo: "Avalie o Servi�o",
+                    desc: "O servi�o foi conclu�do. Deixe sua avalia��o.",
                     tipo: 'pedidos',
                     status: 'unread',
                     time: new Date(data.dataConclusao || new Date()),
@@ -939,7 +943,7 @@ async function carregarNotificacoes(uid) {
     } catch (error) {
         console.error("Erro notifications:", error);
         if (!container || !container.children.length) {
-            container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar notificações.</p>`;
+            container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar notifica��es.</p>`;
         }
     }
 }
@@ -1023,7 +1027,7 @@ async function carregarNotificacoes(uid) {
                         emptyDesc.innerText = "Tente ajustar os filtros ou a busca.";
                     } else {
                         emptyTitle.innerText = "Tudo limpo por aqui!";
-                        emptyDesc.innerText = "Você não tem novas notificações no momento.";
+                        emptyDesc.innerText = "Voc� n�o tem novas notifica��es no momento.";
                     }
                 }
                 if (empty) empty.style.display = 'block';
@@ -1094,7 +1098,7 @@ async function carregarNotificacoes(uid) {
             btn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Salvando...`;
 
             try {
-                // Filtra apenas as não lidas para não gastar recursos
+                // Filtra apenas as n�o lidas para n�o gastar recursos
                 const naoLidas = todasNotificacoes.filter(n => n.status === 'unread');
                 
                 // Cria um array de promessas para atualizar tudo junto
@@ -1152,7 +1156,7 @@ async function carregarNotificacoes(uid) {
                 atualizarBadge();
                 renderizarLista(aplicarFiltros());
             } catch (error) {
-                console.error("Erro ao marcar notificação:", error);
+                console.error("Erro ao marcar notifica��o:", error);
             }
         }
 
@@ -1163,7 +1167,7 @@ async function carregarNotificacoes(uid) {
                     const docRef = doc(db, "notificacoes", notif.id);
                     await deleteDoc(docRef);
                 } catch (error) {
-                    console.error("Erro ao dispensar notificação:", error);
+                    console.error("Erro ao dispensar notifica��o:", error);
                 }
             } else {
                 await marcarNotificacaoLida(notif);
@@ -1267,7 +1271,8 @@ async function carregarNotificacoes(uid) {
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260309v97"></script>
+<script src="doke-shell.js?v=20260312v99"></script>
+  <script src="site-global-polish.js"></script>
 </body>
 </html>
 

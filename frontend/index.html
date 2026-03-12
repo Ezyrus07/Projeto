@@ -4,9 +4,9 @@
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260218v43"></script>
+<script src="supabase-init.js?v=20260312v44"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <script>
@@ -35,14 +35,14 @@
         style.textContent = `
           html.${HOME_PREBOOT_ENTER},
           html.${HOME_PREBOOT_ENTER} body{
-            background:linear-gradient(180deg,#214f7f 0%, #1f6c7b 22%, #e8eef5 58%, #eef3f8 100%) !important;
+            background:#ffffff !important;
           }
           html.${HOME_PREBOOT_ENTER}::before{
             content:"";
             position:fixed;
             inset:0;
             z-index:2147483646;
-            background:linear-gradient(180deg,#214f7f 0%, #1f6c7b 22%, #e8eef5 58%, #eef3f8 100%);
+            background:#ffffff;
             opacity:1;
             pointer-events:none;
             transition:opacity .22s ease;
@@ -50,25 +50,25 @@
           html.${HOME_PREBOOT_ENTER}::after{
             content:"";
             position:fixed;
-            left:0;
-            top:0;
-            height:3px;
-            width:34%;
+            left:50%;
+            top:50%;
+            width:112px;
+            height:112px;
+            transform:translate(-50%,-50%);
             z-index:2147483647;
-            background:linear-gradient(90deg,#2e68a6,#0b7768);
-            box-shadow:0 0 12px rgba(11,119,104,.32);
-            animation:dokeHomePrebootLoad .82s ease-in-out infinite;
+            background:url("assets/Imagens/doke-logo.png") center/contain no-repeat;
+            opacity:1;
             pointer-events:none;
+            animation:dokeHomePrebootPulse 1s ease-in-out infinite;
             transition:opacity .18s ease;
           }
           html.${HOME_PREBOOT_ENTER}.${HOME_PREBOOT_READY}::before,
           html.${HOME_PREBOOT_ENTER}.${HOME_PREBOOT_READY}::after{
             opacity:0;
           }
-          @keyframes dokeHomePrebootLoad{
-            0%{ transform:translateX(0); width:24%; }
-            50%{ transform:translateX(120%); width:46%; }
-            100%{ transform:translateX(270%); width:24%; }
+          @keyframes dokeHomePrebootPulse{
+            0%,100%{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+            50%{ transform:translate(-50%,-50%) scale(.965); opacity:.82; }
           }
         `;
         document.head.appendChild(style);
@@ -96,7 +96,7 @@
     }
     function isHomeLayoutStable() {
       try {
-        var hero = document.querySelector(".secao-busca");
+        var hero = document.querySelector(".home-logo-hero") || document.querySelector(".secao-busca");
         if (!(hero instanceof HTMLElement)) return false;
         var heroStyle = window.getComputedStyle(hero);
         if (heroStyle.display === "none" || heroStyle.visibility === "hidden" || Number(heroStyle.opacity || "1") <= 0) return false;
@@ -159,10 +159,10 @@
     }, 2600);
   })();
 </script>
-<script src="doke-nav-boot.js?v=20260309v09"></script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
 <style>
   html.doke-v2-preboot body {
-      background:#fff !important;
+      background:linear-gradient(180deg,#f7fbff 0%,#eef5fb 100%) !important;
     opacity: 0 !important;
     visibility: hidden !important;
   }
@@ -173,7 +173,7 @@
       var qs = new URLSearchParams(location.search || "");
       var file = String((location.pathname || "").split("/").pop() || "index.html").toLowerCase();
       var forcedOff = qs.get("appv2") === "0";
-      var enabled = !forcedOff && (qs.get("appv2") === "1" || localStorage.getItem("doke_app_v2") === "1" || file === "index.html");
+      var enabled = !forcedOff && file !== "index.html" && (qs.get("appv2") === "1" || localStorage.getItem("doke_app_v2") === "1");
       if (enabled) {
         try { localStorage.setItem("doke_app_v2", "1"); } catch (_e2) {}
       }
@@ -242,10 +242,39 @@
 <link href="doke-shell.css?v=20260212v42" rel="stylesheet"/>
 <link href="doke-responsive.css?v=20260209v24" rel="stylesheet"/>
 <link href="page-home.css?v=20260228v52" rel="stylesheet"/>
+<link href="mobile-home-hotfix.css?v=20260311v1" rel="stylesheet"/>
 <link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
+  <link rel="stylesheet" href="ui-system.css">
+  <link rel="stylesheet" href="site-global-polish.css">
+  <link rel="stylesheet" href="index-structure-rework.css?v=20260312v07">
+<style>
+  @media (min-width: 1025px) {
+    body[data-page="home"] {
+      --sidebar-width: 0px !important;
+      --navbar-height-desktop: 0px !important;
+      padding-top: 0 !important;
+    }
+
+    body[data-page="home"] .navbar-desktop,
+    body[data-page="home"] .sidebar-icones,
+    body[data-page="home"] .navbar-mobile,
+    body[data-page="home"] .bottom-nav,
+    body[data-page="home"] #overlay-menu {
+      display: none !important;
+    }
+
+    body[data-page="home"] main,
+    body[data-page="home"] .dp-wrap {
+      margin-left: auto !important;
+      margin-right: auto !important;
+      max-width: min(1820px, calc(100vw - 72px)) !important;
+      width: min(1820px, calc(100vw - 72px)) !important;
+    }
+  }
+</style>
 </head>
-<body data-page="home">
+<body data-page="home" data-doke-unified-desktop="off">
 <a class="skip-link" href="#feedAnuncios">Pular para o contedo</a>
 <div class="popup" id="popup">
 <div class="popup-content">
@@ -261,12 +290,75 @@
 
 <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 
-
 <main class="dp-wrap">
-<section class="secao-busca">
+<section class="home-shell-topbar" aria-label="Atalhos da home">
+<a class="home-shell-brand" href="index.html" aria-label="Doke">
+<img class="home-shell-brand__logo" src="assets/Imagens/doke-logo.png" alt="Doke"/>
+<span class="home-shell-brand__bar"></span>
+</a>
+<div class="home-shell-actions">
+<a class="home-shell-action" href="#categorias-home">Categorias</a>
+<a class="home-shell-action" href="#videos-home">Videos</a>
+<a class="home-shell-action is-profile" href="meuperfil.html" aria-label="Perfil"><i class="bx bx-user"></i></a>
+</div>
+</section>
+<div class="home-status-pill" aria-hidden="true">
+<span class="home-status-dot"></span>
+<span>Carregando pagina</span>
+</div>
+<div class="home-structure-grid">
+<aside class="home-overview-card" aria-label="Resumo da plataforma">
+<div class="home-overview-card__avatar">D</div>
+<div class="home-overview-card__text">
+<strong>Doke agora</strong>
+<span>Uma home mais limpa para encontrar servicos, profissionais e conteudo sem poluicao visual.</span>
+</div>
+<div class="home-overview-card__stack">
+<article class="home-overview-stat">
+<b>Busca direta</b>
+<span>Descreva servico, bairro ou urgencia em uma linha.</span>
+</article>
+<article class="home-overview-stat">
+<b>Exploracao rapida</b>
+<span>Categorias, videos e publicacoes organizados em um fluxo unico.</span>
+</article>
+<article class="home-overview-stat">
+<b>Acoes principais</b>
+<span>Procurar, anunciar e navegar pelo feed sem trocar de contexto.</span>
+</article>
+</div>
+<div class="home-overview-card__actions">
+<a class="home-overview-link" href="#categorias-home">Ver categorias</a>
+<a class="home-overview-link is-soft" href="pedidos.html">Abrir pedidos</a>
+</div>
+</aside>
+<div class="home-main-stack">
+<section class="home-logo-hero home-shell-section" aria-hidden="true">
+<img class="home-logo-hero__logo" src="assets/Imagens/doke-logo.png" alt="Doke"/>
+</section>
+<section class="home-feature-grid" aria-label="Atalhos principais">
+<article class="home-feature-card">
+<span class="home-feature-card__eyebrow">Categorias</span>
+<strong>Entre direto nas areas mais buscadas.</strong>
+<p>Use a grade de categorias para pular para o que importa sem navegar por menus extras.</p>
+<a href="#categorias-home">Explorar categorias</a>
+</article>
+<article class="home-feature-card">
+<span class="home-feature-card__eyebrow">Videos</span>
+<strong>Descubra profissionais por conteudo curto.</strong>
+<p>Veja demonstracoes, provas sociais e exemplos rapidos antes de abrir um perfil.</p>
+<a href="#videos-home">Abrir videos</a>
+</article>
+<article class="home-feature-card">
+<span class="home-feature-card__eyebrow">Publicacoes</span>
+<strong>Acompanhe novidades e inspiracoes do feed.</strong>
+<p>Reunimos publicacoes e destaques em uma leitura mais leve e previsivel.</p>
+<a href="#publicacoes-home">Ver publicacoes</a>
+</article>
+</section>
+<section class="secao-busca home-shell-section home-search-panel">
 <div class="typing-container">
-<span class="static-text">Busque por</span>
-<span class="icon">?</span>
+<span class="static-text">Encontre servicos com clareza</span>
 <span class="dynamic-text" id="typewriter"></span>
 <span class="cursor"></span>
 </div>
@@ -309,11 +401,11 @@
 <div class="doke-promo__text">Ganhe confiana, histrico de servios e vantagens. Profissional recebe mais rpido e o cliente fica protegido.</div>
 <div class="doke-promo__actions">
 <a class="doke-promo__btn" href="pagamentos.html"><i class="bx bx-crown"></i> Ver benefcios</a>
-<button class="doke-promo__close" id="dokePromoClose" type="button">Agora no</button>
+<button class="doke-promo__close" id="dokePromoClose" type="button" onclick="try{document.getElementById('dokePromo').style.display='none';localStorage.setItem('doke_promo_seen_v1','1');}catch(_e){}">Agora não</button>
 </div>
 </div>
 </section>
-<section aria-label="Categorias em alta" class="categorias-container estilo-lojas">
+<section aria-label="Categorias em alta" class="categorias-container estilo-lojas home-shell-section" id="categorias-home">
 <div class="secao-title-row">
 <h2 class="sec-title">Categorias em alta</h2>
 </div>
@@ -363,7 +455,7 @@
 <button aria-label="Prxima categoria" class="pro-arrow right cat-next" type="button"><i class="bx bx-chevron-right"></i></button>
 </div>
 </section>
-<section class="videos-container">
+<section class="videos-container home-shell-section" id="videos-home">
 
 <div class="videos-header-top sec-head-row sec-head-row--inline is-blue">
   <div class="sec-head-left">
@@ -427,7 +519,7 @@
 </div>
 </div>
 </section>
-<section class="fotos-container">
+<section class="fotos-container home-shell-section" id="publicacoes-home">
 
 <div class="section-feed-title sec-head-row sec-head-row--inline is-green" style="padding: 0; margin-bottom: 25px; margin-top: 40px;">
   <div class="sec-head-left">
@@ -503,7 +595,7 @@
 </div>
 </div>
 </section>
-<div class="anuncio-container anuncio-container-home">
+<div class="anuncio-container anuncio-container-home home-shell-section">
 <div class="filtros-container-premium">
 <div class="filtros-header-row">
 <button class="btn-toggle-filtros" onclick="toggleFiltrosExtras()" type="button">
@@ -614,18 +706,20 @@
     }
 </script>
 <!-- ================= PROFISSIONAIS EM DESTAQUE ================= -->
-<section class="pros-section">
+<section class="pros-section home-shell-section">
 <div class="pros-header">
 <h2 class="sec-title">Profissionais em Destaque</h2>
 </div>
 <div class="pros-carousel" id="prosDestaque"></div>
 </section>
-<section class="pros-section">
+<section class="pros-section home-shell-section">
 <div class="pros-header">
 <h2 class="sec-title">Profissionais Novos</h2>
 </div>
 <div class="pros-carousel" id="prosNovos"></div>
 </section>
+</div>
+</div>
 </main>
 <footer class="main-footer">
 <div class="footer-content">
@@ -881,8 +975,90 @@
     }catch(e){}
   })();
 </script>
-<script src="doke-shell.js?v=20260309v97"></script>
-<script defer="" src="app-v2/app-main.js?v=20260310v81"></script>
+<script>
+  (function () {
+    if (document.body?.dataset.page !== "home") return;
+
+    try {
+      var style = document.createElement("style");
+      style.id = "homeForceNoChrome";
+      style.textContent = `
+        body[data-page="home"] header.navbar-desktop,
+        body[data-page="home"] header.navbar-mobile,
+        body[data-page="home"] aside.sidebar-icones,
+        body[data-page="home"] .navbar-desktop,
+        body[data-page="home"] .sidebar-icones,
+        body[data-page="home"] .bottom-nav,
+        body[data-page="home"] #overlay-menu {
+          display: none !important;
+          opacity: 0 !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+          width: 0 !important;
+          min-width: 0 !important;
+          max-width: 0 !important;
+          height: 0 !important;
+          min-height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+          border: 0 !important;
+          box-shadow: none !important;
+        }
+        body[data-page="home"] {
+          --sidebar-width: 0px !important;
+          --navbar-height-desktop: 0px !important;
+          padding-top: 0 !important;
+        }
+        body[data-page="home"] main,
+        body[data-page="home"] .dp-wrap,
+        body[data-page="home"].doke-structure-reform main,
+        body[data-page="home"].doke-structure-reform .dp-wrap {
+          margin-left: auto !important;
+          margin-right: auto !important;
+          width: min(1820px, calc(100vw - 72px)) !important;
+          max-width: min(1820px, calc(100vw - 72px)) !important;
+        }
+      `;
+      document.head.appendChild(style);
+    } catch (_e) {}
+
+    function cleanupHomeChrome() {
+      try {
+        document.querySelectorAll("header.navbar-desktop, header.navbar-mobile, aside.sidebar-icones, .navbar-desktop, .sidebar-icones, .bottom-nav, #overlay-menu").forEach(function (el) {
+          try { el.remove(); } catch (_e) {}
+        });
+        document.body.classList.remove(
+          "has-doke-sidebar",
+          "doke-structure-reform",
+          "doke-sidebar-expanded",
+          "doke-sidebar-search-open",
+          "menu-ativo"
+        );
+        document.body.style.paddingTop = "0";
+        document.body.style.setProperty("--sidebar-width", "0px");
+      } catch (_e) {}
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", cleanupHomeChrome, { once: true });
+    } else {
+      cleanupHomeChrome();
+    }
+
+    window.addEventListener("load", cleanupHomeChrome, { once: true });
+
+    try {
+      var observer = new MutationObserver(function () {
+        cleanupHomeChrome();
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+      setTimeout(function () {
+        try { observer.disconnect(); } catch (_e) {}
+      }, 6000);
+    } catch (_e) {}
+  })();
+</script>
 <script>
   (function(){
     const runtime = window.dokePageRuntime || null;
@@ -985,11 +1161,14 @@
   body[data-page="home"] #galeria-dinamica{
     display:flex !important;
     flex-wrap:nowrap !important;
-    align-items:stretch !important;
+    align-items:flex-start !important;
     gap:12px !important;
     overflow-x:auto !important;
     overflow-y:visible !important;
-    padding:10px 0 14px !important;
+    min-height:0 !important;
+    height:auto !important;
+    padding:10px 0 0 !important;
+    margin-bottom:0 !important;
   }
   body[data-page="home"] #galeria-dinamica > .tiktok-card,
   body[data-page="home"] #galeria-dinamica > .dp-reelCard{
@@ -1006,6 +1185,10 @@
   }
   body[data-page="home"] .videos-container{
     overflow:visible !important;
+    min-height:0 !important;
+    height:auto !important;
+    padding-bottom:0 !important;
+    margin-bottom:0 !important;
   }
   body[data-page="home"] #buscaDropdown.is-portal-open{
     position:fixed !important;
@@ -1088,9 +1271,7 @@
     });
   })();
 </script>
+<script src="mobile-home-hotfix.js?v=20260311v1"></script>
+  <script src="site-global-polish.js"></script>
 </body>
 </html>
-
-
-
-

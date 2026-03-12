@@ -46,6 +46,21 @@
     return `<span>${String(thread.nome || thread.title || "?").trim().slice(0,1).toUpperCase() || "?"}</span>`;
   }
 
+  function contactsSeed() {
+    const buckets = [];
+    ["contatos","doke_contatos","doke_contacts","listaContatos","doke_lista_contatos","clientesContatos","mensagensContatos"].forEach((key)=>{
+      const raw = safeParse(localStorage.getItem(key) || "null", null);
+      if (Array.isArray(raw)) buckets.push(...raw);
+    });
+    return buckets.map((item, idx) => ({
+      id: String(item.id || item.uid || item.chatId || item.email || `contato-${idx}`),
+      nome: String(item.nome || item.name || item.user || item.usuario || 'Contato'),
+      title: String(item.title || item.assunto || 'Conversa'),
+      avatar: String(item.avatar || item.foto || ''),
+      updatedAt: new Date().toISOString(), unread: 0, archived: false, messages: Array.isArray(item.messages)?item.messages:[]
+    })).filter((t)=>t.id && t.nome);
+  }
+
   function seedThreads() {
     const base = safeParse(localStorage.getItem("doke_v2_messages_threads") || "null", null);
     if (Array.isArray(base) && base.length) return base;
@@ -108,7 +123,8 @@
     const fromLocal = safeParse(localStorage.getItem("doke_v2_messages_threads") || "null", null);
     const legacy = normalizeCandidateThreads();
     const baseSeed = seedThreads();
-    const threads = Array.isArray(fromLocal) && fromLocal.length ? fromLocal : (legacy.length ? legacy : baseSeed);
+    const contactSeeds = contactsSeed();
+    const threads = Array.isArray(fromLocal) && fromLocal.length ? fromLocal : (legacy.length ? legacy : (contactSeeds.length ? contactSeeds : baseSeed));
     return threads.map((t) => ({
       id: String(t.id || t.chatId || cryptoRandom()),
       nome: String(t.nome || t.user || t.usuario || t.title || "Conversa"),
@@ -213,7 +229,7 @@
       const thread = activeThread();
       const mobileActive = !!thread;
       page.classList.toggle('has-active-thread', mobileActive);
-      if (refs.emptyThread) { refs.emptyThread.hidden = !!thread || state.threads.length > 0; refs.emptyThread.style.display = (!!thread || state.threads.length > 0) ? 'none' : ''; }
+      if (refs.emptyThread) { refs.emptyThread.hidden = !!thread || filteredThreads().length > 0; refs.emptyThread.style.display = (!!thread || filteredThreads().length > 0) ? 'none' : ''; }
       refs.thread.hidden = !thread;
       if (!thread) return;
       refs.avatar.innerHTML = avatarMarkup(thread);

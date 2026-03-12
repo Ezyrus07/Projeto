@@ -121,12 +121,9 @@
       <div class="doke-v2-campaign-shell">
         <section class="doke-v2-hero doke-v2-page-hero doke-v2-campaign-hero is-${cfg.accent}">
           <div class="doke-v2-campaign-copy">
-            <span class="doke-v2-hero-kicker">${cfg.eyebrow}</span>
             <h1>${cfg.title}</h1>
             <p>${cfg.description}</p>
-            <div class="doke-v2-campaign-pills">${pillsHtml(cfg.pills)}</div>
           </div>
-          ${statsHtml(cfg)}
         </section>
         <section class="doke-v2-section-card doke-v2-campaign-wrap">
           <div class="doke-v2-campaign-loading" aria-hidden="true">

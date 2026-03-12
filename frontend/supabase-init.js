@@ -1237,93 +1237,9 @@ if (!key || key.startsWith("sb_publishable")) {
       } catch (_e) {}
     })();
 
-    window.dokeRestoreSupabaseSessionFromStorage = async function(opts){
-      if (window.__DOKE_RESTORING_SESSION__) return false;
-      window.__DOKE_RESTORING_SESSION__ = true;
-      try {
-        const force = !!(opts && opts.force === true);
-        if (!window.sb?.auth?.getSession || typeof window.sb.auth.setSession !== "function") return false;
-
-        const currentRes = await window.sb.auth.getSession().catch(() => ({ data: { session: null }, error: null }));
-        const currentSession = currentRes?.data?.session || null;
-        if (!force && currentSession?.access_token) return true;
-
-        const found = findStoredSessionCandidate(true, { requireRefreshToken: true, allowExpiredAccessToken: true });
-        const session = found?.session || null;
-        if (!session?.access_token || !session?.refresh_token) return false;
-
-        let restoredSession = null;
-        let setError = null;
-        try {
-          const { data, error } = await window.sb.auth.setSession({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token
-          });
-          if (!error && data?.session?.access_token) restoredSession = data.session;
-          if (error) setError = error;
-        } catch (err) {
-          setError = err || null;
-        }
-
-        if (!restoredSession) {
-          const refreshed = await refreshSessionViaAuthRest(session.refresh_token);
-          if (refreshed?.access_token && refreshed?.refresh_token) {
-            try {
-              const retrySet = await window.sb.auth.setSession({
-                access_token: refreshed.access_token,
-                refresh_token: refreshed.refresh_token
-              });
-              if (!retrySet?.error && retrySet?.data?.session?.access_token) {
-                restoredSession = retrySet.data.session;
-              }
-            } catch (_e) {}
-            if (!restoredSession) restoredSession = refreshed;
-          }
-        }
-
-        if (restoredSession?.access_token) {
-          let tokenIsValid = false;
-          try {
-            const authUrl = `${url}/auth/v1/user`;
-            const access = String(restoredSession.access_token || "").trim();
-            const probe = await fetch(authUrl, {
-              method: "GET",
-              headers: {
-                apikey: key,
-                Authorization: `Bearer ${access}`
-              }
-            });
-            tokenIsValid = probe.ok;
-          } catch (_e) {
-            // Em falha de rede, nao limpa sessao imediatamente.
-            tokenIsValid = true;
-          }
-
-          if (!tokenIsValid) {
-            await clearInvalidSessionArtifacts("restore_token_invalid");
-            return false;
-          }
-        }
-
-        if (!restoredSession?.access_token) {
-          try { console.warn("[DOKE] Falha ao restaurar sessao do storage.", setError || null); } catch (_e) {}
-          const refreshErr = window.__DOKE_LAST_REFRESH_AUTH_ERROR__ || null;
-          if (looksLikeUnauthorizedSessionError(setError) || looksLikeUnauthorizedSessionError(refreshErr)) {
-            try { await clearInvalidSessionArtifacts("restore_failed_unauthorized"); } catch (_e2) {}
-          }
-          return false;
-        }
-
-        persistSessionArtifacts(restoredSession);
-        return true;
-      } catch (_e) {
-        return false;
-      } finally {
-        window.__DOKE_RESTORING_SESSION__ = false;
-      }
+    window.dokeRestoreSupabaseSessionFromStorage = async function(){
+      return false;
     };
-
-    try { window.dokeRestoreSupabaseSessionFromStorage({ force: false }); } catch (_e) {}
 
     (async function normalizeLocalLoginCacheIfSessionMissing(){
       try {
@@ -2058,4 +1974,3 @@ function DokeQuery(table){
   setTimeout(patchClient, 0);
   setTimeout(patchClient, 1000);
 })();
-

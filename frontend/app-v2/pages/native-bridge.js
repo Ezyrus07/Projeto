@@ -130,6 +130,8 @@
     if (!code) return;
     const lower = code.toLowerCase();
     if (lower.includes('<script') || lower.includes('firebaseconfig')) return;
+    if (/^\s*(<|<!doctype|html\b|body\b|head\b)/i.test(code)) return;
+    if (/\b(?:const|let|var)\s+firebaseConfig\b/i.test(code)) return;
     const originalAdd = document.addEventListener.bind(document);
     document.addEventListener = function(type, listener, options) {
       if (type === "DOMContentLoaded" && typeof listener === "function") {
