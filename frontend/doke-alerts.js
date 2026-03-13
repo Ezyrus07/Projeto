@@ -74,6 +74,12 @@
     return type || "info";
   }
 
+  function isLoadingLikeMessage(msg) {
+    const text = String(msg || "").replace(/\s+/g, " ").trim().toLowerCase();
+    if (!text) return false;
+    return text.includes("carregando") || text.includes("abrindo pagina") || text.includes("abrindo página") || text.includes("atualizando");
+  }
+
   function fallbackToast(message, opts = {}) {
     const type = normalizeType(opts.type || "info");
     const title = safeStr(opts.title || "");
@@ -120,6 +126,7 @@
     payload.type = normalizeType(payload.type || "info");
     payload.message = safeStr(payload.message || "");
     payload.title = safeStr(payload.title || "");
+    if (isLoadingLikeMessage(payload.message)) return;
     if (typeof window.dokeToast === "function") {
       try { return window.dokeToast(payload); } catch (_) {}
       try { return window.dokeToast(payload.message, payload); } catch (_) {}

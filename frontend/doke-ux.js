@@ -515,9 +515,69 @@
   }
 
   // ---------------------------
+  // 7) Page transition + reveal system
+  // ---------------------------
+  const revealSelector = [
+    "main > section",
+    ".page-content > section",
+    ".dp-wrap > section",
+    ".categorias-container",
+    ".videos-container",
+    ".anuncio-container",
+    ".pros-section",
+    ".fotos-container",
+    ".feed-card",
+    ".notification-card",
+    ".message-card",
+    ".pedido-card",
+    ".order-card",
+    ".doke-soft-card",
+    ".card",
+    ".panel",
+    ".surface"
+  ].join(", ");
+
+  function isValidRevealTarget(el){
+    if(!(el instanceof HTMLElement)) return false;
+    if(el.closest("[data-doke-skeleton='1']")) return false;
+    if(el.classList.contains("skeleton") || el.classList.contains("is-skeleton") || el.classList.contains("skel")) return false;
+    if(el.hidden) return false;
+    const text = (el.textContent || "").trim();
+    const childCount = el.children ? el.children.length : 0;
+    if(!text && childCount === 0) return false;
+    return true;
+  }
+
+  function assignRevealTargets(root=document){
+    const scope = root instanceof Element || root instanceof Document ? root : document;
+    const nodes = $$(revealSelector, scope).filter(isValidRevealTarget);
+    nodes.slice(0, 18).forEach((el, index)=>{
+      if(!el.hasAttribute("data-doke-reveal")) el.setAttribute("data-doke-reveal", "");
+      el.style.setProperty("--doke-reveal-order", String(index));
+    });
+  }
+
+  function flushReveal(root=document){
+    const scope = root instanceof Element || root instanceof Document ? root : document;
+    $$("[data-doke-reveal]", scope).forEach((el)=>{
+      el.classList.add("is-revealed");
+    });
+  }
+
+  function bindPageReveal(){
+    const body = document.body;
+    if(!(body instanceof HTMLElement)) return;
+    document.documentElement.classList.remove("doke-route-pending");
+    body.classList.remove("doke-page-entering");
+    body.classList.add("doke-page-ready");
+    window.dokeRefreshReveal = function(){};
+  }
+
+  // ---------------------------
   // Init
   // ---------------------------
   onReady(()=>{
+    bindPageReveal();
     markActiveSidebar();
     attachMasks();
     bindValidationFocus();

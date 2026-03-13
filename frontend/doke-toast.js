@@ -62,6 +62,12 @@
     }
   }
 
+  function isLoadingLikeMessage(message){
+    const text = String(message || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!text) return false;
+    return text.includes('carregando') || text.includes('abrindo pagina') || text.includes('abrindo página') || text.includes('atualizando');
+  }
+
   function toast(input, legacyType, legacyTitle){
     const normalized = (input && typeof input === 'object' && !Array.isArray(input))
       ? input
@@ -75,6 +81,9 @@
       details=null,
       ttl=4500
     } = normalized || {};
+    if (isLoadingLikeMessage(message)) {
+      return { remove(){}, openDetails(){} };
+    }
     ensureUI();
     const t = make('div','doke-toast');
     t.dataset.type = type;

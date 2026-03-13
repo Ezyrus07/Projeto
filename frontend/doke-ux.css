@@ -7,6 +7,79 @@
 /* Boxicons: evita desalinhamento vertical em botões */
 .bx{ line-height: 1; }
 
+:root{
+  --doke-motion-fast: 180ms;
+  --doke-motion-base: 260ms;
+  --doke-motion-slow: 420ms;
+  --doke-motion-ease: cubic-bezier(.22, 1, .36, 1);
+  --doke-motion-exit: cubic-bezier(.4, 0, .2, 1);
+  --doke-reveal-distance: 18px;
+}
+
+html.doke-route-pending,
+html.doke-route-pending body{
+  cursor: progress;
+}
+
+body{
+  transition: background-color var(--doke-motion-base) var(--doke-motion-ease), color var(--doke-motion-base) var(--doke-motion-ease);
+}
+
+body.doke-page-entering main,
+body.doke-page-entering .page-content,
+body.doke-page-entering .doke-main,
+body.doke-page-entering .dp-wrap,
+body.doke-page-entering .feed-shell,
+body.doke-page-entering .app-shell-main{
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+body.doke-page-ready main,
+body.doke-page-ready .page-content,
+body.doke-page-ready .doke-main,
+body.doke-page-ready .dp-wrap,
+body.doke-page-ready .feed-shell,
+body.doke-page-ready .app-shell-main{
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--doke-motion-base) var(--doke-motion-ease),
+    transform var(--doke-motion-base) var(--doke-motion-ease);
+}
+
+[data-doke-reveal]{
+  opacity: 0;
+  transform: translateY(var(--doke-reveal-distance));
+  transition:
+    opacity var(--doke-motion-base) var(--doke-motion-ease),
+    transform var(--doke-motion-base) var(--doke-motion-ease);
+  transition-delay: calc(var(--doke-reveal-order, 0) * 28ms);
+  will-change: transform, opacity;
+}
+
+body.doke-page-ready [data-doke-reveal].is-revealed{
+  opacity: 1;
+  transform: none;
+}
+
+.doke-state-switch{
+  transition:
+    opacity var(--doke-motion-fast) var(--doke-motion-ease),
+    transform var(--doke-motion-fast) var(--doke-motion-ease);
+}
+
+.doke-state-switch.is-loading{
+  opacity: .72;
+  transform: translateY(4px);
+  pointer-events: none;
+}
+
+.doke-state-switch.is-loaded{
+  opacity: 1;
+  transform: none;
+}
+
 .doke-hidden{display:none!important;}
 .doke-soft-card{
   background:#fff;border:1px solid rgba(2,6,23,.08);
@@ -1206,6 +1279,58 @@ body[data-page="home"] .pv-inline-search-section--stealth .pv-search.pv-search--
 .dp-itemMenuBtn,
 #dpMoreBtn{
   aspect-ratio: 1 / 1;
+}
+
+@media (prefers-reduced-motion: reduce){
+  body,
+  body main,
+  body .page-content,
+  body .doke-main,
+  body .dp-wrap,
+  body .feed-shell,
+  body .app-shell-main,
+  [data-doke-reveal],
+  .doke-state-switch{
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* Global kill switch: sem transições/animações/reveals */
+*,
+*::before,
+*::after{
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+html.doke-route-pending,
+html.doke-route-pending body{
+  cursor: auto !important;
+}
+
+body.doke-page-entering main,
+body.doke-page-entering .page-content,
+body.doke-page-entering .doke-main,
+body.doke-page-entering .dp-wrap,
+body.doke-page-entering .feed-shell,
+body.doke-page-entering .app-shell-main,
+body.doke-page-ready main,
+body.doke-page-ready .page-content,
+body.doke-page-ready .doke-main,
+body.doke-page-ready .dp-wrap,
+body.doke-page-ready .feed-shell,
+body.doke-page-ready .app-shell-main,
+[data-doke-reveal],
+body.doke-page-ready [data-doke-reveal].is-revealed,
+.doke-state-switch,
+.doke-state-switch.is-loading,
+.doke-state-switch.is-loaded{
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto !important;
 }
 
 

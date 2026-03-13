@@ -194,13 +194,32 @@
   // -----------------------------
   let toastEl;
   function toast(msg){
+    const text = String(msg || "").replace(/\s+/g, " ").trim();
+    if(!text) return;
+    const lowered = text.toLowerCase();
+    if(
+      lowered.includes("carregando") ||
+      lowered.includes("abrindo pagina") ||
+      lowered.includes("abrindo página") ||
+      lowered.includes("atualizando")
+    ){
+      return;
+    }
     try{
+      if(typeof window.dokeToast === "function"){
+        window.dokeToast({ message: text, type: "info" });
+        return;
+      }
+      if(typeof window.mostrarToast === "function"){
+        window.mostrarToast(text, "info");
+        return;
+      }
       if(!toastEl){
         toastEl = document.createElement("div");
         toastEl.className = "dp-toast";
         document.body.appendChild(toastEl);
       }
-      toastEl.textContent = msg;
+      toastEl.textContent = text;
       toastEl.style.display = "block";
       clearTimeout(toastEl._t);
       toastEl._t = setTimeout(()=> toastEl.style.display="none", 2600);
@@ -1499,6 +1518,52 @@ function ensureTheme(ctx, theme){
     $$(selector).forEach(el => setVisible(el, !!cond));
   }
 
+  function getCachedProfileFallback(){
+    try{
+      const cached = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null");
+      if(!cached || typeof cached !== "object") return null;
+      const nome = String(cached.nome || cached.name || cached.user || "").trim();
+      if(!nome && !cached.foto && !cached.avatar) return null;
+      return {
+        id: cached.id || cached.uid || cached.user_uid || cached.userId || null,
+        uid: cached.uid || cached.id || cached.user_uid || cached.userId || null,
+        nome: nome || "Usuário",
+        user: cached.user || cached.username || "",
+        foto: cached.foto || cached.avatar || cached.avatar_url || cached.foto_url || null,
+        foto_url: cached.foto_url || cached.avatar_url || cached.foto || cached.avatar || null,
+        tipo: cached.tipo || "usuario",
+        bio: cached.bio || "",
+        local: cached.local || "Brasil",
+        created_at: cached.created_at || null
+      };
+    }catch(_){
+      return null;
+    }
+  }
+
+  function renderCachedProfileShell(target){
+    if(!target) return false;
+    try{
+      renderHeader({
+        client: null,
+        authUser: null,
+        me: target,
+        target,
+        targetId: target.id || target.uid || null,
+        canEdit: true,
+        canWrite: false,
+        pageTheme: roleFromUsuario(target) === "profissional" ? "profissional" : "cliente",
+        pageMode: "self",
+        sbHealth: null,
+        sbRestDown: false
+      });
+      return true;
+    }catch(e){
+      console.error(e);
+      return false;
+    }
+  }
+
   function safeStr(v){ return (v ?? "").toString().trim(); }
 
   function getSkeletonCountByViewport(desktop = 4, tablet = 3, mobile = 2){
@@ -1510,92 +1575,26 @@ function ensureTheme(ctx, theme){
 
   function renderPerfilGridSkeleton(grid, kind){
     if(!grid) return;
-    const tpl = [];
     grid.classList.remove("dp-grid--loading");
     grid.classList.add("dp-grid--loading");
-
-    if(kind === "reels"){
-      const count = getSkeletonCountByViewport(4, 3, 2);
-      grid.classList.add("dp-grid--reels");
-      for(let i = 0; i < count; i++){
-        tpl.push(
-          `<article class="dp-reelCard dp-item dp-skelCard dp-skelCard--reel" aria-hidden="true">
-             <div class="dp-reelMedia dp-skelMedia dp-skelMedia--reel skeleton"></div>
-           </article>`
-        );
-      }
-      grid.innerHTML = tpl.join("");
-      return;
-    }
-
+    if(kind === "reels") grid.classList.add("dp-grid--reels");
+    if(kind === "portfolio" || kind === "publicacoes") grid.classList.add("dp-grid--masonry");
     if(kind === "servicos"){
-      const count = getSkeletonCountByViewport(2, 2, 1);
       try { grid.classList.add("lista-cards-premium"); } catch(_){}
-      for(let i = 0; i < count; i++){
-        tpl.push(
-          `<article class="card-premium skeleton-premium-card dp-serviceSkel" aria-hidden="true">
-             <div class="skeleton skeleton-premium-cover"></div>
-             <div class="skeleton-premium-body">
-               <div class="skeleton skeleton-line lg"></div>
-               <div class="skeleton skeleton-line md"></div>
-               <div class="skeleton skeleton-line sm"></div>
-             </div>
-           </article>`
-        );
-      }
-      grid.innerHTML = tpl.join("");
-      return;
     }
-
-    if(kind === "portfolio"){
-      const count = getSkeletonCountByViewport(8, 6, 4);
-      grid.classList.add("dp-grid--masonry");
-      for(let i = 0; i < count; i++){
-        tpl.push(
-          `<article class="dp-item dp-skelCard dp-skelCard--portfolio" aria-hidden="true">
-             <div class="dp-itemMedia dp-skelMedia dp-skelMedia--portfolio skeleton"></div>
-             <div class="dp-itemBody dp-skelBody dp-skelBody--portfolio">
-               <div class="skeleton dp-skelLine dp-skelLine--md"></div>
-             </div>
-           </article>`
-        );
-      }
-      grid.innerHTML = tpl.join("");
-      return;
-    }
-
-    if(kind === "publicacoes"){
-      const count = getSkeletonCountByViewport(8, 6, 4);
-      grid.classList.add("dp-grid--masonry");
-      for(let i = 0; i < count; i++){
-        tpl.push(
-          `<article class="dp-item dp-skelCard dp-skelCard--publicação" aria-hidden="true">
-             <div class="dp-itemMedia dp-skelMedia skeleton"></div>
-             <div class="dp-itemBody dp-skelBody">
-               <div class="dp-skelAuthor">
-                 <span class="skeleton dp-skelAvatar"></span>
-                 <span class="skeleton dp-skelLine dp-skelLine--author"></span>
-               </div>
-               <div class="skeleton dp-skelLine dp-skelLine--lg"></div>
-               <div class="skeleton dp-skelLine dp-skelLine--md"></div>
-             </div>
-           </article>`
-        );
-      }
-      grid.innerHTML = tpl.join("");
-      return;
-    }
+    const labelMap = {
+      reels: "Carregando vídeos curtos...",
+      servicos: "Carregando serviços...",
+      portfolio: "Carregando portfólio...",
+      publicacoes: "Carregando publicações..."
+    };
+    const label = labelMap[String(kind || "").toLowerCase()] || "Carregando conteúdo...";
+    grid.innerHTML = `<div class="dp-softLoader" role="status" aria-live="polite"><span class="dp-softSpinner" aria-hidden="true"></span><span>${label}</span></div>`;
   }
 
   function renderPerfilBoxSkeleton(box){
     if(!box) return;
-    box.innerHTML = `
-      <div class="dp-empty dp-skelPanel" aria-hidden="true">
-        <div class="skeleton dp-skelLine dp-skelLine--lg"></div>
-        <div class="skeleton dp-skelLine dp-skelLine--md"></div>
-        <div class="skeleton dp-skelLine dp-skelLine--sm"></div>
-      </div>
-    `;
+    box.innerHTML = `<div class="dp-softLoader" role="status" aria-live="polite"><span class="dp-softSpinner" aria-hidden="true"></span><span>Carregando conteúdo...</span></div>`;
   }
 
   try{
@@ -5793,7 +5792,8 @@ if(!rangeSel || !refreshBtn) return;
     setAvatar(resolvedAvatar, (u.nome||"U")[0]);
 
     setText("#dpName", u.nome || "Usuário");
-    setText("#dpHandle", (u.user || "usuario"));
+    const cleanHandle = String(u.user || "").trim().replace(/^@+/, "");
+    setText("#dpHandle", cleanHandle ? `@${cleanHandle}` : "");
 
     const bio = u.bio || (isProfissionalUsuario(u) ? "Profissional na Doke." : "Olá! Sou novo na comunidade Doke.");
     setText("#dpBio", bio);
@@ -6005,6 +6005,79 @@ if(!rangeSel || !refreshBtn) return;
     ]);
   }
 
+  function renderProfileLoadIssue(title, message){
+    const safeTitle = String(title || "Perfil indisponível").trim() || "Perfil indisponível";
+    const safeMessage = String(message || "Não foi possível carregar os dados agora.").trim() || "Não foi possível carregar os dados agora.";
+    setText("#dpName", safeTitle);
+    setText("#dpHandle", "");
+    setText("#dpBio", safeMessage);
+    setText("#dpStatusText", "");
+    const about = $("#dpAboutText");
+    if (about) about.textContent = safeMessage;
+    try{
+      $$(".dp-tab").forEach((tabBtn)=> tabBtn.classList.toggle("active", String(tabBtn.dataset.tab || "").toLowerCase() === "sobre"));
+      $$(".dp-section[data-tab]").forEach((section)=>{
+        const isSobre = String(section.dataset.tab || "").toLowerCase() === "sobre";
+        section.style.display = isSobre ? "" : "none";
+        section.classList.toggle("dp-section--hidden", !isSobre);
+        section.setAttribute("aria-hidden", isSobre ? "false" : "true");
+      });
+    }catch(_){}
+  }
+
+  function buildCachedSelfProfile(authUser){
+    let cached = null;
+    try{
+      cached = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null");
+    }catch(_){
+      cached = null;
+    }
+    const uid = normalizeIdentity(
+      cached?.uid ||
+      cached?.id ||
+      cached?.user_uid ||
+      cached?.userId ||
+      authUser?.id ||
+      authUser?.uid
+    );
+    if(!uid) return null;
+    const emailNick = authUser?.email ? String(authUser.email).split("@")[0] : "usuario";
+    return {
+      id: uid,
+      uid,
+      nome: cached?.nome || authUser?.user_metadata?.nome || authUser?.user_metadata?.name || emailNick || "Usuário",
+      user: cached?.user || authUser?.user_metadata?.user || authUser?.user_metadata?.username || emailNick || "",
+      foto: cached?.foto || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.foto || null,
+      bio: cached?.bio || authUser?.user_metadata?.bio || "",
+      local: cached?.local || "",
+      tipo: cached?.tipo || authUser?.user_metadata?.tipo || "usuario",
+      created_at: cached?.created_at || null,
+      membroDesde: cached?.membroDesde || null,
+      stats: cached?.stats || {}
+    };
+  }
+
+  function revealCachedSelfProfile(client, authUser, me, pageTheme){
+    if(!me) return;
+    try{
+      renderHeader({
+        client,
+        authUser,
+        me,
+        target: me,
+        targetId: me.id || me.uid || "",
+        canEdit: true,
+        canWrite: !!authUser,
+        pageTheme,
+        pageMode: "self",
+        sbHealth: null,
+        sbRestDown: false
+      });
+      $("#dpRoot")?.classList.remove("dp-loading");
+      $("#dpRoot")?.classList.add("dp-ready");
+    }catch(_){}
+  }
+
   // -----------------------------
   // Main init
   // -----------------------------
@@ -6012,6 +6085,10 @@ if(!rangeSel || !refreshBtn) return;
     const rootEl = $("#dpRoot");
     // Mostra feedback de carregamento e garante que não fica "branco"
     rootEl?.classList.add("dp-loading");
+    setText("#dpName", "");
+    setText("#dpHandle", "");
+    setText("#dpBio", "");
+    setText("#dpStatusText", "");
     try{
       $$(".dp-tab").forEach((tabBtn)=>{
         const isSobre = String(tabBtn.dataset.tab || "").toLowerCase() === "sobre";
@@ -6030,10 +6107,10 @@ if(!rangeSel || !refreshBtn) return;
 
       // Fallback visual quando Supabase não está configurado
       if(!client){
-        $("#dpName") && ($("#dpName").textContent = "Perfil");
-        $("#dpHandle") && ($("#dpHandle").textContent = "@usuario");
-        $("#dpBio") && ($("#dpBio").textContent = "Configure o Supabase em supabase-init.js para carregar os dados do seu perfil.");
-        $("#dpAboutText") && ($("#dpAboutText").textContent = "Dica: Abra supabase-init.js e cole o Project URL e a ANON PUBLIC KEY. Depois recarregue a página.");
+        renderProfileLoadIssue(
+          "Perfil",
+          "Configure o Supabase em supabase-init.js para carregar os dados do seu perfil."
+        );
 
         // Esconde ações que dependem de login/dados
         ["#dpCoverBtn","#dpAvatarBtn","#dpEditBtn","#dpMoreBtn","#dpAvailabilityRow",
@@ -6071,6 +6148,12 @@ if(!rangeSel || !refreshBtn) return;
         }
         me = r.usuario || null;
       }
+      if(!me && pageMode === "self"){
+        me = buildCachedSelfProfile(authUser);
+      }
+      if(pageMode === "self" && me){
+        revealCachedSelfProfile(client, authUser, me, pageTheme);
+      }
 
       // target
       const params = new URLSearchParams(location.search);
@@ -6104,12 +6187,12 @@ if(!rangeSel || !refreshBtn) return;
         }
         if(uRes.error){
           console.error(uRes.error);
-          toast("Erro ao buscar usuário por username.");
+          renderProfileLoadIssue("Perfil indisponível", "Não foi possível localizar esse usuário agora.");
           return;
         }
         const usuario = uRes.usuario;
         if(!usuario){
-          toast("Usuário não encontrado.");
+          renderProfileLoadIssue("Usuário não encontrado", "Esse perfil não está disponível.");
           return;
         }
         targetId = usuario.id;
@@ -6140,7 +6223,7 @@ if(!rangeSel || !refreshBtn) return;
       }
 
       if(!targetId){
-        toast("Perfil não encontrado.");
+        renderProfileLoadIssue("Perfil não encontrado", "Não foi possível identificar qual perfil abrir.");
         return;
       }
 
@@ -6156,9 +6239,6 @@ if(!rangeSel || !refreshBtn) return;
       let target = tRes.usuario || null;
       if(restDown && pageMode === "self"){
         target = me || target;
-        if(target){
-          toast("Supabase indisponível (520/erro de rede). Exibindo perfil do cache local.");
-        }
       }
       const meKey = normalizeIdentity(me?.id || me?.uid);
       const tKey = normalizeIdentity(targetId);
@@ -6168,16 +6248,8 @@ if(!rangeSel || !refreshBtn) return;
         if (isSelfTarget && me) {
           // Mesmo se o banco estiver fora, não derruba a sessão nem força login.
           target = me;
-          const msg = String(tRes.error?.message || tRes.error || '');
-          const isFetchFail = msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('timeout');
-          const is520 = (health && health.restStatus === 520);
-          if(is520 || isFetchFail){
-            toast("Supabase indisponível (520/erro de rede). Exibindo perfil do cache local.");
-          }else{
-            toast("Sem permissão de leitura no banco (policy SELECT). Exibindo perfil do cache local.");
-          }
         } else {
-          toast("Erro ao carregar perfil.");
+          renderProfileLoadIssue("Perfil indisponível", "Não foi possível carregar os dados do perfil agora.");
           return;
         }
       }
@@ -6186,8 +6258,8 @@ if(!rangeSel || !refreshBtn) return;
         if(isSelfTarget && me){
           target = me;
         }else{
-        toast("Usuário não encontrado.");
-        return;
+          renderProfileLoadIssue("Usuário não encontrado", "Esse perfil não está disponível.");
+          return;
         }
       }
 
@@ -6250,9 +6322,7 @@ if(!rangeSel || !refreshBtn) return;
 
     }catch(err){
       console.error(err);
-      toast("Falha ao renderizar o perfil.");
-      $("#dpName") && ($("#dpName").textContent = "Perfil");
-      $("#dpBio") && ($("#dpBio").textContent = "Ocorreu um erro ao carregar. Abra o console (F12) para ver detalhes.");
+      renderProfileLoadIssue("Perfil indisponível", "Ocorreu um erro ao carregar esse perfil.");
     }finally{
       rootEl?.classList.remove("dp-loading");
       rootEl?.classList.add("dp-ready");
@@ -6269,7 +6339,7 @@ if(!rangeSel || !refreshBtn) return;
       .then(() => init())
       .catch((err) => {
         console.error(err);
-        try { toast("Falha ao iniciar perfil."); } catch(_) {}
+        try { renderProfileLoadIssue("Perfil indisponível", "Ocorreu um erro ao abrir esse perfil."); } catch(_) {}
       });
   }
   if (document.readyState === "loading") {

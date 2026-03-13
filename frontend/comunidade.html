@@ -11,7 +11,7 @@
 <script defer="" src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<script src="doke-nav-boot.js?v=20260312v11"></script>
+<script src="doke-nav-boot.js?v=20260313v13"></script>
 <title>Comunidades - Doke</title>
     <meta name="description" content="Participe de comunidades, publique conte�dos e interaja com grupos locais.">
     <meta property="og:title" content="Doke - Comunidades">
@@ -24,9 +24,9 @@
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260312v62"></script>
-<script defer="" src="comunidades-supabase-patch.js"></script>
-<script defer="" src="comunidades-meusgrupos-fix.js"></script>
+<script defer="" src="script.js?v=20260313v73"></script>
+<script defer="" src="comunidades-supabase-patch.js?v=20260313v01"></script>
+<script defer="" src="comunidades-meusgrupos-fix.js?v=20260313v02"></script>
 <style>
         /* ======================================================
            ESTILOS ESPECÍFICOS DA PÁGINA COMUNIDADES
@@ -465,9 +465,7 @@ main{padding-top:18px !important;}
 <div class="comm-hero-stat"><small>Seus grupos</small><strong id="heroJoinedGroups">0</strong></div>
 </div>
 <div class="groups-scroll" id="listaMeusGrupos">
-<div class="my-group-item is-placeholder"><div class="group-img-ring"><img alt="Sugest�o" src="assets/Imagens/logo-192.png"/></div><span>Sugest�es</span></div>
-<div class="my-group-item is-placeholder"><div class="group-img-ring"><img alt="Profissionais" src="assets/Imagens/logo-192.png"/></div><span>Profissionais</span></div>
-<div class="my-group-item is-placeholder"><div class="group-img-ring"><img alt="Bairro" src="assets/Imagens/logo-192.png"/></div><span>Seu bairro</span></div>
+<div class="doke-inline-loader"><span aria-hidden="true" class="doke-inline-loader__spinner"></span><span>Carregando seus grupos...</span></div>
 </div>
 </section>
 </div>
@@ -491,35 +489,8 @@ main{padding-top:18px !important;}
 </button>
 </div>
 <div class="grid-comunidades" id="listaComunidades">
-<div class="card-comm fallback-card">
-<div class="fallback-card-top">
-<strong>Profissionais perto de voc�</strong>
-<span>Em alta</span>
-</div>
-<p>Encontre trocas �teis, oportunidades locais e networking por cidade.</p>
-<button class="fallback-card-btn" type="button">Explorar</button>
-</div>
-<div class="card-comm fallback-card">
-<div class="fallback-card-top">
-<strong>Neg�cios e servi�os</strong>
-<span>Profissional</span>
-</div>
-<p>Discuss�es mais objetivas sobre atendimento, pre�o, agenda e capta��o.</p>
-<button class="fallback-card-btn" type="button">Abrir</button>
-</div>
-<div class="card-comm fallback-card">
-<div class="fallback-card-top">
-<strong>Comunidade do bairro</strong>
-<span>Perto de voc�</span>
-</div>
-<p>Pedidos r�pidos, indica��es e avisos �teis sem exagero visual.</p>
-<button class="fallback-card-btn" type="button">Ver grupos</button>
-</div>
-<div class="comm-skeleton-grid" id="commSkeleton" hidden>
-<div class="comm-skel"><div class="comm-skel comm-skel-cover"></div><div class="comm-skel comm-skel-line"></div><div class="comm-skel comm-skel-line short"></div></div>
-<div class="comm-skel"><div class="comm-skel comm-skel-cover"></div><div class="comm-skel comm-skel-line"></div><div class="comm-skel comm-skel-line short"></div></div>
-<div class="comm-skel"><div class="comm-skel comm-skel-cover"></div><div class="comm-skel comm-skel-line"></div><div class="comm-skel comm-skel-line short"></div></div>
-</div>
+<div class="doke-inline-loader"><span aria-hidden="true" class="doke-inline-loader__spinner"></span><span>Carregando comunidades...</span></div>
+<div class="comm-skeleton-grid" id="commSkeleton" hidden></div>
 </div>
 </div>
 </div>
@@ -708,9 +679,9 @@ main{padding-top:18px !important;}
   if (document.readyState === 'loading') __commOn(document, 'DOMContentLoaded', __initComunidadePage);
   else __initComunidadePage();
 </script>
-<script defer="" src="doke-toast.js"></script>
-<script defer="" src="doke-alerts.js?v=20260217v33"></script>
-<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script defer="" src="doke-toast.js?v=20260313v03"></script>
+<script defer="" src="doke-alerts.js?v=20260313v03"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js?v=20260313v02"></script>
 
 <script>
 (function(){
@@ -734,24 +705,19 @@ main{padding-top:18px !important;}
     input.__dokeBound = true;
     input.addEventListener('input', function(){
       const q = String(this.value||'').toLowerCase();
-      list.querySelectorAll('.com-card,.card-comm,.fallback-card').forEach((card)=>{
+      list.querySelectorAll('.com-card,.card-comm').forEach((card)=>{
         const txt = String(card.textContent||'').toLowerCase();
         card.style.display = !q || txt.includes(q) ? '' : 'none';
       });
     });
   }
-  window.addEventListener('load', function(){ setTimeout(paintFallback, 1200); setTimeout(bindSearch, 300); }, {once:true});
+  window.addEventListener('load', function(){ setTimeout(bindSearch, 300); }, {once:true});
 })();
 </script>
-<script defer="" src="doke-shell.js?v=20260312v99"></script>
+<script defer="" src="doke-shell.js?v=20260313v102"></script>
   <script src="site-global-polish.js"></script>
 </body>
 </html>
-
-
-
-
-
 
 
 

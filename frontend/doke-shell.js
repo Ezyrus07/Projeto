@@ -1,5 +1,5 @@
 (function(){
-  window.__DOKE_SHELL_BUILD__ = "20260309v97";
+  window.__DOKE_SHELL_BUILD__ = "20260313v101";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
   try {
@@ -106,58 +106,19 @@
   }
 
   function showBootScreen(){
-    try{
-      if(document.getElementById("dokeBootScreen")) return;
-      const overlay=document.createElement("div");
-      overlay.id="dokeBootScreen";
-      overlay.setAttribute("aria-hidden","true");
-      overlay.style.cssText="position:fixed;inset:0;z-index:999999;background:linear-gradient(180deg,#f7fbff 0%,#eef5fb 100%);display:block;transition:opacity .18s ease;";
-      overlay.innerHTML=getNavSkeletonMarkup();
-      bootScreenShownAt = Date.now();
-      document.documentElement.appendChild(overlay);
-    }catch(_e){}
+    return;
   }
 
   function hideBootScreen(){
-    try{
-      const overlay=document.getElementById("dokeBootScreen");
-      if(!overlay) return;
-      if (overlay.dataset.closing === "1") return;
-      const waitMs = Math.max(0, TRANSITION_MIN_MS - (Date.now() - bootScreenShownAt));
-      clearTimeout(bootHideTimer);
-      bootHideTimer = window.setTimeout(() => {
-        try {
-          const liveOverlay = document.getElementById("dokeBootScreen");
-          if (!liveOverlay || liveOverlay.dataset.closing === "1") return;
-          liveOverlay.dataset.closing = "1";
-          liveOverlay.style.opacity = "0";
-          window.setTimeout(() => { try{ liveOverlay.remove(); }catch(_e){} }, TRANSITION_FADE_MS);
-        } catch(_e){}
-      }, waitMs);
-    }catch(_e){}
+    return;
   }
 
   function setPendingTransition(active){
-    try{
-      if(!document.body) return;
-      if(active){
-        clearTimeout(pendingHideTimer);
-        pendingHideTimer = 0;
-        pendingShownAt = Date.now();
-        document.body.classList.add("doke-nav-pending");
-        return;
-      }
-      if(!document.body.classList.contains("doke-nav-pending")) return;
-      const waitMs = Math.max(0, TRANSITION_MIN_MS - (Date.now() - pendingShownAt));
-      clearTimeout(pendingHideTimer);
-      pendingHideTimer = window.setTimeout(() => {
-        try { document.body.classList.remove("doke-nav-pending"); } catch(_e){}
-        pendingHideTimer = 0;
-      }, waitMs);
-    }catch(_e){}
+    return;
   }
 
   const NAV_PREBOOT_KEY = "doke_nav_preboot_target_v1";
+  try { sessionStorage.removeItem(NAV_PREBOOT_KEY); } catch (_e) {}
   if (!HAS_GLOBAL_BOOT_SCRIPT) {
     showBootScreen();
     window.addEventListener("load", hideBootScreen, { once:true });
@@ -165,14 +126,17 @@
   }
 
   function markNextHtmlNavigation(urlObj){
-    try{
-      if(!urlObj) return;
-      const path = `${urlObj.pathname || ""}${urlObj.search || ""}`;
-      sessionStorage.setItem(NAV_PREBOOT_KEY, path);
-    }catch(_e){}
+    return;
   }
 
   function toast(msg, type="info"){
+    const text = String(msg || "").replace(/\s+/g, " ").trim().toLowerCase();
+    if (
+      text.includes("carregando") ||
+      text.includes("abrindo pagina") ||
+      text.includes("abrindo página") ||
+      text.includes("atualizando")
+    ) return;
     try{
       if(typeof window.dokeToast === "function") return window.dokeToast({ message: String(msg || ""), type });
       if(typeof window.mostrarToast === "function") return window.mostrarToast(msg, type);
@@ -799,7 +763,7 @@
     const isPro = !!opts?.isPro;
     const nomePerfil = sanitizePlainText(profile.user || profile.nome || profile.name || "Minha conta");
     const nomePerfilSafe = escapeHtml(nomePerfil || "Minha conta");
-    const profileHref = isPro ? "meuperfil.html" : "perfil-usuario.html";
+    const profileHref = "meuperfil.html";
     const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
     const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
     const buildProfileDropdown = (photo) => `
@@ -892,7 +856,7 @@
       const isPro = !!opts?.isPro;
       const nomePerfil = sanitizePlainText(profile.user || profile.nome || profile.name || "Minha conta");
       const nomePerfilSafe = escapeHtml(nomePerfil || "Minha conta");
-      const profileHref = isPro ? "meuperfil.html" : "perfil-usuario.html";
+      const profileHref = "meuperfil.html";
       const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
       const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
 

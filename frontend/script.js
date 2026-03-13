@@ -4,7 +4,7 @@
 
 
 // [DOKE] Build tag (cache-buster)
-window.__DOKE_BUILD__ = "20260303v61";
+window.__DOKE_BUILD__ = "20260313v72";
 try { console.log("[DOKE] build:", window.__DOKE_BUILD__); } catch(_e) {}
 
 function dokeApplyAppPageEnter(){
@@ -14,13 +14,6 @@ function dokeApplyAppPageEnter(){
 function dokeNavigateHtml(targetUrl) {
     const to = String(targetUrl || '').trim();
     if (!to) return;
-    try {
-        const url = new URL(to, window.location.href);
-        if (url.origin === window.location.origin && /\.html$/i.test(String(url.pathname || ''))) {
-            sessionStorage.setItem('doke_nav_preboot_target_v1', `${url.pathname || ''}${url.search || ''}`);
-            if (document.body) document.body.classList.add('doke-nav-pending');
-        }
-    } catch (_) {}
     try {
         if (typeof window.__DOKE_V2_NAVIGATE__ === 'function') {
             window.__DOKE_V2_NAVIGATE__(to);
@@ -4401,10 +4394,7 @@ window.irParaMeuPerfil = function(event) {
             localStorage.setItem("usuarioLogado", "true");
         } catch (_) {}
 
-        let perfilLocal = null;
-        try { perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null'); } catch (_) { perfilLocal = null; }
-        if (perfilLocal?.isProfissional === true) window.location.href = "meuperfil.html";
-        else window.location.href = "perfil-usuario.html";
+        window.location.href = "meuperfil.html";
     };
     if(event) event.preventDefault();
     go();
@@ -5016,7 +5006,57 @@ if (!window.__dokeUserLinkBound) {
     });
 }
 
-window.mostrarToast = function(mensagem, tipo = 'sucesso') {
+function dokeIsLoadingLikeMessage(message) {
+    const text = String(message || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!text) return false;
+    return (
+        text.includes('carregando') ||
+        text.includes('abrindo pagina') ||
+        text.includes('abrindo página') ||
+        text.includes('atualizando')
+    );
+}
+
+function dokeNormalizeToastType(tipo) {
+    const raw = String(tipo || 'info').trim().toLowerCase();
+    if (raw === 'sucesso') return 'success';
+    if (raw === 'erro') return 'error';
+    if (raw === 'warning') return 'warn';
+    return raw || 'info';
+}
+
+window.dokeInlineLoaderMarkup = function(label) {
+    const text = String(label || 'Carregando...').trim() || 'Carregando...';
+    return `<div class="doke-inline-loader" role="status" aria-live="polite"><i class='bx bx-loader-alt bx-spin' aria-hidden="true"></i><span>${text}</span></div>`;
+};
+
+window.dokeInlineStateMarkup = function(label, kind = 'info') {
+    const text = String(label || '').trim();
+    const type = String(kind || 'info').trim().toLowerCase();
+    const klass = type === 'error' ? 'doke-inline-state is-error' : 'doke-inline-state';
+    return `<div class="${klass}" role="status" aria-live="polite"><span>${text}</span></div>`;
+};
+
+window.dokeSetInlineLoader = function(container, label) {
+    if (!container) return;
+    container.innerHTML = window.dokeInlineLoaderMarkup(label);
+};
+
+window.dokeSetInlineState = function(container, label, kind = 'info') {
+    if (!container) return;
+    container.innerHTML = window.dokeInlineStateMarkup(label, kind);
+};
+
+window.mostrarToast = function(mensagem, tipo = 'sucesso', titulo = '') {
+    const text = String(mensagem || '').trim();
+    if (!text || dokeIsLoadingLikeMessage(text)) return;
+    if (typeof window.dokeToast === 'function') {
+        return window.dokeToast({
+            message: text,
+            type: dokeNormalizeToastType(tipo),
+            title: String(titulo || '').trim()
+        });
+    }
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
@@ -5030,7 +5070,7 @@ window.mostrarToast = function(mensagem, tipo = 'sucesso') {
 
     const toast = document.createElement('div');
     toast.className = `toast ${tipo}`;
-    toast.innerHTML = `${icone} <span>${mensagem}</span>`;
+    toast.innerHTML = `${icone} <span>${text}</span>`;
     container.appendChild(toast);
     setTimeout(() => { toast.remove(); }, 3000);
 }
@@ -6212,6 +6252,7 @@ function setupFeedVideoPreview(container) {
 }
 
 window.carregarPerfil = function() {
+    if (document.body?.dataset?.page === 'perfil' || document.getElementById('dpRoot')) return;
     const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || { nome: "Novo Usuario", user: "@usuario", bio: "Edite seu perfil.", local: "Brasil", foto: "https://placehold.co/150", membroDesde: "2024" };
     if(document.getElementById('nomePerfilDisplay')) document.getElementById('nomePerfilDisplay').innerText = usuario.nome;
     if(document.getElementById('bioPerfilDisplay')) document.getElementById('bioPerfilDisplay').innerText = usuario.bio;
@@ -6647,7 +6688,7 @@ document.addEventListener("DOMContentLoaded", async function() {
             // Ativa notifica??es de pedidos novos
             try { window.monitorarNotificacoesGlobal(user.uid); } catch (_) {}
 
-            if(window.location.pathname.includes('perfil')) {
+            if(window.location.pathname.includes('perfil') && !(document.body?.dataset?.page === 'perfil' || document.getElementById('dpRoot'))) {
                 carregarPerfil();
                 carregarPosts(user.uid);
                 if (typeof carregarMeusStories === "function") {
@@ -7561,8 +7602,13 @@ window.acaoComunidadeGrupo = async function(grupoIdEncoded, isPrivate, isMember)
 async function carregarComunidadesGerais() {
     const container = document.getElementById('listaComunidades');
     if (!container) return;
+    const client = window.supabase || window.supabaseClient || window.sb || null;
 
-    container.innerHTML = `<div style="padding:18px; color:#666;">Carregando comunidades...</div>`;
+    if (typeof window.dokeSetInlineLoader === 'function') {
+        window.dokeSetInlineLoader(container, 'Carregando comunidades...');
+    } else {
+        container.innerHTML = `<div style="padding:18px; color:#666;">Carregando comunidades...</div>`;
+    }
 
     const fallbackCover = () => `linear-gradient(120deg, var(--cor2), #7b3fa0)`;
 
@@ -7615,16 +7661,16 @@ async function carregarComunidadesGerais() {
         const uid = await dokeCommGetUid();
 
         // Preferir Supabase (dados reais)
-        if (window.supabase) {
+        if (client && typeof client.from === 'function') {
             // tentar ordenar, mas fazer fallback se a coluna n?o existir
-            let res = await window.supabase
+            let res = await client
                 .from('comunidades')
                 .select('*')
                 .order('dataCriacao', { ascending: false })
                 .limit(40);
 
             if (res.error) {
-                res = await window.supabase
+                res = await client
                     .from('comunidades')
                     .select('*')
                     .limit(40);
@@ -7634,7 +7680,11 @@ async function carregarComunidadesGerais() {
 
             const list = (res.data || []).map(c => ({ ...c, id: c.id || c.comunidade_id || c.uuid }));
             if (!list.length) {
-                container.innerHTML = `<div style="padding:18px; color:#777;">Nenhuma comunidade encontrada.</div>`;
+                if (typeof window.dokeSetInlineState === 'function') {
+                    window.dokeSetInlineState(container, 'Nenhuma comunidade encontrada.');
+                } else {
+                    container.innerHTML = `<div style="padding:18px; color:#777;">Nenhuma comunidade encontrada.</div>`;
+                }
                 return;
             }
 
@@ -7644,9 +7694,16 @@ async function carregarComunidadesGerais() {
         }
 
         // Fallback Firestore
+        if (!(window.db && typeof window.collection === 'function' && typeof window.getDocs === 'function')) {
+            throw new Error('Comunidades indisponiveis: cliente de dados nao encontrado.');
+        }
         const snap = await getDocs(collection(db, "comunidades"));
         if (!snap || snap.empty) {
-            container.innerHTML = `<div style="padding:18px; color:#777;">Nenhuma comunidade encontrada.</div>`;
+            if (typeof window.dokeSetInlineState === 'function') {
+                window.dokeSetInlineState(container, 'Nenhuma comunidade encontrada.');
+            } else {
+                container.innerHTML = `<div style="padding:18px; color:#777;">Nenhuma comunidade encontrada.</div>`;
+            }
             return;
         }
 
@@ -7662,20 +7719,36 @@ async function carregarComunidadesGerais() {
 
     } catch (e) {
         console.error("Erro ao listar comunidades:", e);
-        container.innerHTML = `<div style="padding:18px; color:#999;">Erro ao carregar lista.</div>`;
+        if (typeof window.dokeSetInlineState === 'function') {
+            window.dokeSetInlineState(container, 'Não foi possível carregar comunidades agora.', 'error');
+        } else {
+            container.innerHTML = `<div style="padding:18px; color:#999;">Erro ao carregar lista.</div>`;
+        }
     }
 }
 // 3. LISTAR MEUS GRUPOS (Onde sou membro)
 async function carregarMeusGrupos() {
     const container = document.getElementById('listaMeusGrupos');
     if (!container) return;
+    if (window.__DOKE_COMM_MY_GROUPS_PATCH__ === true) return;
+    const client = window.supabase || window.supabaseClient || window.sb || null;
 
-    container.innerHTML = `<div style="padding:18px; color:#666;">Carregando seus grupos...</div>`;
+    if (typeof window.dokeSetInlineLoader === 'function') {
+        window.dokeSetInlineLoader(container, 'Carregando seus grupos...');
+    } else {
+        container.innerHTML = `<div style="padding:18px; color:#666;">Carregando seus grupos...</div>`;
+    }
 
     try {
-        const uid = (window.auth && window.auth.currentUser && window.auth.currentUser.uid) ? window.auth.currentUser.uid : null;
+        const uid = (typeof window.dokeCommGetUid === 'function')
+            ? await window.dokeCommGetUid()
+            : ((window.auth && window.auth.currentUser && window.auth.currentUser.uid) ? window.auth.currentUser.uid : null);
         if (!uid) {
-            container.innerHTML = `<div style="padding:18px; color:#777;">Fa?a login para ver seus grupos.</div>`;
+            if (typeof window.dokeSetInlineState === 'function') {
+                window.dokeSetInlineState(container, 'Faça login para ver seus grupos.');
+            } else {
+                container.innerHTML = `<div style="padding:18px; color:#777;">Fa?a login para ver seus grupos.</div>`;
+            }
             return;
         }
 
@@ -7705,9 +7778,9 @@ async function carregarMeusGrupos() {
         };
 
         // Preferir Supabase
-        if (window.supabase) {
+        if (client && typeof client.from === 'function') {
             // 1) tentar contains (json/array)
-            let res = await window.supabase
+            let res = await client
                 .from('comunidades')
                 .select('*')
                 .contains('membros', [uid]);
@@ -7715,7 +7788,7 @@ async function carregarMeusGrupos() {
             // 2) fallback caso seja array literal
             if (res.error) {
                 const literal = `{"${uid}"}`;
-                res = await window.supabase
+                res = await client
                     .from('comunidades')
                     .select('*')
                     .filter('membros', 'cs', literal);
@@ -7725,7 +7798,11 @@ async function carregarMeusGrupos() {
 
             const list = (res.data || []).map(c => ({ ...c, id: c.id || c.comunidade_id || c.uuid }));
             if (!list.length) {
-                container.innerHTML = `<div style="padding:18px; color:#777;">Voc? ainda n?o participa de nenhum grupo.</div>`;
+                if (typeof window.dokeSetInlineState === 'function') {
+                    window.dokeSetInlineState(container, 'Você ainda não participa de nenhum grupo.');
+                } else {
+                    container.innerHTML = `<div style="padding:18px; color:#777;">Voc? ainda n?o participa de nenhum grupo.</div>`;
+                }
                 return;
             }
             container.innerHTML = list.map(renderItem).join('');
@@ -7733,11 +7810,18 @@ async function carregarMeusGrupos() {
         }
 
         // Fallback Firestore
+        if (!(window.db && typeof window.collection === 'function' && typeof window.getDocs === 'function' && typeof window.query === 'function' && typeof window.where === 'function')) {
+            throw new Error('Seus grupos indisponiveis: cliente de dados nao encontrado.');
+        }
         const q = query(collection(db, "comunidades"), where("membros", "array-contains", uid));
         const snap = await getDocs(q);
 
         if (!snap || snap.empty) {
-            container.innerHTML = `<div style="padding:18px; color:#777;">Voc? ainda n?o participa de nenhum grupo.</div>`;
+            if (typeof window.dokeSetInlineState === 'function') {
+                window.dokeSetInlineState(container, 'Você ainda não participa de nenhum grupo.');
+            } else {
+                container.innerHTML = `<div style="padding:18px; color:#777;">Voc? ainda n?o participa de nenhum grupo.</div>`;
+            }
             return;
         }
 
@@ -7751,7 +7835,11 @@ async function carregarMeusGrupos() {
 
     } catch (e) {
         console.error("Erro meus grupos:", e);
-        container.innerHTML = `<div style="padding:18px; color:#999;">Erro ao carregar seus grupos.</div>`;
+        if (typeof window.dokeSetInlineState === 'function') {
+            window.dokeSetInlineState(container, 'Não foi possível carregar seus grupos.', 'error');
+        } else {
+            container.innerHTML = `<div style="padding:18px; color:#999;">Erro ao carregar seus grupos.</div>`;
+        }
     }
 }
 // 4. Envio de Texto

@@ -3,97 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="doke-nav-boot.js?v=20260312v11"></script>
-    <title>Card Personalizado</title>
-    <style>
-        :root {
-            --primary-color: #077861; /* Verde sugerido */
-            --secondary-color: #2a5f90; /* Azul sugerido */
-            --text-light: #ffffff;
-            --bg-card: #f9f9f9;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #e0e0e0;
-        }
-
-        .card {
-            background-color: var(--bg-card);
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            overflow: hidden;
-            width: 320px;
-            transition: transform 0.3s ease;
-            border-top: 5px solid var(--primary-color);
-        }
-
-        .card:hover {
-            transform: translateY(-10px);
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            padding: 25px;
-            text-align: center;
-            color: var(--text-light);
-        }
-
-        .card-header h2 {
-            margin: 0;
-            font-size: 1.5rem;
-            letter-spacing: 1px;
-        }
-
-        .card-body {
-            padding: 20px;
-            color: #444;
-            line-height: 1.6;
-        }
-
-        .card-footer {
-            padding: 15px;
-            text-align: center;
-            background-color: #eee;
-        }
-
-        .btn {
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: bold;
-            transition: background 0.3s ease;
-        }
-
-        .btn:hover {
-            background-color: var(--primary-color);
-        }
-    </style>
-  <link rel="stylesheet" href="site-global-polish.css">
+    <title>Doke Layout</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
+<style>:root {
+    --bg-color: #f0f2f5;
+    --card-white: #ffffff;
+    --primary-teal: #12848c;
+    --text-dark: #333333;
+    --gray-light: #f8f9fa;
+    --radius: 15px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-dark);
+}
+
+/* Header */
+.navbar {
+    height: 70px;
+    background: var(--card-white);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 40px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: #235574;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: #e0e0e0;
+    border-radius: 50%;
+}
+
+/* Layout Grid Principal */
+.main-container {
+    display: grid;
+    grid-template-columns: 280px 1fr; /* Largura exata da sidebar */
+    gap: 25px;
+    padding: 25px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Sidebar Estilo Card */
+.sidebar {
+    background: var(--card-white);
+    border-radius: var(--radius);
+    padding: 30px 20px;
+    height: fit-content;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+
+.profile-section {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.profile-img {
+    width: 100px;
+    height: 100px;
+    background: #e0e0e0;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+}
+
+.profile-section h3 { font-size: 18px; }
+.profile-section a { color: #666; font-size: 14px; text-decoration: none; }
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.menu-item {
+    padding: 15px;
+    background: var(--gray-light);
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--text-dark);
+    transition: 0.2s;
+}
+
+.menu-item:hover, .menu-item.active {
+    background: #edf2f5;
+    font-weight: 600;
+}
+
+/* Conteúdo */
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.hero-card {
+    background: var(--primary-teal);
+    border-radius: var(--radius);
+    padding: 50px;
+    color: white;
+    text-align: center;
+}
+
+.search-box {
+    margin-top: 25px;
+}
+
+.search-box input {
+    width: 90%;
+    padding: 15px 25px;
+    border-radius: 30px;
+    border: none;
+    font-size: 16px;
+    outline: none;
+}
+
+.section-title {
+    margin: 10px 0;
+    font-size: 20px;
+}
+
+/* Grid de Categorias */
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.cat-card {
+    background: var(--card-white);
+    height: 180px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+
+.cat-card:hover {
+    transform: translateY(-5px);
+}</style>
 <body>
 
-    <div class="card">
-        <div class="card-header">
-            <h2>Novo Design</h2>
+    <header class="navbar">
+        <div class="logo">doke</div>
+        <div class="nav-links">
+            <a href="#">Anunciar</a>
+            <a href="#">Comunidades</a>
+            <div class="user-avatar"></div>
         </div>
-        <div class="card-body">
-            <p>Este card foi estilizado utilizando a paleta de cores personalizada. O gradiente superior une o verde e o azul para um visual corporativo moderno.</p>
-        </div>
-        <div class="card-footer">
-            <button class="btn">Saiba Mais</button>
-        </div>
+    </header>
+
+    <div class="main-container">
+        
+        <aside class="sidebar">
+            <div class="profile-section">
+                <div class="profile-img"></div>
+                <h3>Seu Nome</h3>
+                <a href="#">Ver perfil</a>
+            </div>
+            
+            <nav class="menu">
+                <a href="#" class="menu-item active">Início</a>
+                <a href="#" class="menu-item">Meus Pedidos</a>
+                <a href="#" class="menu-item">Mensagens</a>
+                <a href="#" class="menu-item">Configurações</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            
+            <section class="hero-card">
+                <h2>O que você está procurando?</h2>
+                <div class="search-box">
+                    <input type="text" placeholder="Ex: Eletricista, Pintor...">
+                </div>
+            </section>
+
+            <h3 class="section-title">Categorias em alta</h3>
+
+            <div class="categories-grid">
+                <div class="cat-card">Eletricista</div>
+                <div class="cat-card">Encanador</div>
+                <div class="cat-card">Pintura</div>
+                <div class="cat-card">Limpeza</div>
+            </div>
+
+        </main>
     </div>
 
-  <script src="site-global-polish.js"></script>
 </body>
 </html>

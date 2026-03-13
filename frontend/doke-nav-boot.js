@@ -6,8 +6,8 @@
   const currentFileName = String((location.pathname || "").split("/").pop() || "").toLowerCase();
   const isHomePage = currentFileName === "" || currentFileName === "index.html";
   const LOGO_SRC = "assets/Imagens/doke-logo.png";
-  const TRANSITION_MIN_MS = 420;
-  const TRANSITION_FADE_MS = 220;
+  const TRANSITION_MIN_MS = 320;
+  const TRANSITION_FADE_MS = 170;
   const BOOT_HOLD_ATTR = "data-doke-boot-hold";
   const BOOT_HOLD_TIMEOUT_MS = 4500;
   let overlayShownAt = 0;
@@ -212,11 +212,7 @@
   }
 
   function markNextHtmlNavigation(url) {
-    try {
-      if (!isInternalHtmlUrl(url)) return;
-      sessionStorage.setItem(NAV_PREBOOT_KEY, `${url.pathname || ""}${url.search || ""}`);
-      if (document.body) document.body.classList.add("doke-nav-pending");
-    } catch (_e) {}
+    return;
   }
 
   function maybeRedirectProtectedPage() {
@@ -258,64 +254,55 @@
       style.id = "dokeNavBootStyle";
       style.textContent = `
         #dokeNavBootOverlay{
-          --doke-skel-base:#e8eef5;
-          --doke-skel-glow:rgba(255,255,255,.82);
           position:fixed;
           inset:0;
           z-index:2147483647;
           opacity:0;
           pointer-events:none;
-          background:linear-gradient(180deg,#f7fbff 0%,#eef5fb 100%);
-          transition:opacity .14s ease;
+          display:grid;
+          place-items:start center;
+          padding-top:32px;
+          background:rgba(245,249,253,.68);
+          backdrop-filter:blur(6px);
+          transition:opacity .17s cubic-bezier(.22,1,.36,1);
         }
         html.${ENTER_CLASS} #dokeNavBootOverlay{ opacity:1; }
         .doke-nav-skeleton-shell{
-          min-height:100%;
-          padding:26px;
-          display:grid;
-          grid-template-rows:auto 1fr;
-          gap:22px;
-        }
-        .doke-nav-skeleton-topbar{
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          gap:16px;
-          padding:18px 22px;
-          border-radius:24px;
-          background:rgba(255,255,255,.72);
-          border:1px solid rgba(214,226,238,.9);
-          box-shadow:0 20px 50px rgba(18,49,83,.08);
-        }
-        .doke-nav-skeleton-brand,
-        .doke-nav-skeleton-actions{
           display:flex;
           align-items:center;
           gap:12px;
+          padding:14px 18px;
+          border-radius:999px;
+          background:rgba(255,255,255,.92);
+          border:1px solid rgba(214,226,238,.96);
+          box-shadow:0 18px 40px rgba(18,49,83,.10);
         }
-        .doke-nav-skeleton-brand img{
+        .doke-nav-skeleton-brand{
           width:38px;
           height:38px;
+          border-radius:14px;
+          display:grid;
+          place-items:center;
+          background:linear-gradient(180deg,#ffffff 0%, #f3f8fc 100%);
+          border:1px solid rgba(214,226,238,.96);
+          overflow:hidden;
+          flex:0 0 auto;
+        }
+        .doke-nav-skeleton-brand img{
+          width:26px;
+          height:26px;
           object-fit:contain;
           opacity:.9;
-        }
-        .doke-nav-skeleton-body{
-          display:grid;
-          grid-template-columns:minmax(220px,270px) minmax(0,1fr);
-          gap:22px;
-          min-height:0;
         }
         .doke-nav-skeleton-status{
           display:inline-flex;
           align-items:center;
           gap:10px;
           width:max-content;
-          margin:0 4px;
-          padding:10px 14px;
-          border-radius:999px;
-          background:rgba(255,255,255,.82);
-          border:1px solid rgba(214,226,238,.92);
-          box-shadow:0 14px 32px rgba(18,49,83,.08);
+          color:#23415f;
+          font-size:.92rem;
+          font-weight:800;
+          letter-spacing:.01em;
         }
         .doke-nav-skeleton-status-dot{
           width:10px;
@@ -323,71 +310,24 @@
           border-radius:50%;
           background:#0b7768;
           box-shadow:0 0 0 0 rgba(11,119,104,.28);
-          animation:dokeNavPulse 1.1s ease-out infinite;
+          animation:dokeNavPulse 1s ease-out infinite;
         }
-        .doke-nav-skeleton-status-text{
-          color:#23415f;
-          font-size:.94rem;
-          font-weight:800;
-          letter-spacing:.01em;
-        }
-        .doke-nav-skeleton-sidebar,
-        .doke-nav-skeleton-main{
-          background:rgba(255,255,255,.68);
-          border:1px solid rgba(214,226,238,.88);
-          box-shadow:0 20px 50px rgba(18,49,83,.08);
-          border-radius:28px;
-          padding:24px;
-          display:grid;
-          align-content:start;
-          gap:16px;
-        }
-        .doke-nav-skeleton-main{ gap:18px; }
-        .doke-nav-skeleton-grid{
-          display:grid;
-          grid-template-columns:repeat(3,minmax(0,1fr));
-          gap:16px;
-        }
-        .doke-nav-skeleton-list{
-          display:grid;
-          gap:14px;
-        }
-        .doke-nav-skeleton-line,
-        .doke-nav-skeleton-chip,
-        .doke-nav-skeleton-avatar,
-        .doke-nav-skeleton-box,
-        .doke-nav-skeleton-hero,
-        .doke-nav-skeleton-card,
-        .doke-nav-skeleton-row{
+        .doke-nav-skeleton-status-line{
+          width:128px;
+          height:12px;
+          border-radius:999px;
           position:relative;
           overflow:hidden;
-          background:var(--doke-skel-base);
+          background:#dfe8f2;
         }
-        .doke-nav-skeleton-line::after,
-        .doke-nav-skeleton-chip::after,
-        .doke-nav-skeleton-avatar::after,
-        .doke-nav-skeleton-box::after,
-        .doke-nav-skeleton-hero::after,
-        .doke-nav-skeleton-card::after,
-        .doke-nav-skeleton-row::after{
+        .doke-nav-skeleton-status-line::after{
           content:"";
           position:absolute;
           inset:0;
           transform:translateX(-100%);
-          background:linear-gradient(90deg,transparent 0%, var(--doke-skel-glow) 50%, transparent 100%);
-          animation:dokeNavBootShimmer 1.05s linear infinite;
+          background:linear-gradient(90deg,transparent 0%, rgba(255,255,255,.82) 50%, transparent 100%);
+          animation:dokeNavBootShimmer 1.18s linear infinite;
         }
-        .doke-nav-skeleton-line{ height:14px; width:100%; border-radius:999px; }
-        .doke-nav-skeleton-line.short{ width:62%; }
-        .doke-nav-skeleton-line.is-brand{ width:128px; }
-        .doke-nav-skeleton-chip{ width:96px; height:34px; border-radius:999px; }
-        .doke-nav-skeleton-chip.short{ width:66px; }
-        .doke-nav-skeleton-avatar{ width:42px; height:42px; border-radius:50%; }
-        .doke-nav-skeleton-avatar.large{ width:78px; height:78px; }
-        .doke-nav-skeleton-box{ height:92px; border-radius:22px; }
-        .doke-nav-skeleton-hero{ height:180px; border-radius:26px; }
-        .doke-nav-skeleton-card{ height:126px; border-radius:22px; }
-        .doke-nav-skeleton-row{ height:76px; border-radius:20px; }
         @keyframes dokeNavBootShimmer{
           100%{ transform:translateX(100%); }
         }
@@ -395,12 +335,20 @@
           70%{ box-shadow:0 0 0 10px rgba(11,119,104,0); }
           100%{ box-shadow:0 0 0 0 rgba(11,119,104,0); }
         }
-        @media (max-width: 900px){
-          .doke-nav-skeleton-shell{ padding:18px; gap:16px; }
-          .doke-nav-skeleton-body{ grid-template-columns:1fr; }
-          .doke-nav-skeleton-sidebar{ display:none; }
-          .doke-nav-skeleton-grid{ grid-template-columns:1fr; }
-          .doke-nav-skeleton-topbar{ padding:16px 18px; }
+        @media (max-width: 700px){
+          #dokeNavBootOverlay{
+            padding-top:18px;
+          }
+          .doke-nav-skeleton-shell{
+            padding:12px 14px;
+            gap:10px;
+          }
+          .doke-nav-skeleton-status{
+            font-size:.86rem;
+          }
+          .doke-nav-skeleton-status-line{
+            width:92px;
+          }
         }
       `;
       document.head.appendChild(style);
@@ -410,42 +358,13 @@
         overlay.setAttribute("aria-hidden", "true");
         overlay.innerHTML = `
           <div class="doke-nav-skeleton-shell">
-            <div class="doke-nav-skeleton-topbar">
-              <div class="doke-nav-skeleton-brand">
-                <img src="${LOGO_SRC}" alt="Doke">
-                <span class="doke-nav-skeleton-line is-brand"></span>
-              </div>
-              <div class="doke-nav-skeleton-actions">
-                <span class="doke-nav-skeleton-chip"></span>
-                <span class="doke-nav-skeleton-chip short"></span>
-                <span class="doke-nav-skeleton-avatar"></span>
-              </div>
+            <div class="doke-nav-skeleton-brand">
+              <img src="${LOGO_SRC}" alt="Doke">
             </div>
             <div class="doke-nav-skeleton-status" aria-hidden="true">
               <span class="doke-nav-skeleton-status-dot"></span>
-              <span class="doke-nav-skeleton-status-text">Carregando pagina</span>
-            </div>
-            <div class="doke-nav-skeleton-body">
-              <div class="doke-nav-skeleton-sidebar">
-                <span class="doke-nav-skeleton-avatar large"></span>
-                <span class="doke-nav-skeleton-line"></span>
-                <span class="doke-nav-skeleton-line short"></span>
-                <span class="doke-nav-skeleton-box"></span>
-                <span class="doke-nav-skeleton-box"></span>
-              </div>
-              <div class="doke-nav-skeleton-main">
-                <div class="doke-nav-skeleton-hero"></div>
-                <div class="doke-nav-skeleton-grid">
-                  <span class="doke-nav-skeleton-card"></span>
-                  <span class="doke-nav-skeleton-card"></span>
-                  <span class="doke-nav-skeleton-card"></span>
-                </div>
-                <div class="doke-nav-skeleton-list">
-                  <span class="doke-nav-skeleton-row"></span>
-                  <span class="doke-nav-skeleton-row"></span>
-                  <span class="doke-nav-skeleton-row"></span>
-                </div>
-              </div>
+              <span>Abrindo pagina</span>
+              <span class="doke-nav-skeleton-status-line"></span>
             </div>
           </div>
         `;
@@ -498,20 +417,7 @@
   window.dokeReleaseBootTransition = releaseBootHold;
 
   function activateOverlay() {
-    try {
-      if (!shouldBootTransition()) return;
-      installStyle();
-      overlayShownAt = Date.now();
-      overlayHoldReleased = !getBootHoldToken();
-      clearTimeout(overlayHoldTimer);
-      if (!overlayHoldReleased) {
-        overlayHoldTimer = window.setTimeout(() => {
-          overlayHoldReleased = true;
-          finishOverlay();
-        }, BOOT_HOLD_TIMEOUT_MS);
-      }
-      document.documentElement.classList.add(ENTER_CLASS);
-    } catch (_e) {}
+    return;
   }
 
   function clearOverlay() {
@@ -524,7 +430,7 @@
       sessionStorage.removeItem(NAV_PREBOOT_KEY);
       try { document.documentElement.removeAttribute(BOOT_HOLD_ATTR); } catch (_e) {}
       try { document.body?.removeAttribute(BOOT_HOLD_ATTR); } catch (_e) {}
-      document.documentElement.classList.remove(ENTER_CLASS, READY_CLASS);
+      document.documentElement.classList.remove(ENTER_CLASS, READY_CLASS, "doke-route-pending");
       try {
         const overlay = document.getElementById("dokeNavBootOverlay");
         if (overlay) overlay.remove();
@@ -559,6 +465,8 @@
   }
 
   cleanupDevServiceWorker();
+  try { sessionStorage.removeItem(NAV_PREBOOT_KEY); } catch (_e) {}
+  try { document.documentElement.classList.remove(ENTER_CLASS, READY_CLASS, "doke-route-pending"); } catch (_e) {}
   if (maybeRedirectProtectedPage()) return;
 
   activateOverlay();

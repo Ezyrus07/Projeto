@@ -1729,7 +1729,45 @@ body[data-page="perfil"]{
   --dp-action-min-h: 44px;
 }
 
-/* Evita flash de ações incorretas no skeleton antes do hydrate do perfil */
+/* Loader leve do perfil: sem transição de página, só indicador de dados */
+body[data-page="perfil"] #dpRoot{
+  position: relative;
+}
+
+body[data-page="perfil"] #dpRoot .dp-inlineLoader{
+  display: none;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  margin: 8px auto 18px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.92);
+  border: 1px solid #dfe7f0;
+  box-shadow: 0 12px 28px rgba(15,23,42,.06);
+  color: #23415f;
+  font-weight: 800;
+}
+
+body[data-page="perfil"] #dpRoot.dp-loading .dp-inlineLoader{
+  display: inline-flex;
+}
+
+body[data-page="perfil"] #dpRoot.dp-loading > .dp-card,
+body[data-page="perfil"] #dpRoot.dp-loading > .dp-tabsWrap,
+body[data-page="perfil"] #dpRoot.dp-loading > .dp-section{
+  display: none !important;
+}
+
+body[data-page="perfil"] #dpRoot .dp-inlineLoaderSpinner{
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid rgba(35,65,95,.18);
+  border-top-color: #0b7768;
+  animation: dpSpin .75s linear infinite;
+}
+
 body[data-page="perfil"] #dpRoot:not(.dp-ready) .dp-actionsRow > button,
 body[data-page="perfil"] #dpRoot:not(.dp-ready) #dpAvailabilityRow,
 body[data-page="perfil"] #dpRoot:not(.dp-ready) .dp-coverActions .dp-btn{

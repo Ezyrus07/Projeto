@@ -1,55 +1,383 @@
-/* DOKE Skeleton (global) — v20260209v1 */
+/* Doke Skeleton System — v20260313 */
 :root{
-  --skel-base: rgba(148,163,184,.16);
-  --skel-hi: rgba(255,255,255,.58);
-  --skel-radius: 14px;
+  --doke-skel-base: #dfe8f2;
+  --doke-skel-base-strong: #d5e0ec;
+  --doke-skel-glow: rgba(255,255,255,.82);
+  --doke-skel-sheen: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255,255,255,.12) 24%,
+    var(--doke-skel-glow) 50%,
+    rgba(255,255,255,.12) 76%,
+    transparent 100%
+  );
+  --doke-skel-radius-xs: 10px;
+  --doke-skel-radius-sm: 14px;
+  --doke-skel-radius-md: 18px;
+  --doke-skel-radius-lg: 24px;
+  --doke-skel-duration: 1.18s;
+  --doke-skel-fade: .22s;
+  --doke-skel-surface: rgba(255,255,255,.86);
+  --doke-skel-border: rgba(206,220,233,.9);
+  --doke-skel-shadow: 0 14px 30px rgba(18, 49, 83, 0.07);
 }
 
-@keyframes dokeShimmer{
-  0%{ background-position: 200% 0; }
-  100%{ background-position: -200% 0; }
+@keyframes dokeSkelShimmer{
+  0%{ transform: translateX(-130%); }
+  100%{ transform: translateX(130%); }
 }
 
-.skel{
-  position: relative;
-  display: block;
-  border-radius: var(--skel-radius);
-  background: linear-gradient(90deg, var(--skel-base) 25%, var(--skel-hi) 37%, var(--skel-base) 63%);
-  background-size: 400% 100%;
-  animation: dokeShimmer 1.5s ease-in-out infinite;
+@keyframes dokeSkelPulse{
+  0%, 100%{ opacity: .96; }
+  50%{ opacity: .78; }
 }
 
-.skel--circle{ border-radius: 999px; }
-.skel--soft{ opacity: .85; }
-.skel--tight{ border-radius: 10px; }
-
-.skel-line{ height: 12px; width: 100%; }
-.skel-line.skel-line--sm{ height: 10px; }
-.skel-line.skel-line--lg{ height: 16px; }
-
-.skel-avatar{ width: 44px; height: 44px; }
-.skel-thumb{ width: 100%; aspect-ratio: 1 / 1; border-radius: 14px; }
-.skel-reel{ width: 100%; aspect-ratio: 9 / 16; border-radius: 16px; }
-
-.skel-stack{ display: grid; gap: 10px; }
-.skel-row{ display: flex; gap: 12px; align-items: center; }
-.skel-card{
-  padding: 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(0,0,0,.06);
-  background: rgba(255,255,255,.75);
-  backdrop-filter: blur(8px);
-}
-
-/* Legacy skeleton classes used across old pages */
+.skel,
 .skeleton,
 .cat-skel,
 .pub-skel,
-.is-skeleton{
-  animation-duration: 1.5s !important;
+.is-skeleton,
+.comm-skel,
+.feed-skel-line,
+.tiktok-skel-media,
+.tiktok-skel-badge,
+.tiktok-skel-play,
+.tiktok-skel-provider,
+.tiktok-skel-lineMd,
+.pub-skel-avatar,
+.pub-skel-user,
+.pub-skel-date,
+.pub-skel-title,
+.pub-skel-desc,
+.pub-skel-media-fill,
+.cat-skel-circle,
+.cat-skel-line,
+.cat-skel-badge,
+[data-doke-skeleton] .doke-skel-line,
+[data-doke-skeleton] .doke-skel-media{
+  position: relative !important;
+  overflow: hidden !important;
+  display: block;
+  background: var(--doke-skel-base) !important;
+  border-radius: var(--doke-skel-radius-sm) !important;
+  animation: dokeSkelPulse var(--doke-skel-duration) ease-in-out infinite !important;
+  box-shadow: none !important;
+  color: transparent !important;
 }
 
-/* Reduced motion */
+.skel::after,
+.skeleton::after,
+.cat-skel::after,
+.pub-skel::after,
+.is-skeleton::after,
+.comm-skel::after,
+.feed-skel-line::after,
+.tiktok-skel-media::after,
+.tiktok-skel-badge::after,
+.tiktok-skel-play::after,
+.tiktok-skel-provider::after,
+.tiktok-skel-lineMd::after,
+.pub-skel-avatar::after,
+.pub-skel-user::after,
+.pub-skel-date::after,
+.pub-skel-title::after,
+.pub-skel-desc::after,
+.pub-skel-media-fill::after,
+.cat-skel-circle::after,
+.cat-skel-line::after,
+.cat-skel-badge::after,
+[data-doke-skeleton] .doke-skel-line::after,
+[data-doke-skeleton] .doke-skel-media::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: var(--doke-skel-sheen);
+  transform: translateX(-130%);
+  animation: dokeSkelShimmer var(--doke-skel-duration) linear infinite;
+}
+
+.skel--circle,
+.skel-circle,
+.cat-skel-circle,
+.pub-skel-avatar,
+.doke-skeleton__avatar{
+  border-radius:999px !important;
+}
+
+.skel--tight{ border-radius: var(--doke-skel-radius-xs) !important; }
+.skel--soft{ opacity:.88; }
+
+.skel-line,
+.doke-skeleton__line{
+  height:12px;
+  width:100%;
+}
+
+.skel-line--sm,
+.doke-skeleton__line--sm{
+  height:10px;
+}
+
+.skel-line--lg,
+.doke-skeleton__line--lg{
+  height:16px;
+  border-radius:999px;
+}
+
+.skel-avatar,
+.doke-skeleton__avatar{
+  width:44px;
+  height:44px;
+}
+
+.skel-thumb,
+.doke-skeleton__thumb{
+  width:100%;
+  aspect-ratio:1 / 1;
+  border-radius: var(--doke-skel-radius-sm);
+}
+
+.skel-reel,
+.doke-skeleton__reel{
+  width:100%;
+  aspect-ratio:9 / 16;
+  border-radius: var(--doke-skel-radius-md);
+}
+
+.skel-stack,
+.doke-skeleton__stack{
+  display:grid;
+  gap:10px;
+}
+
+.skel-row,
+.doke-skeleton__row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.skel-card,
+.doke-skeleton__card,
+[data-doke-skeleton] .doke-skel-card{
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  border-radius: var(--doke-skel-radius-md);
+  border: 1px solid var(--doke-skel-border);
+  background: var(--doke-skel-surface);
+  box-shadow: var(--doke-skel-shadow);
+}
+
+.skel-card::before,
+.doke-skeleton__card::before,
+[data-doke-skeleton] .doke-skel-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,0));
+  pointer-events:none;
+}
+
+.doke-skeleton-grid,
+[data-doke-skeleton] .doke-skel-wrap{
+  display:grid;
+  gap:16px;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.doke-skeleton-grid--dense{
+  grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.doke-skeleton-pill{
+  height:36px;
+  border-radius:999px !important;
+}
+
+.doke-skeleton-box{
+  min-height:84px;
+  border-radius: var(--doke-skel-radius-md) !important;
+}
+
+.doke-skeleton-hero{
+  min-height:180px;
+  border-radius: var(--doke-skel-radius-lg) !important;
+}
+
+.doke-skeleton-sidebar{
+  display:grid;
+  gap:14px;
+}
+
+.doke-skeleton-feed{
+  display:grid;
+  gap:18px;
+}
+
+.doke-skeleton-feed > .doke-skeleton__card{
+  padding:18px;
+}
+
+/* wrappers legados */
+[data-doke-skeleton="1"]{
+  position:relative;
+  transition: opacity var(--doke-skel-fade) ease, visibility var(--doke-skel-fade) ease;
+}
+
+[data-doke-skeleton="1"][hidden]{
+  display:none !important;
+}
+
+.doke-skel-body{
+  display:grid;
+  gap:10px;
+}
+
+.doke-skel-line{
+  height:12px;
+  border-radius:999px;
+}
+
+.doke-skel-line.w40{ width:40%; }
+.doke-skel-line.w60{ width:60%; }
+.doke-skel-line.w85{ width:85%; }
+
+.doke-skel-media{
+  width:100%;
+  min-height:172px;
+  border-radius: var(--doke-skel-radius-md);
+}
+
+.doke-skel-card{
+  transition: opacity var(--doke-skel-fade) ease, transform var(--doke-skel-fade) ease;
+}
+
+/* estados para esconder skeleton quando conteúdo real chega */
+[aria-busy="false"] [data-doke-skeleton="1"],
+[data-loading="false"] [data-doke-skeleton="1"],
+.is-loaded [data-doke-skeleton="1"]{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+
+/* padding mais consistente em mobile */
+@media (max-width: 768px){
+  :root{
+    --doke-skel-radius-sm: 12px;
+    --doke-skel-radius-md: 16px;
+    --doke-skel-radius-lg: 20px;
+  }
+
+  .doke-skeleton-grid,
+  [data-doke-skeleton] .doke-skel-wrap{
+    gap:12px;
+    grid-template-columns:1fr;
+  }
+
+  .doke-skeleton__card,
+  .skel-card,
+  [data-doke-skeleton] .doke-skel-card{
+    padding:14px;
+  }
+
+  .doke-skel-media,
+  .doke-skeleton__thumb{
+    min-height:140px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce){
-  .skel{ animation: none; background: var(--skel-base); }
+  .skel,
+  .skeleton,
+  .cat-skel,
+  .pub-skel,
+  .is-skeleton,
+  .comm-skel,
+  .feed-skel-line,
+  .tiktok-skel-media,
+  .tiktok-skel-badge,
+  .tiktok-skel-play,
+  .tiktok-skel-provider,
+  .tiktok-skel-lineMd,
+  .pub-skel-avatar,
+  .pub-skel-user,
+  .pub-skel-date,
+  .pub-skel-title,
+  .pub-skel-desc,
+  .pub-skel-media-fill,
+  .cat-skel-circle,
+  .cat-skel-line,
+  .cat-skel-badge,
+  [data-doke-skeleton] .doke-skel-line,
+  [data-doke-skeleton] .doke-skel-media{
+    animation:none !important;
+  }
+
+  .skel::after,
+  .skeleton::after,
+  .cat-skel::after,
+  .pub-skel::after,
+  .is-skeleton::after,
+  .comm-skel::after,
+  .feed-skel-line::after,
+  .tiktok-skel-media::after,
+  .tiktok-skel-badge::after,
+  .tiktok-skel-play::after,
+  .tiktok-skel-provider::after,
+  .tiktok-skel-lineMd::after,
+  .pub-skel-avatar::after,
+  .pub-skel-user::after,
+  .pub-skel-date::after,
+  .pub-skel-title::after,
+  .pub-skel-desc::after,
+  .pub-skel-media-fill::after,
+  .cat-skel-circle::after,
+  .cat-skel-line::after,
+  .cat-skel-badge::after,
+  [data-doke-skeleton] .doke-skel-line::after,
+  [data-doke-skeleton] .doke-skel-media::after{
+    animation:none !important;
+    opacity:.42;
+  }
+}
+
+/* Global kill switch: sem skeleton visual no site */
+.skel,
+.skeleton,
+.cat-skel,
+.pub-skel,
+.is-skeleton,
+.comm-skel,
+.feed-skel-line,
+.tiktok-skel-media,
+.tiktok-skel-badge,
+.tiktok-skel-play,
+.tiktok-skel-provider,
+.tiktok-skel-lineMd,
+.pub-skel-avatar,
+.pub-skel-user,
+.pub-skel-date,
+.pub-skel-title,
+.pub-skel-desc,
+.pub-skel-media-fill,
+.cat-skel-circle,
+.cat-skel-line,
+.cat-skel-badge,
+.doke-skel-wrap,
+.doke-skel-card,
+.doke-skel-media,
+.doke-skel-line,
+.doke-nav-skeleton-shell,
+.doke-nav-skeleton-status,
+.feed-skeleton,
+.comm-skeleton-grid,
+[data-doke-skeleton="1"]{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  animation:none !important;
+  transition:none !important;
 }

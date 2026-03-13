@@ -3,6 +3,7 @@
    Renderiza #listaMeusGrupos a partir de comunidade_membros + comunidades.
 */
 (function(){
+  window.__DOKE_COMM_MY_GROUPS_PATCH__ = true;
   const $ = (sel, root=document) => root.querySelector(sel);
 
   const MEMBERS_TABLE = 'comunidade_membros';
@@ -101,7 +102,16 @@
 
   function renderEmpty(el, msg){
     if (!el) return;
-    el.innerHTML = `<div style="color:rgba(255,255,255,0.75); padding:10px; font-weight:800;">${msg}</div>`;
+    const text = String(msg || '').trim();
+    if (/^carregando/i.test(text) && typeof window.dokeInlineLoaderMarkup === 'function') {
+      el.innerHTML = window.dokeInlineLoaderMarkup(text);
+      return;
+    }
+    if (typeof window.dokeInlineStateMarkup === 'function') {
+      el.innerHTML = window.dokeInlineStateMarkup(text);
+      return;
+    }
+    el.innerHTML = `<div style="color:rgba(255,255,255,0.75); padding:10px; font-weight:800;">${text}</div>`;
   }
 
   function renderGroups(el, groups, schema){

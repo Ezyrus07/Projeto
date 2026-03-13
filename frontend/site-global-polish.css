@@ -3,6 +3,9 @@
   --doke-safe-top: calc(env(safe-area-inset-top, 0px) + 12px);
   --doke-panel-radius: 20px;
   --doke-soft-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  --doke-ui-fast: 180ms;
+  --doke-ui-base: 260ms;
+  --doke-ui-ease: cubic-bezier(.22, 1, .36, 1);
 }
 
 html, body {
@@ -39,6 +42,24 @@ main, .page-content, .doke-main, .feed-shell, .app-shell-main {
 
 .card, .panel, .surface, .feed-card, .pedido-card, .message-card, .notification-card {
   border-radius: 18px;
+  transition:
+    transform var(--doke-ui-fast) var(--doke-ui-ease),
+    box-shadow var(--doke-ui-fast) var(--doke-ui-ease),
+    border-color var(--doke-ui-fast) var(--doke-ui-ease),
+    background-color var(--doke-ui-fast) var(--doke-ui-ease);
+}
+
+@media (hover: hover) and (pointer: fine){
+  .card:hover,
+  .panel:hover,
+  .surface:hover,
+  .feed-card:hover,
+  .pedido-card:hover,
+  .message-card:hover,
+  .notification-card:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.1);
+  }
 }
 
 .pedido-card, .order-card, [class*="pedido-card"] {
@@ -72,8 +93,83 @@ main, .page-content, .doke-main, .feed-shell, .app-shell-main {
   display: none;
 }
 
+.doke-inline-loader,
+.doke-inline-state,
+.dp-inlineLoader,
+.notif-loading,
+.doke-list-loading,
+.doke-chat-loading{
+  min-height: 0 !important;
+  width: max-content !important;
+  max-width: min(100%, 440px);
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  margin: 10px auto 16px !important;
+  padding: 10px 16px !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.94) !important;
+  border: 1px solid #dfe7f0 !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06) !important;
+  color: #23415f !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+}
+
+.doke-inline-state{
+  color: #4b647d !important;
+}
+
+.doke-inline-state.is-error{
+  border-color: rgba(220, 38, 38, 0.16) !important;
+  color: #8b1e1e !important;
+  background: rgba(255,255,255,.96) !important;
+}
+
+.notif-loading > div{
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.notif-loading p{
+  margin: 0 !important;
+}
+
+.notif-loading i,
+.doke-list-loading i,
+.doke-chat-loading i{
+  color: #0b7768 !important;
+  font-size: 1rem !important;
+}
+
+.feed-skeleton,
+.comm-skeleton-grid,
+.notif-skeleton-list,
+.notif-skeleton-card,
+.v2-messages-list-skeleton,
+.v2-messages-thread-skeleton{
+  display: none !important;
+}
+
 .video-card, .short-video-card, .publication-card, .feed-card {
   overflow: hidden;
+}
+
+[data-doke-skeleton="1"],
+.doke-skel-wrap,
+.feed-skeleton,
+.comm-skeleton-grid,
+.notif-skeleton-list,
+.v2-messages-list-skeleton,
+.v2-messages-thread-skeleton{
+  transition: opacity var(--doke-ui-fast) var(--doke-ui-ease);
+}
+
+.is-loaded [data-doke-skeleton="1"],
+.is-loaded .doke-skel-wrap{
+  opacity: 0;
 }
 
 @media (max-width: 768px) {

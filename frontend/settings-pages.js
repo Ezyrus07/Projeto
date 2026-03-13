@@ -119,9 +119,7 @@
   }
 
   window.irParaPerfilCorreto = function () {
-    const p = getLocalProfile();
-    const isPro = p?.isProfissional === true || p?.tipo === 'profissional' || p?.role === 'profissional';
-    window.location.href = isPro ? 'meuperfil.html' : 'perfil-usuario.html';
+    window.location.href = 'meuperfil.html';
   };
 
   // Mobile UX: no drawer menu; show a back link to the settings list (mais.html)
