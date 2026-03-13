@@ -24,7 +24,7 @@
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260313v73"></script>
+<script defer="" src="script.js?v=20260313v74"></script>
 <script defer="" src="comunidades-supabase-patch.js?v=20260313v01"></script>
 <script defer="" src="comunidades-meusgrupos-fix.js?v=20260313v02"></script>
 <style>
@@ -396,7 +396,6 @@
 <link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
   <link rel="stylesheet" href="page-comunidade.css?v=20260209v24">
 
-<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
 
 <style id="clean-community-overrides">
@@ -420,7 +419,7 @@ main{padding-top:18px !important;}
 @media (max-width:768px){.comm-header{align-items:flex-start !important;}.header-actions{width:100%;flex-direction:column;align-items:stretch;}.search-bar-comm,.btn-create-comm{width:100% !important;}.comm-hero-stats{grid-template-columns:1fr;}.groups-scroll{gap:10px;}.group-img-ring{width:56px;height:56px;border-radius:16px;}.my-group-item span{font-size:.75rem;}}
 </style>
   <link rel="stylesheet" href="ui-system.css">
-  <link rel="stylesheet" href="site-global-polish.css">
+  <link rel="stylesheet" href="site-global-polish.css?v=20260313v24">
 </head>
 <body data-page="comunidade">
 <div class="popup" id="popup">
@@ -490,7 +489,6 @@ main{padding-top:18px !important;}
 </div>
 <div class="grid-comunidades" id="listaComunidades">
 <div class="doke-inline-loader"><span aria-hidden="true" class="doke-inline-loader__spinner"></span><span>Carregando comunidades...</span></div>
-<div class="comm-skeleton-grid" id="commSkeleton" hidden></div>
 </div>
 </div>
 </div>
@@ -643,11 +641,8 @@ main{padding-top:18px !important;}
   function setupCommObservers() {
     const list = document.getElementById('listaComunidades');
     const my = document.getElementById('listaMeusGrupos');
-    const skeleton = document.getElementById('commSkeleton');
     if (!list) return;
     const sync = () => {
-      const hasCards = !!list.querySelector('.com-card, .card-comm');
-      if (skeleton) skeleton.style.display = hasCards ? 'none' : '';
       atualizarHeroStats();
     };
     const mo = __commObserve(new MutationObserver(sync));
@@ -718,8 +713,6 @@ main{padding-top:18px !important;}
   <script src="site-global-polish.js"></script>
 </body>
 </html>
-
-
 
 
 

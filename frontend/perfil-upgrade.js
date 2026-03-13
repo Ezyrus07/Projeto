@@ -6060,21 +6060,8 @@ if(!rangeSel || !refreshBtn) return;
   function revealCachedSelfProfile(client, authUser, me, pageTheme){
     if(!me) return;
     try{
-      renderHeader({
-        client,
-        authUser,
-        me,
-        target: me,
-        targetId: me.id || me.uid || "",
-        canEdit: true,
-        canWrite: !!authUser,
-        pageTheme,
-        pageMode: "self",
-        sbHealth: null,
-        sbRestDown: false
-      });
-      $("#dpRoot")?.classList.remove("dp-loading");
-      $("#dpRoot")?.classList.add("dp-ready");
+      const label = $("#dpInlineLoader .dp-inlineLoaderText");
+      if(label) label.textContent = "Carregando perfil";
     }catch(_){}
   }
 

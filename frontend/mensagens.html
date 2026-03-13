@@ -2618,12 +2618,11 @@ body[data-page="chat"] .mensagens-body {
 <link href="doke-shell.css?v=20260211v33" rel="stylesheet"/>
 <link href="doke-responsive.css?v=20260209v23" rel="stylesheet"/>
 <link href="page-chat.css?v=20260306v41" rel="stylesheet"/>
-<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
 <link href="hotfix-20260304.css?v=20260304v5" rel="stylesheet"/>
   <link rel="stylesheet" href="ui-system.css">
 <style>.popup{display:none!important;}</style>
-  <link rel="stylesheet" href="site-global-polish.css">
+  <link rel="stylesheet" href="site-global-polish.css?v=20260313v24">
 </head>
 <body data-page="chat">
 <div class="popup" id="popup">
@@ -2710,10 +2709,10 @@ body[data-page="chat"] .mensagens-body {
 </div>
 </div>
 <div class="lista-scroll" id="lista-pedidos" style="display:none;">
-<div class="doke-list-loading"><i class='bx bx-loader-alt bx-spin'></i><span>Carregando pedidos...</span></div>
+<div class="doke-inline-loader"><span aria-hidden="true" class="doke-inline-loader__spinner"></span><span>Carregando pedidos...</span></div>
 </div>
 <div class="lista-scroll" id="lista-conversas">
-<div class="doke-list-loading"><i class='bx bx-loader-alt bx-spin'></i><span>Carregando conversas...</span></div>
+<div class="doke-inline-loader"><span aria-hidden="true" class="doke-inline-loader__spinner"></span><span>Carregando conversas...</span></div>
 </div>
 <div class="agenda-panel" id="agendaPanel" style="display:none;">
 <div class="agenda-top">
@@ -3162,7 +3161,7 @@ body[data-page="chat"] .mensagens-body {
         if (typeof window.dokeInlineLoaderMarkup === 'function') {
             return window.dokeInlineLoaderMarkup(label);
         }
-        return `<div class="doke-list-loading"><i class='bx bx-loader-alt bx-spin'></i><span>${label}</span></div>`;
+        return `<div class="doke-inline-loader"><span aria-hidden="true" class="doke-inline-loader__spinner"></span><span>${label}</span></div>`;
     }
 
     function showListSkeleton(container, type = 'pedido', count = 5){
@@ -7543,7 +7542,7 @@ window.confirmarFinalizacaoPedido = async () => {
                 const aguardandoAuth = container.dataset.dokeAuthRetry === "1";
                 if (!aguardandoAuth) {
                     container.dataset.dokeAuthRetry = "1";
-                    replaceListHtmlSmooth(container, `<div style="text-align:center; padding:30px; color:#999;">Carregando seus pedidos...</div>`, 'pedidos:loading-auth');
+                    replaceListHtmlSmooth(container, (typeof window.dokeInlineLoaderMarkup === 'function' ? window.dokeInlineLoaderMarkup('Carregando pedidos...') : `<div class="doke-inline-loader"><span aria-hidden="true" class="doke-inline-loader__spinner"></span><span>Carregando pedidos...</span></div>`), 'pedidos:loading-auth');
                     setTimeout(() => {
                         try {
                             container.dataset.dokeAuthRetry = "0";
@@ -8874,7 +8873,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
           const chatKey = dokeChatKey(colecao, docId);
           if (container.dataset.chatRenderKey !== chatKey) {
               container.dataset.chatRenderKey = chatKey;
-              container.innerHTML = `<div class="doke-chat-loading"><i class='bx bx-loader-alt bx-spin'></i><span>Carregando conversa...</span></div>`;
+              container.innerHTML = (typeof window.dokeInlineLoaderMarkup === 'function' ? window.dokeInlineLoaderMarkup('Carregando conversa...') : `<div class="doke-inline-loader"><span aria-hidden="true" class="doke-inline-loader__spinner"></span><span>Carregando conversa...</span></div>`);
           }
           
           const q = query(collection(db, colecao, docId, "mensagens"), orderBy("timestamp", "asc"));

@@ -5027,7 +5027,7 @@ function dokeNormalizeToastType(tipo) {
 
 window.dokeInlineLoaderMarkup = function(label) {
     const text = String(label || 'Carregando...').trim() || 'Carregando...';
-    return `<div class="doke-inline-loader" role="status" aria-live="polite"><i class='bx bx-loader-alt bx-spin' aria-hidden="true"></i><span>${text}</span></div>`;
+    return `<div class="doke-inline-loader" role="status" aria-live="polite"><span aria-hidden="true" class="doke-inline-loader__spinner"></span><span>${text}</span></div>`;
 };
 
 window.dokeInlineStateMarkup = function(label, kind = 'info') {
