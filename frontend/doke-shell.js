@@ -1,5 +1,5 @@
 (function(){
-  window.__DOKE_SHELL_BUILD__ = "20260313v101";
+  window.__DOKE_SHELL_BUILD__ = "20260313v106";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
   try {
@@ -12,20 +12,6 @@
   const __dokeAppV2Enabled = (__dokeQs.get("appv2") === "1") || (localStorage.getItem("doke_app_v2") === "1");
   const __dokeAppV2LegacyOnlyRoutes = new Set([]);
   const __dokeIsV2Frame = (__dokeQs.get("v2frame") === "1") || (__dokeQs.get("embed") === "1") || (__dokeQs.get("noshell") === "1");
-  if (__dokeAppV2Enabled && !__dokeIsV2Frame && __dokeCurrentFile && __dokeCurrentFile !== "index.html" && !DOKE_DISABLE_SHELL_PAGES.includes(__dokeCurrentFile) && !__dokeAppV2LegacyOnlyRoutes.has(__dokeCurrentFile)) {
-    try {
-      const routeQs = new URLSearchParams(location.search || "");
-      routeQs.delete("appv2");
-      routeQs.delete("route");
-      const route = `${__dokeCurrentFile}${routeQs.toString() ? `?${routeQs.toString()}` : ""}`;
-      const target = new URL("index.html", location.href);
-      target.searchParams.set("appv2", "1");
-      target.searchParams.set("route", route);
-      target.searchParams.set("fromLegacyRoute", "1");
-      location.replace(target.toString());
-      return;
-    } catch (_e) {}
-  }
   if (DOKE_DISABLE_SHELL_PAGES.includes(__dokeCurrentFile)) {
     try { document.documentElement.classList.add("doke-no-shell"); } catch(_e) {}
     return;
@@ -40,17 +26,34 @@
     window.__DOKE_LEGACY_SHELL_DISABLED__ = true;
     return;
   }
+  const resolveFrontendHref = (href) => {
+    const raw = String(href || "").trim();
+    if (!raw) return "";
+    try{
+      if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) return raw;
+      if (raw.startsWith("//")) return `${location.protocol}${raw}`;
+      if (raw.startsWith("/")) return new URL(raw, location.origin).toString();
+      const currentPath = String(location.pathname || "").toLowerCase();
+      const base = currentPath.includes("/frontend/")
+        ? new URL("./", location.href)
+        : new URL("/frontend/", location.origin);
+      return new URL(raw, base).toString();
+    }catch(_e){
+      return raw;
+    }
+  };
   const PAGES = {
     home: "index.html",
     search: "busca.html",
     comunidades: "comunidade.html",
     negocios: "negocios.html",
     pedidos: "pedidos.html",
-    perfil: "meuperfil.html",
+    perfil: resolveFrontendHref("meuperfil.html"),
     chat: "mensagens.html",
     notif: "notificacoes.html",
     mais: "mais.html"
   };
+  const PROFILE_NAV_ATTRS = `href="${resolveFrontendHref("meuperfil.html")}" onclick="if(window.irParaMeuPerfil){ window.irParaMeuPerfil(event); return false; }"`;
 
   const LOGO_SRC = "assets/Imagens/doke-logo.png";
   const TRANSITION_MIN_MS = 420;
@@ -763,7 +766,7 @@
     const isPro = !!opts?.isPro;
     const nomePerfil = sanitizePlainText(profile.user || profile.nome || profile.name || "Minha conta");
     const nomePerfilSafe = escapeHtml(nomePerfil || "Minha conta");
-    const profileHref = "meuperfil.html";
+    const profileHref = resolveFrontendHref("meuperfil.html");
     const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
     const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
     const buildProfileDropdown = (photo) => `
@@ -773,7 +776,7 @@
         </button>
         <div class="doke-shell-profile-menu" hidden>
           <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">${nomePerfilSafe}</div>
-          <a href="${profileHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+          <a ${PROFILE_NAV_ATTRS} class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
           ${itemCarteira}
           <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
           <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> Anunciar</a>
@@ -856,7 +859,7 @@
       const isPro = !!opts?.isPro;
       const nomePerfil = sanitizePlainText(profile.user || profile.nome || profile.name || "Minha conta");
       const nomePerfilSafe = escapeHtml(nomePerfil || "Minha conta");
-      const profileHref = "meuperfil.html";
+      const profileHref = resolveFrontendHref("meuperfil.html");
       const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
       const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
 
@@ -873,7 +876,7 @@
           } else {
             menu.innerHTML = `
               <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">${nomePerfilSafe}</div>
-              <a href="${profileHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+              <a ${PROFILE_NAV_ATTRS} class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
               ${itemCarteira}
               <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
               <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> Anunciar</a>
@@ -977,7 +980,7 @@ const sidebarMarkup = `
   ${item(protectedHref("mensagens.html?aba=conversas"), "bx-message-rounded-dots", "azul", "Mensagens")}
   ${item(protectedHref("pedidos.html"), "bx-package", "verde", "Pedidos")}
   ${item("comunidade.html", "bx-group", "verde", "Comunidades")}
-  ${item(profileHref, "bx-user", "verde", "Perfil")}
+  <div class="item ${file === "meuperfil.html" ? "active" : ""}"><a ${PROFILE_NAV_ATTRS}><i class="bx bx-user icon verde"></i><span>Perfil</span></a></div>
   ${item("mais.html", "bx-menu", "azul", "Mais")}
 </aside>`;
 
@@ -1522,7 +1525,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
     const itemAlternar = isLogged ? `<a href="#" class="dropdown-item" data-action="alternar-conta"><i class='bx bx-user-pin'></i> Alternar Conta</a>` : "";
     const itemSair = `<a href="#" class="dropdown-item item-sair" data-action="logout"><i class='bx bx-log-out'></i> Sair</a>`;
-    const profileItemHTML = `<a href="${profileHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>`;
+    const profileItemHTML = `<a ${PROFILE_NAV_ATTRS} class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>`;
     const guestItemHTML = `<a href="login.html?noshell=1" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
     const dropdownItemsHTML = isLogged
       ? `${profileItemHTML}${itemCarteira}${itemAlternar}<a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${labelAnunciar}</a>${itemSair}`
@@ -1730,7 +1733,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
           <a href="${protectedHref(PAGES.notif)}"><i class='bx bx-bell'></i> Notificações</a>
           <a href="${protectedHref(PAGES.chat)}"><i class='bx bx-message-rounded-dots'></i> Mensagens</a>
           <a href="${protectedHref(PAGES.pedidos)}"><i class='bx bx-package'></i> Pedidos</a>
-          <a href="${profileHref}"><i class='bx bx-user'></i> Perfil</a>
+          <a ${PROFILE_NAV_ATTRS}><i class='bx bx-user'></i> Perfil</a>
           <a href="${PAGES.mais}"><i class='bx bx-dots-horizontal-rounded'></i> Mais</a>
         </nav>
       `;
@@ -1759,7 +1762,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         <a href="#" data-nav="search"><i class='bx bx-search'></i><span>Pesquisar</span></a>
         <a href="${PAGES.comunidades}" data-nav="comunidades"><i class='bx bx-group'></i><span>Comunidades</span></a>
         <a href="${PAGES.negocios}" data-nav="negocios"><i class='bx bx-store-alt'></i><span>Negócios</span></a>
-        <a href="${profileHref}" data-nav="perfil"><span class="doke-nav-avatar-wrap"><img class="doke-nav-avatar" alt="Perfil"></span><span>Perfil</span></a>
+        <a ${PROFILE_NAV_ATTRS} data-nav="perfil"><span class="doke-nav-avatar-wrap"><img class="doke-nav-avatar" alt="Perfil"></span><span>Perfil</span></a>
       `;
       document.body.appendChild(bottom);
 
@@ -3496,3 +3499,5 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     }, true);
   } catch(_e){}
 })();
+
+

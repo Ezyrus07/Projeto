@@ -72,11 +72,21 @@
      can still exist in the DOM on mobile. When the shell is active we must
      hide them to avoid a duplicated header/navigation. */
   body.doke-shell-active .navbar-mobile,
-  body.doke-shell-active .navbar-desktop,
-  body.doke-shell-active .sidebar-icones,
+  body.doke-shell-active .navbar-desktop:not([data-shell="unified-desktop"]),
+  body.doke-shell-active .sidebar-icones:not([data-shell="unified-desktop"]),
   body.doke-shell-active .bottom-nav,
   body.doke-shell-active #overlay-menu{
     display: none !important;
+  }
+  body.doke-shell-active .navbar-desktop[data-shell="unified-desktop"]{
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  body.doke-shell-active .sidebar-icones[data-shell="unified-desktop"]{
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
   /* Se a página não usa <main>, garante espaço para o bottom-nav */
   body.doke-no-main{

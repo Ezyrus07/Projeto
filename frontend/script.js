@@ -4,15 +4,33 @@
 
 
 // [DOKE] Build tag (cache-buster)
-window.__DOKE_BUILD__ = "20260313v72";
+window.__DOKE_BUILD__ = "20260313v73";
 try { console.log("[DOKE] build:", window.__DOKE_BUILD__); } catch(_e) {}
 
 function dokeApplyAppPageEnter(){
     return;
 }
 
+function dokeResolveFrontendHref(targetUrl) {
+    const raw = String(targetUrl || '').trim();
+    if (!raw) return '';
+    try {
+        if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) return raw;
+        if (raw.startsWith('//')) return `${window.location.protocol}${raw}`;
+        if (raw.startsWith('/')) return new URL(raw, window.location.origin).toString();
+        const currentPath = String(window.location.pathname || '').toLowerCase();
+        const base = currentPath.includes('/frontend/')
+            ? new URL('./', window.location.href)
+            : new URL('/frontend/', window.location.origin);
+        return new URL(raw, base).toString();
+    } catch (_) {
+        return raw;
+    }
+}
+window.dokeResolveFrontendHref = dokeResolveFrontendHref;
+
 function dokeNavigateHtml(targetUrl) {
-    const to = String(targetUrl || '').trim();
+    const to = dokeResolveFrontendHref(targetUrl);
     if (!to) return;
     try {
         if (typeof window.__DOKE_V2_NAVIGATE__ === 'function') {
@@ -4358,6 +4376,8 @@ if (!window.__dokeDropdownBound) {
 window.irParaMeuPerfil = function(event) {
     const go = async () => {
         let resolvedUser = null;
+        const loginHref = dokeResolveFrontendHref(`login.html?next=${encodeURIComponent('/frontend/meuperfil.html')}`);
+        const profileHref = dokeResolveFrontendHref('meuperfil.html');
         try { resolvedUser = await dokeResolveAuthUser(); } catch (_) {}
         if (!resolvedUser) {
             try { resolvedUser = dokeEnsureAuthUserFromCacheSync(); } catch (_) {}
@@ -4384,7 +4404,7 @@ window.irParaMeuPerfil = function(event) {
         }
 
         if (!resolvedUser) {
-            window.location.href = "login.html";
+            window.location.href = loginHref;
             return;
         }
 
@@ -4394,10 +4414,24 @@ window.irParaMeuPerfil = function(event) {
             localStorage.setItem("usuarioLogado", "true");
         } catch (_) {}
 
-        window.location.href = "meuperfil.html";
+        window.location.href = profileHref;
     };
     if(event) event.preventDefault();
     go();
+}
+
+if (!window.__dokePerfilLinkInterceptorBound) {
+    window.__dokePerfilLinkInterceptorBound = true;
+    document.addEventListener("click", function (event) {
+        const trigger = event.target && event.target.closest
+            ? event.target.closest('a[href="meuperfil.html"], a[data-nav="perfil"], .dropdown-item[href="meuperfil.html"]')
+            : null;
+        if (!trigger) return;
+        if (typeof window.irParaMeuPerfil === "function") {
+            event.preventDefault();
+            window.irParaMeuPerfil(event);
+        }
+    }, true);
 }
 
 window.filtrarPorCategoria = function(categoria) {
@@ -16830,3 +16864,4 @@ window.addEventListener('DOMContentLoaded', function(){
     if(act){ var overlay = document.querySelector('.doke-pro-upsell-overlay'); if(overlay) overlay.remove(); }
   }, true);
 })();
+

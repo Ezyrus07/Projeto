@@ -5775,8 +5775,26 @@ if(!rangeSel || !refreshBtn) return;
   // -----------------------------
   // Render header
   // -----------------------------
+  function getBestProfileIdentity(ctx){
+    const cached = buildCachedSelfProfile(ctx?.authUser) || {};
+    const local = (() => {
+      try{
+        return JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null") || {};
+      }catch(_){
+        return {};
+      }
+    })();
+    return Object.assign(
+      {},
+      cached,
+      local,
+      ctx?.me || {},
+      ctx?.target || {}
+    );
+  }
+
   function renderHeader(ctx){
-    const u = ctx.target;
+    const u = getBestProfileIdentity(ctx);
     ensureTheme(ctx, roleFromUsuario(u) === "profissional" ? "profissional" : "cliente");
 
     // avatar / cover
@@ -6060,8 +6078,26 @@ if(!rangeSel || !refreshBtn) return;
   function revealCachedSelfProfile(client, authUser, me, pageTheme){
     if(!me) return;
     try{
-      const label = $("#dpInlineLoader .dp-inlineLoaderText");
-      if(label) label.textContent = "Carregando perfil";
+      const previewCtx = {
+        client,
+        authUser,
+        me,
+        target: me,
+        targetId: me.id || me.uid || authUser?.id || authUser?.uid || "",
+        canEdit: true,
+        canWrite: true,
+        pageTheme,
+        pageMode: "self",
+        sbHealth: null,
+        sbRestDown: false
+      };
+      renderHeader(previewCtx);
+      const rootEl = $("#dpRoot");
+      if(rootEl){
+        rootEl.classList.remove("dp-loading");
+        rootEl.classList.add("dp-ready");
+        rootEl.setAttribute("data-owner", "self");
+      }
     }catch(_){}
   }
 
@@ -6070,8 +6106,8 @@ if(!rangeSel || !refreshBtn) return;
   // -----------------------------
   async function init(){
     const rootEl = $("#dpRoot");
-    // Mostra feedback de carregamento e garante que não fica "branco"
-    rootEl?.classList.add("dp-loading");
+    rootEl?.classList.remove("dp-loading");
+    rootEl?.classList.add("dp-ready");
     setText("#dpName", "");
     setText("#dpHandle", "");
     setText("#dpBio", "");
@@ -6087,6 +6123,14 @@ if(!rangeSel || !refreshBtn) return;
         section.classList.toggle("dp-section--hidden", !isSobre);
         section.setAttribute("aria-hidden", isSobre ? "false" : "true");
       });
+    }catch(_){}
+
+    try{
+      const cachedShell = getCachedProfileFallback();
+      if(cachedShell){
+        renderCachedProfileShell(cachedShell);
+        rootEl?.setAttribute("data-owner", "self");
+      }
     }catch(_){}
 
     try{
@@ -6117,8 +6161,6 @@ if(!rangeSel || !refreshBtn) return;
       let pageMode = selfPages.has(file) ? "self" : (declaredMode || "public"); // self | public
       const pageTheme = root?.dataset?.theme || "cliente"; // cliente|profissional (visual)
 
-      // Evita flicker suave
-      root?.classList.remove("dp-ready");
       await sleep(20);
 
       // Session (optional on public pages)
