@@ -434,7 +434,7 @@ function showMsg(type, text){
       if (type !== "ok" && raw.toLowerCase().includes("failed to fetch")) {
         el.textContent =
           "Falha ao conectar no Supabase (CORS/Projeto pausado/offline). " +
-          "? No painel do Supabase: Settings Ã¢â? â?T API Ã¢â? â?T CORS Allowed Origins, adicione " +
+          "? No painel do Supabase: Settings Ã¢??T API Ã¢??T CORS Allowed Origins, adicione " +
           "http://localhost:5503 e http://127.0.0.1:5503 (e tambÃ©m 5500 se usar Live Server). " +
           "Se o projeto estiver pausado, clique em Resume. Depois recarregue a pÃ¡gina.";
       } else {
@@ -451,17 +451,39 @@ function showMsg(type, text){
       eye.classList.toggle("bx-hide", isPw);
     });
 
+    const APP_ONLY_ROUTES = new Set([
+      "busca.html","detalhes.html","notificacoes.html","pedidos.html","mensagens.html","mais.html","novidades.html",
+      "escolheranuncio.html","ajuda.html","carteira.html","historico.html","dadospessoais.html","enderecos.html",
+      "preferencia-notif.html","idioma.html","privacidade.html","senha.html","pagamentos.html","comunidade.html",
+      "grupo.html","meuperfil.html","perfil-profissional.html","perfil.html","perfil-cliente.html","perfil-usuario.html",
+      "perfil-empresa.html","feed.html","publicacoes.html","interacoes.html","orcamento.html","pagar.html","pedido.html",
+      "projeto.html","resultado.html","anunciar.html","anunciar-negocio.html","editar-anuncio.html","avaliar.html",
+      "quiz.html","diagnostico.html","diagnostico-avancado.html","tornar-profissional.html","explorar.html","estatistica.html",
+      "admin-validacoes.html","negocios.html","acompanhamento-profissional.html","empresas.html","meuempreendimento.html",
+      "negocio.html","sobre-doke.html"
+    ]);
+
+    const normalizeNextAfterLogin = (raw) => {
+      try {
+        const base = new URL("./", window.location.href);
+        const u = new URL(String(raw || "index.html"), base);
+        if (u.origin !== window.location.origin) return "index.html";
+        const file = String((u.pathname || "").split("/").pop() || "index.html").toLowerCase();
+        if (!file || /login\.html/i.test(file)) return "index.html";
+        if (file !== "index.html" && APP_ONLY_ROUTES.has(file)) {
+          return `index.html?fromLegacyRoute=1&route=${encodeURIComponent(`${file}${u.search || ""}`)}`;
+        }
+        return `${u.pathname || ""}${u.search || ""}${u.hash || ""}` || "index.html";
+      } catch (_) {
+        return "index.html";
+      }
+    };
+
     const getNextAfterLogin = () => {
       try{
         const params = new URLSearchParams(window.location.search || "");
         const raw = String(params.get("next") || "").trim();
-        if(!raw) return "index.html";
-        const base = new URL("./", window.location.href);
-        const u = new URL(raw, base);
-        if(u.origin !== window.location.origin) return "index.html";
-        const path = `${u.pathname || ""}${u.search || ""}${u.hash || ""}`;
-        if(!path || /login\.html/i.test(path)) return "index.html";
-        return path;
+        return normalizeNextAfterLogin(raw || "index.html");
       }catch(_){
         return "index.html";
       }

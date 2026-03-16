@@ -1,8 +1,26 @@
 (function(){
   const ENABLE_KEY = "doke_app_v2";
-const VERSION = "20260314v21";
-  const V2_DIRECT_ROUTES = new Set([
+const VERSION = "20260316v01";
+    const V2_DIRECT_ROUTES = new Set([
     "index.html",
+    "busca.html",
+    "detalhes.html",
+    "notificacoes.html",
+    "pedidos.html",
+    "mensagens.html",
+    "mais.html",
+    "novidades.html",
+    "escolheranuncio.html",
+    "ajuda.html",
+    "carteira.html",
+    "historico.html",
+    "dadospessoais.html",
+    "enderecos.html",
+    "preferencia-notif.html",
+    "idioma.html",
+    "privacidade.html",
+    "senha.html",
+    "pagamentos.html",
     "comunidade.html",
     "grupo.html",
     "meuperfil.html",
@@ -13,7 +31,29 @@ const VERSION = "20260314v21";
     "perfil-empresa.html",
     "feed.html",
     "publicacoes.html",
-    "interacoes.html"
+    "interacoes.html",
+    "orcamento.html",
+    "pagar.html",
+    "pedido.html",
+    "projeto.html",
+    "resultado.html",
+    "anunciar.html",
+    "anunciar-negocio.html",
+    "editar-anuncio.html",
+    "avaliar.html",
+    "quiz.html",
+    "diagnostico.html",
+    "diagnostico-avancado.html",
+    "tornar-profissional.html",
+    "explorar.html",
+    "estatistica.html",
+    "admin-validacoes.html",
+    "negocios.html",
+    "acompanhamento-profissional.html",
+    "empresas.html",
+    "meuempreendimento.html",
+    "negocio.html",
+    "sobre-doke.html"
   ]);
   const clearPreboot = () => {
     try { document.documentElement.classList.remove("doke-v2-preboot"); } catch (_e) {}
@@ -316,12 +356,12 @@ const VERSION = "20260314v21";
     router.register("pagamentos.html", settingsPagesApi.mountPayments);
     router.register("comunidade.html", socialPagesApi.mountCommunity);
     router.register("grupo.html", socialPagesApi.mountGroup);
-    router.register("meuperfil.html", nativeBridgeApi.mountNativeBridge);
-    router.register("perfil-profissional.html", nativeBridgeApi.mountNativeBridge);
-    router.register("perfil.html", nativeBridgeApi.mountNativeBridge);
-    router.register("perfil-cliente.html", nativeBridgeApi.mountNativeBridge);
-    router.register("perfil-usuario.html", nativeBridgeApi.mountNativeBridge);
-    router.register("perfil-empresa.html", nativeBridgeApi.mountNativeBridge);
+    router.register("meuperfil.html", socialPagesApi.mountOwnProfile);
+    router.register("perfil-profissional.html", socialPagesApi.mountProfessionalProfile);
+    router.register("perfil.html", socialPagesApi.mountGenericProfile);
+    router.register("perfil-cliente.html", socialPagesApi.mountGenericProfile);
+    router.register("perfil-usuario.html", socialPagesApi.mountGenericProfile);
+    router.register("perfil-empresa.html", socialPagesApi.mountCompanyProfile);
     router.register("feed.html", socialPagesApi.mountFeed);
     router.register("publicacoes.html", socialPagesApi.mountPublications);
     router.register("interacoes.html", socialPagesApi.mountInteractions);

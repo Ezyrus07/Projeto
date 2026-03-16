@@ -1,4 +1,4 @@
-﻿/* Doke - Comunidade V2 (upgrade)
+/* Doke - Comunidade V2 (upgrade)
    - Criação de grupos Público/Privado
    - Botão Entrar/Solicitar (privado -> pendente)
    - Render próprio da lista (sem depender do script.js)
@@ -16,6 +16,8 @@
 
   const listEl = $('#listaComunidades');
   const searchInput = $('#inputBuscaComm') || $('#buscaComm');
+  const COMM_CACHE_KEY = 'doke_comm_cache_v5';
+  let activeLoadToken = 0;
 
   function getClient(){
     return window.supabase || window.supabaseClient || window.sb || window.__supabaseClient || null;
@@ -39,6 +41,94 @@
       }
     }catch(_){ }
     return (perfilLocal.uid || perfilLocal.id || perfilLocal.user_uid || perfilLocal.userId || perfilLocal.username || perfilLocal.user || '').toString().replace(/^@/,'');
+  }
+
+  function stateMarkup(kind, title, message){
+    const safeTitle = String(title || '').trim();
+    const safeMessage = String(message || '').trim();
+    const icon = kind === 'error' ? 'bx-error-circle' : (kind === 'empty' ? 'bx-search-alt' : 'bx-loader-alt bx-spin');
+    const cls = kind === 'loader' ? ' is-loading' : '';
+    return `
+      <div class="comm-state${cls}" data-kind="${kind}" style="grid-column:1/-1;">
+        <div class="comm-state__icon"><i class='bx ${icon}'></i></div>
+        <div class="comm-state__body">
+          <h3>${safeTitle}</h3>
+          <p>${safeMessage}</p>
+        </div>
+      </div>`;
+  }
+
+  function updateHeroStatsSafe(){
+    try{ window.atualizarHeroStats && window.atualizarHeroStats(); }catch(_){ }
+  }
+
+  function hasVisibleCards(){
+    return !!listEl && !!listEl.querySelector('.com-card, .card-comm');
+  }
+
+  function readCache(){
+    try{
+      const raw = sessionStorage.getItem(COMM_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.groups)) return null;
+      if (parsed.ts && (Date.now() - Number(parsed.ts) > 1000 * 60 * 45)) return null;
+      return parsed;
+    }catch(_){ return null; }
+  }
+
+  function writeCache(groups, statusMap, countMap){
+    try{
+      sessionStorage.setItem(COMM_CACHE_KEY, JSON.stringify({
+        ts: Date.now(),
+        groups: Array.isArray(groups) ? groups : [],
+        statusEntries: Array.from(statusMap?.entries?.() || []),
+        countEntries: Array.from(countMap?.entries?.() || [])
+      }));
+    }catch(_){ }
+  }
+
+  function restoreFromCache(schema){
+    const cache = readCache();
+    if (!cache || !Array.isArray(cache.groups) || !cache.groups.length || !listEl) return false;
+    const statusMap = new Map(Array.isArray(cache.statusEntries) ? cache.statusEntries : []);
+    const countMap = new Map(Array.isArray(cache.countEntries) ? cache.countEntries : []);
+    listEl.innerHTML = '';
+    cache.groups.forEach((g)=>{
+      const gid = String(g.id ?? g.comunidade_id ?? g.grupo_id ?? g.community_id ?? '');
+      const card = makeCard(g, schema || { nameCol:'nome', descCol:'descricao', typeCol:'tipo', photoCol:'foto', coverCol:'capa', privateCol:'privado', ownerCol:'dono_uid' }, statusMap.get(gid) || 'none', countMap.get(gid) || 0);
+      listEl.appendChild(card);
+    });
+    updateHeroStatsSafe();
+    return true;
+  }
+
+  function generalSkeletonMarkup(count=4){
+    return `
+      <div class="comm-skeleton-grid" aria-hidden="true">
+        ${Array.from({ length: count }).map(() => `
+          <article class="comm-skeleton-card">
+            <div class="comm-skeleton-card__cover"></div>
+            <div class="comm-skeleton-card__body">
+              <div class="comm-skeleton-card__avatar"></div>
+              <div class="comm-skeleton-card__content">
+                <div class="comm-skeleton-card__line is-title"></div>
+                <div class="comm-skeleton-card__line"></div>
+                <div class="comm-skeleton-card__line is-short"></div>
+                <div class="comm-skeleton-card__chips"><span></span><span></span><span></span></div>
+              </div>
+              <div class="comm-skeleton-card__button"></div>
+            </div>
+          </article>`).join('')}
+      </div>`;
+  }
+
+  function myGroupsSkeletonMarkup(count=4){
+    return Array.from({ length: count }).map(() => `
+      <div class="my-group-skeleton" aria-hidden="true">
+        <div class="my-group-skeleton__thumb"></div>
+        <div class="my-group-skeleton__line"></div>
+      </div>`).join('');
   }
 
   function toast(msg){
@@ -149,7 +239,7 @@
     const foto = normalizeUrl(fotoRaw);
     const capa = normalizeUrl(capaRaw);
 
-    const el = document.createElement('div');
+    const el = document.createElement('article');
     el.className = 'com-card';
     el.setAttribute('data-tipo', String(tipo));
 
@@ -158,15 +248,17 @@
       <div class="com-body">
         <div class="com-avatar">${foto ? `<img src="${foto}" alt="${nome}" onerror="this.remove();">` : `<i class='bx bx-group'></i>`}</div>
         <div class="com-info">
-          <div class="com-title">${nome}</div>
+          <div class="com-title-row">
+            <div class="com-title">${nome}</div>
+            <span class="community-fallback-badge">${priv ? 'Privado' : 'Público'}</span>
+          </div>
           <div class="com-desc">${desc}</div>
           <div class="com-meta">
             <span class="pill">${tipo}</span>
-            <span class="pill">${priv ? 'ðŸ”’ Privado' : 'ðŸŒ Público'}</span>
             <span class="meta-small">${membersCount} membro(s)</span>
           </div>
+          <button class="btn-ver-grupo" type="button"></button>
         </div>
-        <button class="btn-ver-grupo" type="button"></button>
       </div>
     `;
 
@@ -174,13 +266,15 @@
     const go = () => (window.location.href = `grupo.html?id=${encodeURIComponent(id)}`);
 
     if (myStatus === 'ativo'){
-      btn.textContent = 'Abrir';
+      btn.textContent = 'Entrou';
+      btn.setAttribute('data-state', 'entered');
       btn.addEventListener('click', (e)=>{ e.stopPropagation(); go(); });
       el.addEventListener('click', go);
       return el;
     }
     if (myStatus === 'pendente'){
       btn.textContent = 'Pendente';
+      btn.setAttribute('data-state', 'request');
       btn.disabled = true;
       btn.style.opacity = '0.75';
       btn.style.cursor = 'not-allowed';
@@ -188,13 +282,13 @@
       return el;
     }
 
-    btn.textContent = priv ? 'Solicitar' : 'Entrar';
+    btn.textContent = priv ? 'Solicitar entrada' : 'Entrar';
+    btn.setAttribute('data-state', priv ? 'request' : 'join');
     btn.addEventListener('click', async (e)=>{
       e.stopPropagation();
       btn.disabled = true;
       try{
         await joinOrRequest(id, priv, group?.[schema.ownerCol] || null);
-        // se público, já entra e abre
         if (!priv) go();
       } finally {
         btn.disabled = false;
@@ -319,40 +413,54 @@
     }
   }
 
-  async function load(){
+  async function load(options = {}){
     if (!listEl) return;
+    const token = ++activeLoadToken;
+    const { forceFresh = false, preserveVisible = false } = options || {};
     const client = getClient();
+
+    if (!forceFresh){
+      try{
+        const schemaForCache = client ? await detectGroupsSchema(client) : null;
+        if (!hasVisibleCards()) restoreFromCache(schemaForCache);
+      }catch(_){ }
+    }
+
+    const shouldShowSkeleton = !preserveVisible && !hasVisibleCards();
+    if (shouldShowSkeleton) listEl.innerHTML = generalSkeletonMarkup();
+    updateHeroStatsSafe();
+
     if (!client){
-      listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#888; grid-column:1/-1;">Supabase não inicializado.</div>';
+      if (!hasVisibleCards() && !readCache()) listEl.innerHTML = generalSkeletonMarkup();
       return;
     }
+
     const groupSchema = await detectGroupsSchema(client);
     const memSchema = await detectMembersSchema(client);
     const uid = await getUid(client);
 
-    listEl.innerHTML = `
-      <div style="text-align:center; padding:40px; color:#888; grid-column:1/-1;">
-        <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i>
-        <p>Buscando grupos...</p>
-      </div>`;
-
     let { data: groups, error: gErr } = await client.from(GROUPS_TABLE).select('*').order('created_at', { ascending: false }).limit(200);
-// compat: alguns schemas não têm created_at
-if (gErr && (String(gErr.code||'') === '42703' || String(gErr.message||'').toLowerCase().includes('created_at'))){
-  ({ data: groups, error: gErr } = await client.from(GROUPS_TABLE).select('*').limit(200));
-}
+    if (gErr && (String(gErr.code||'') === '42703' || String(gErr.message||'').toLowerCase().includes('created_at'))){
+      ({ data: groups, error: gErr } = await client.from(GROUPS_TABLE).select('*').limit(200));
+    }
+    if (token !== activeLoadToken) return;
+
     if (gErr){
       console.warn('[DOKE] comunidades load error', gErr);
-      listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#888; grid-column:1/-1;">Não foi possível carregar os grupos.</div>';
-      return;
-    }
-    const rows = Array.isArray(groups) ? groups : [];
-    if (!rows.length){
-      listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#888; grid-column:1/-1;">Nenhum grupo ainda. Crie o primeiro!</div>';
+      if (!hasVisibleCards() && !restoreFromCache(groupSchema)) {
+        listEl.innerHTML = stateMarkup('error', 'Não foi possível carregar as comunidades.', 'Tente novamente em instantes ou recarregue a página.');
+      }
+      updateHeroStatsSafe();
       return;
     }
 
-    // status do usuário
+    const rows = Array.isArray(groups) ? groups : [];
+    if (!rows.length){
+      if (!hasVisibleCards()) listEl.innerHTML = stateMarkup('empty', 'Nenhuma comunidade encontrada', 'Não há comunidades publicadas ainda. Crie o primeiro grupo para começar.');
+      updateHeroStatsSafe();
+      return;
+    }
+
     const statusMap = new Map();
     if (uid){
       try{
@@ -366,34 +474,42 @@ if (gErr && (String(gErr.code||'') === '42703' || String(gErr.message||'').toLow
       }catch(_){ }
     }
 
-    const ids = rows.map(r=>String(r.id)).filter(Boolean);
+    const ids = rows.map(r=>String(r.id ?? r.comunidade_id ?? r.grupo_id ?? r.community_id ?? '')).filter(Boolean);
     const countMap = await computeMembersCount(client, memSchema, ids);
+    if (token !== activeLoadToken) return;
 
     listEl.innerHTML = '';
     rows.forEach(g=>{
-      const gid = String(g.id);
+      const gid = String(g.id ?? g.comunidade_id ?? g.grupo_id ?? '');
       const my = statusMap.get(gid) || 'none';
       const card = makeCard(g, groupSchema, my === 'none' ? null : my, countMap.get(gid) || 0);
       listEl.appendChild(card);
     });
+    writeCache(rows, statusMap, countMap);
+    updateHeroStatsSafe();
 
-    // search input (se existir)
     if (searchInput && !searchInput._v2Bound){
       searchInput._v2Bound = true;
       searchInput.addEventListener('input', (e)=>{
         const t = String(e.target.value || '').toLowerCase().trim();
         $$('.com-card', listEl).forEach(c=>{
           const title = (c.querySelector('.com-title')?.textContent || '').toLowerCase();
-          c.style.display = (!t || title.includes(t)) ? '' : 'none';
+          const desc = (c.querySelector('.com-desc')?.textContent || '').toLowerCase();
+          c.style.display = (!t || title.includes(t) || desc.includes(t)) ? '' : 'none';
         });
+        updateHeroStatsSafe();
       });
     }
   }
 
   async function createGroup(event){
     event?.preventDefault?.();
+    const form = event?.target?.closest ? event.target.closest('form') : document.querySelector('#modalCriarComm form');
+    const submitBtn = form?.querySelector('button[type="submit"], .btn-submit-modal');
+    const previousText = submitBtn?.textContent || 'Criar comunidade';
+    if (submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Criando...'; }
     const client = getClient();
-    if (!client) return toast('Supabase não inicializado.');
+    if (!client){ if (submitBtn){ submitBtn.disabled = false; submitBtn.textContent = previousText; } return toast('Supabase não inicializado.'); }
     const uid = await getUid(client);
     if (!uid) return toast('Faça login para criar um grupo.');
 
@@ -406,7 +522,7 @@ if (gErr && (String(gErr.code||'') === '42703' || String(gErr.message||'').toLow
     const privSel = ($('#commPrivacidade')?.value || 'publico').toLowerCase();
     const privado = privSel === 'privado';
 
-    if (!nome || !desc) return toast('Preencha nome e descrição.');
+    if (!nome || !desc){ if (submitBtn){ submitBtn.disabled = false; submitBtn.textContent = previousText; } return toast('Preencha nome e descrição.'); }
 
     const payload = {};
     payload[schema.nameCol] = nome;
@@ -421,6 +537,7 @@ if (gErr && (String(gErr.code||'') === '42703' || String(gErr.message||'').toLow
     const { data, error } = await client.from(GROUPS_TABLE).insert(payload).select('*').limit(1);
     if (error){
       console.warn('[DOKE] criar grupo error', error);
+      if (submitBtn){ submitBtn.disabled = false; submitBtn.textContent = previousText; }
       return toast('Não consegui criar o grupo: ' + (error.message || 'erro'));
     }
     const created = Array.isArray(data) ? data[0] : data;
@@ -438,30 +555,36 @@ if (gErr && (String(gErr.code||'') === '42703' || String(gErr.message||'').toLow
 
     // upload (best-effort)
     try{
-      const file = $('#commFoto')?.files?.[0];
-      if (file && client.storage && schema.photoCol){
+      const uploaders = [
+        { file: $('#commFoto')?.files?.[0], targetCol: schema.photoCol, prefix: 'avatar' },
+        { file: $('#commCapa')?.files?.[0], targetCol: schema.coverCol, prefix: 'cover' }
+      ].filter(item => item.file && item.targetCol);
+      if (uploaders.length && client.storage){
         const buckets = ['comunidades','comunidade','public','avatars'];
-        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-        const path = `grupos/${groupId}/avatar.${ext}`;
-        for (const b of buckets){
-          try{
-            const up = await client.storage.from(b).upload(path, file, { upsert: true });
-            if (up?.error) throw up.error;
-            const pub = client.storage.from(b).getPublicUrl(path);
-            const url = pub?.data?.publicUrl;
-            if (url){
-              const upd = {}; upd[schema.photoCol] = url;
-              await client.from(GROUPS_TABLE).update(upd).eq('id', groupId);
-            }
-            break;
-          }catch(_){ /* tenta próximo bucket */ }
+        const upd = {};
+        for (const item of uploaders){
+          const ext = (item.file.name.split('.').pop() || 'jpg').toLowerCase();
+          const path = `grupos/${groupId}/${item.prefix}.${ext}`;
+          for (const b of buckets){
+            try{
+              const up = await client.storage.from(b).upload(path, item.file, { upsert: true });
+              if (up?.error) throw up.error;
+              const pub = client.storage.from(b).getPublicUrl(path);
+              const url = pub?.data?.publicUrl;
+              if (url){ upd[item.targetCol] = url; break; }
+            }catch(_){ }
+          }
         }
+        if (Object.keys(upd).length){ await client.from(GROUPS_TABLE).update(upd).eq('id', groupId); }
       }
     }catch(_){ }
 
     try{ window.fecharModalCriarComm?.(); }catch(_){ }
-    toast('Grupo criado âœ…');
-    await load();
+    toast('Grupo criado ✅');
+    await load({ forceFresh: true });
+    try{ if (typeof window.carregarMeusGrupos === 'function') await window.carregarMeusGrupos({ forceFresh: true }); }catch(_){ }
+    try{ form?.reset?.(); form?.querySelectorAll('.comm-file-name').forEach((el)=>{ el.textContent = 'Nenhum arquivo escolhido'; }); }catch(_){ }
+    if (submitBtn){ submitBtn.disabled = false; submitBtn.textContent = previousText; }
   }
 
   // Expor overrides para o HTML

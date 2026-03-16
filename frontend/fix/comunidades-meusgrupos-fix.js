@@ -1,4 +1,4 @@
-﻿/* Doke - Patch Meus Grupos (comunidade.html)
+/* Doke - Patch Meus Grupos (comunidade.html)
    Corrige: "Faça login..." mesmo logado. Usa uid do Firebase, Supabase Auth ou localStorage.
    Renderiza #listaMeusGrupos a partir de comunidade_membros + comunidades.
 */
@@ -8,14 +8,16 @@
 
   const MEMBERS_TABLE = 'comunidade_membros';
   const GROUPS_TABLE  = 'comunidades';
+  const MY_GROUPS_CACHE_KEY = 'doke_my_groups_cache_v5';
+  let activeMyGroupsToken = 0;
 
   function getClient(){
-    return window.supabase || window.supabaseClient || null;
+    return window.supabase || window.supabaseClient || window.sb || window.__supabaseClient || null;
   }
 
-  const perfilLocal = (() => {
+  function readPerfilLocal(){
     try { return JSON.parse(localStorage.getItem('doke_usuario_perfil') || '{}') || {}; } catch(e){ return {}; }
-  })();
+  }
 
   async function getUid(client){
     // Firebase compat
@@ -33,7 +35,8 @@
       }
     }catch(e){}
     // local fallback
-    return (perfilLocal.uid || perfilLocal.id || perfilLocal.user_uid || perfilLocal.userId || perfilLocal.username || perfilLocal.user || '').toString().replace(/^@/,'');
+    const perfilLocal = readPerfilLocal();
+    return (perfilLocal.uid || perfilLocal.id || perfilLocal.user_uid || perfilLocal.userId || localStorage.getItem('doke_uid') || perfilLocal.username || perfilLocal.user || '').toString().replace(/^@/,'');
   }
 
   async function hasColumn(client, table, col){
@@ -84,6 +87,7 @@
   }
 
   async function detectGroupsSchema(client){
+    const idCandidates = ['id','comunidade_id','uuid','grupo_id'];
     const nameCandidates = ['nome','titulo','name','title'];
     const photoCandidates = ['foto','avatar','imagem','foto_url','avatar_url','image_url'];
 
@@ -95,23 +99,81 @@
     };
 
     return {
+      idCol: await pick(idCandidates) || 'id',
       nameCol: await pick(nameCandidates) || 'nome',
       photoCol: await pick(photoCandidates)
     };
   }
 
+  function updateJoinedGroupsStat(count){
+    try{
+      const stat = document.getElementById('heroJoinedGroups');
+      if (stat) stat.textContent = String(Number(count || 0));
+    }catch(_){ }
+  }
+
+  function hasVisibleMyGroups(el){
+    return !!el && !!el.querySelector('.my-group-item');
+  }
+
+  function readCache(){
+    try{
+      const raw = sessionStorage.getItem(MY_GROUPS_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.groups)) return null;
+      if (parsed.ts && (Date.now() - Number(parsed.ts) > 1000 * 60 * 45)) return null;
+      return parsed.groups;
+    }catch(_){ return null; }
+  }
+
+  function writeCache(groups){
+    try{ sessionStorage.setItem(MY_GROUPS_CACHE_KEY, JSON.stringify({ ts: Date.now(), groups: Array.isArray(groups) ? groups : [] })); }catch(_){ }
+  }
+
+  function myGroupsSkeletonMarkup(count=4){
+    return Array.from({ length: count }).map(() => `
+      <div class="my-group-skeleton" aria-hidden="true">
+        <div class="my-group-skeleton__thumb"></div>
+        <div class="my-group-skeleton__line"></div>
+      </div>`).join('');
+  }
+
+  function heroEmptyMarkup(title, message){
+    return `
+      <div class="comm-state" data-kind="empty">
+        <div class="comm-state__icon"><i class='bx bx-group'></i></div>
+        <div class="comm-state__body">
+          <h3>${String(title || 'Nenhum grupo')}</h3>
+          <p>${String(message || '')}</p>
+        </div>
+      </div>`;
+  }
+
   function renderEmpty(el, msg){
     if (!el) return;
     const text = String(msg || '').trim();
-    if (/^carregando/i.test(text) && typeof window.dokeInlineLoaderMarkup === 'function') {
-      el.innerHTML = window.dokeInlineLoaderMarkup(text);
+    if (/^carregando/i.test(text)) {
+      el.innerHTML = myGroupsSkeletonMarkup();
+      return;
+    }
+    if (/nenhum grupo|não participa|nao participa/i.test(text)) {
+      el.innerHTML = heroEmptyMarkup('Seus grupos aparecem aqui', 'Entre em um grupo para deixar atalhos rápidos nesta área.');
+      updateJoinedGroupsStat(0);
+      return;
+    }
+    if (/faça login|faca login/i.test(text)) {
+      el.innerHTML = heroEmptyMarkup('Entre para ver seus grupos', 'Faça login para sincronizar os grupos que você já participa.');
+      updateJoinedGroupsStat(0);
       return;
     }
     if (typeof window.dokeInlineStateMarkup === 'function') {
       el.innerHTML = window.dokeInlineStateMarkup(text);
+      updateJoinedGroupsStat(0);
       return;
     }
     el.innerHTML = `<div style="color:rgba(255,255,255,0.75); padding:10px; font-weight:800;">${text}</div>`;
+    updateJoinedGroupsStat(0);
   }
 
   function renderGroups(el, groups, schema){
@@ -124,9 +186,9 @@
     groups.forEach(g=>{
       const a = document.createElement('div');
       a.className = 'my-group-item';
+      const groupId = g.id || g[schema.idCol] || g.comunidade_id || g.uuid || g.grupo_id || '';
       a.addEventListener('click', ()=>{
-        // abre grupo.html
-        window.location.href = `grupo.html?id=${encodeURIComponent(g.id)}`;
+        window.location.href = `grupo.html?id=${encodeURIComponent(groupId)}`;
       });
 
       const ring = document.createElement('div');
@@ -135,52 +197,65 @@
       const img = document.createElement('img');
       img.loading = 'lazy';
       const url = schema.photoCol ? (g[schema.photoCol] || '') : (g.foto || g.avatar || '');
-      img.src = url || 'https://images.unsplash.com/photo-1520975693410-001f7d8d60cf?auto=format&fit=crop&w=240&q=60';
+      img.src = url || 'assets/Imagens/user_placeholder.png';
       ring.appendChild(img);
 
       const span = document.createElement('span');
-      span.textContent = g[schema.nameCol] || 'Grupo';
+      span.textContent = g[schema.nameCol] || g.nome || g.titulo || 'Grupo';
 
       a.appendChild(ring);
       a.appendChild(span);
       el.appendChild(a);
     });
+    updateJoinedGroupsStat(groups.length);
+    writeCache(groups);
   }
 
-  async function run(){
+  function restoreFromCache(el){
+    const groups = readCache();
+    if (!el || !groups || !groups.length) return false;
+    renderGroups(el, groups, { idCol: 'id', nameCol: 'nome', photoCol: 'foto' });
+    return true;
+  }
+
+  async function run(options = {}){
+    const token = ++activeMyGroupsToken;
+    const { preserveVisible = false } = options || {};
     const el = $('#listaMeusGrupos');
-    if (!el) return;
+    if (!el) return false;
+
+    if (!preserveVisible && !hasVisibleMyGroups(el)) restoreFromCache(el);
 
     const client = getClient();
     if (!client){
-      renderEmpty(el, 'Supabase não inicializado.');
-      return;
+      if (!hasVisibleMyGroups(el) && !restoreFromCache(el)) renderEmpty(el, 'Carregando seus grupos...');
+      return false;
     }
 
     const uid = await getUid(client);
     if (!uid){
       renderEmpty(el, 'Faça login para ver seus grupos.');
-      return;
+      return false;
     }
 
-    renderEmpty(el, 'Carregando seus grupos...');
+    if (!preserveVisible && !hasVisibleMyGroups(el)) renderEmpty(el, 'Carregando seus grupos...');
 
     const memSchema = await detectMembersSchema(client);
     const grpSchema = await detectGroupsSchema(client);
 
     const q = client.from(MEMBERS_TABLE).select('*').eq(memSchema.userCol, uid);
     const { data: members, error: mErr } = await q;
+    if (token !== activeMyGroupsToken) return false;
 
     if (mErr){
       console.warn('[DOKE] meus grupos membros error', mErr);
       renderEmpty(el, 'Não foi possível carregar seus grupos.');
-      return;
+      return false;
     }
 
     const rows = Array.isArray(members) ? members : [];
     let ids = rows.map(r=>r[memSchema.communityCol]).filter(Boolean);
 
-    // filtra pendente se tiver status
     if (memSchema.statusCol){
       ids = rows
         .filter(r => String(r[memSchema.statusCol]||'').toLowerCase() !== 'pendente')
@@ -188,23 +263,49 @@
         .filter(Boolean);
     }
 
-    // unique
     ids = Array.from(new Set(ids.map(String)));
     if (!ids.length){
-      renderGroups(el, [], grpSchema);
-      return;
+      try{
+        const { data: directGroups } = await client.from(GROUPS_TABLE).select('*').limit(120);
+        const directList = (Array.isArray(directGroups) ? directGroups : []).filter((g)=>{
+          const membros = Array.isArray(g?.membros) ? g.membros.map(String) : [];
+          return membros.includes(String(uid));
+        });
+        if (token !== activeMyGroupsToken) return false;
+        renderGroups(el, directList, grpSchema);
+        return true;
+      }catch(_){
+        renderGroups(el, [], grpSchema);
+        return true;
+      }
     }
 
-    const { data: groups, error: gErr } = await client.from(GROUPS_TABLE).select('*').in('id', ids);
+    const groupIdCol = grpSchema.idCol || 'id';
+    const { data: groups, error: gErr } = await client.from(GROUPS_TABLE).select('*').in(groupIdCol, ids);
+    if (token !== activeMyGroupsToken) return false;
     if (gErr){
       console.warn('[DOKE] meus grupos grupos error', gErr);
       renderEmpty(el, 'Não foi possível carregar seus grupos.');
-      return;
+      return false;
     }
 
     renderGroups(el, Array.isArray(groups)?groups:[], grpSchema);
+    return true;
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
-  else run();
+  async function boot(options){
+    let ok = await run(options);
+    if (ok) return;
+    const delays = [180, 420, 900, 1600, 2600];
+    for (const delay of delays){
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      ok = await run(options);
+      if (ok) return;
+    }
+  }
+
+  window.carregarMeusGrupos = boot;
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => boot({ preserveVisible:false }));
+  else boot({ preserveVisible:false });
 })();

@@ -3,8 +3,81 @@
   const ENTER_CLASS = "doke-nav-enter";
   const READY_CLASS = "doke-nav-enter-ready";
   const currentPath = `${location.pathname || ""}${location.search || ""}`;
-  const currentFileName = String((location.pathname || "").split("/").pop() || "").toLowerCase();
+  const rawCurrentFileName = String((location.pathname || "").split("/").pop() || "").toLowerCase();
+  const effectiveCurrentTarget = (() => {
+    try {
+      if (rawCurrentFileName !== "index.html" && rawCurrentFileName !== "") return `${rawCurrentFileName}${location.search || ""}`;
+      const params = new URLSearchParams(location.search || "");
+      if (params.get("fromLegacyRoute") !== "1") return `${rawCurrentFileName || "index.html"}${location.search || ""}`;
+      const routeRaw = String(params.get("route") || "").trim();
+      if (!routeRaw) return `${rawCurrentFileName || "index.html"}${location.search || ""}`;
+      return routeRaw;
+    } catch (_e) {
+      return `${rawCurrentFileName || "index.html"}${location.search || ""}`;
+    }
+  })();
+  const currentFileName = (() => {
+    try {
+      return String(effectiveCurrentTarget.split("?")[0] || "index.html").toLowerCase().split("/").pop() || rawCurrentFileName;
+    } catch (_e) {
+      return rawCurrentFileName;
+    }
+  })();
   const isHomePage = currentFileName === "" || currentFileName === "index.html";
+  const migratedAppRoutes = new Set([
+    "index.html",
+    "busca.html",
+    "detalhes.html",
+    "notificacoes.html",
+    "pedidos.html",
+    "mensagens.html",
+    "mais.html",
+    "novidades.html",
+    "escolheranuncio.html",
+    "ajuda.html",
+    "carteira.html",
+    "historico.html",
+    "dadospessoais.html",
+    "enderecos.html",
+    "preferencia-notif.html",
+    "idioma.html",
+    "privacidade.html",
+    "senha.html",
+    "pagamentos.html",
+    "comunidade.html",
+    "grupo.html",
+    "meuperfil.html",
+    "perfil-profissional.html",
+    "perfil.html",
+    "perfil-cliente.html",
+    "perfil-usuario.html",
+    "perfil-empresa.html",
+    "feed.html",
+    "publicacoes.html",
+    "interacoes.html",
+    "orcamento.html",
+    "pagar.html",
+    "pedido.html",
+    "projeto.html",
+    "resultado.html",
+    "anunciar.html",
+    "anunciar-negocio.html",
+    "editar-anuncio.html",
+    "avaliar.html",
+    "quiz.html",
+    "diagnostico.html",
+    "diagnostico-avancado.html",
+    "tornar-profissional.html",
+    "explorar.html",
+    "estatistica.html",
+    "admin-validacoes.html",
+    "negocios.html",
+    "acompanhamento-profissional.html",
+    "empresas.html",
+    "meuempreendimento.html",
+    "negocio.html",
+    "sobre-doke.html"
+  ]);
   const LOGO_SRC = "assets/Imagens/doke-logo.png";
   const TRANSITION_MIN_MS = 320;
   const TRANSITION_FADE_MS = 170;
@@ -164,7 +237,7 @@
         if (stored.uid) persistLoginMarkers(stored.uid);
         return true;
       }
-      return false;
+      return hasWeakTrustedMarkers();
     } catch (_e) {
       return false;
     }
@@ -215,12 +288,44 @@
     return;
   }
 
+
+  function normalizeAppEntryTarget(rawPath) {
+    try {
+      const u = new URL(String(rawPath || "index.html"), location.href);
+      if (u.origin !== location.origin) return "index.html";
+      const file = String((u.pathname || "").split("/").pop() || "index.html").toLowerCase();
+      if (file !== "index.html" && migratedAppRoutes.has(file)) {
+        return `index.html?fromLegacyRoute=1&route=${encodeURIComponent(`${file}${u.search || ""}`)}`;
+      }
+      return `${u.pathname || ""}${u.search || ""}${u.hash || ""}` || "index.html";
+    } catch (_e) {
+      return "index.html";
+    }
+  }
+
+  function maybeRedirectMigratedRouteToApp() {
+    try {
+      if (isHomePage) return false;
+      if (!migratedAppRoutes.has(currentFileName)) return false;
+      const params = new URLSearchParams(location.search || '');
+      if (params.get('noshell') === '1' || params.get('embed') === '1' || params.get('v2frame') === '1') return false;
+      if (params.get('fromLegacyRoute') === '1') return false;
+      const target = new URL('index.html', location.href);
+      target.searchParams.set('fromLegacyRoute', '1');
+      target.searchParams.set('route', `${currentFileName}${location.search || ''}`);
+      location.replace(target.toString());
+      return true;
+    } catch (_e) {
+      return false;
+    }
+  }
+
   function maybeRedirectProtectedPage() {
     try {
       if (!protectedFiles.has(currentFileName)) return false;
       if (hasValidStoredSession()) return false;
       try { document.documentElement.style.visibility = "hidden"; } catch (_e) {}
-      const next = `${currentFileName || "index.html"}${location.search || ""}${location.hash || ""}`;
+      const next = normalizeAppEntryTarget(`${effectiveCurrentTarget || currentFileName || "index.html"}${location.hash || ""}`);
       location.replace(`login.html?noshell=1&next=${encodeURIComponent(next)}`);
       return true;
     } catch (_e) {
@@ -467,6 +572,7 @@
   cleanupDevServiceWorker();
   try { sessionStorage.removeItem(NAV_PREBOOT_KEY); } catch (_e) {}
   try { document.documentElement.classList.remove(ENTER_CLASS, READY_CLASS, "doke-route-pending"); } catch (_e) {}
+  if (maybeRedirectMigratedRouteToApp()) return;
   if (maybeRedirectProtectedPage()) return;
 
   activateOverlay();

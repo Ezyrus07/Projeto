@@ -15,6 +15,29 @@
     return { file, search };
   }
 
+  function resolveAppEntryTarget(target) {
+    const raw = String(target || "");
+    const parsed = parseTarget(raw);
+    if (parsed.file !== "index.html") return raw;
+    try {
+      const params = new URLSearchParams(parsed.search || "");
+      const fromLegacyRoute = params.get("fromLegacyRoute") === "1";
+      const route = String(params.get("route") || "").trim();
+      if (fromLegacyRoute && route) return route;
+    } catch (_e) {}
+    return raw;
+  }
+
+  function toHistoryHref(target) {
+    const parsed = parseTarget(target);
+    const actual = `${parsed.file}${parsed.search || ""}`;
+    if (parsed.file === "index.html") return actual || "index.html";
+    const params = new URLSearchParams();
+    params.set("fromLegacyRoute", "1");
+    params.set("route", actual);
+    return `index.html?${params.toString()}`;
+  }
+
   function createRouter(opts) {
     const routes = new Map();
     let current = null;
@@ -43,7 +66,8 @@
     async function mountPath(path, mode) {
       setNavigationBusy(true);
       try {
-        const parsed = parseTarget(path);
+        const resolvedPath = resolveAppEntryTarget(path);
+        const parsed = parseTarget(resolvedPath);
       const keyPath = parsed.file;
       const keyFull = `${parsed.file}${parsed.search}`;
       const factory = routes.get(parsed.file) || routes.get("index.html");
@@ -116,7 +140,7 @@
         } catch (_e) {}
       }
 
-        const nextHref = `${keyPath === "index.html" ? "index.html" : keyPath}${parsed.search || ""}`;
+        const nextHref = toHistoryHref(`${keyPath}${parsed.search || ""}`);
         if (mode === "push") {
           history.pushState({ dokeV2: 1, path: nextHref }, "", nextHref);
         } else if (mode === "replace") {
@@ -194,7 +218,7 @@
       await navQueue;
     }
 
-    return { register, start, navigate };
+    return { register, start, navigate, parseTarget, resolveAppEntryTarget, toHistoryHref };
   }
 
   window[key] = { createRouter };
