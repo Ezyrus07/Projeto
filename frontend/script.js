@@ -4376,8 +4376,9 @@ if (!window.__dokeDropdownBound) {
 window.irParaMeuPerfil = function(event) {
     const go = async () => {
         let resolvedUser = null;
-        const loginHref = dokeResolveFrontendHref(`login.html?next=${encodeURIComponent('/frontend/meuperfil.html')}`);
+        const loginHref = dokeResolveFrontendHref(`login.html?noshell=1&next=${encodeURIComponent('meuperfil.html')}`);
         const profileHref = dokeResolveFrontendHref('meuperfil.html');
+        const appV2Active = document.documentElement.classList.contains('doke-v2-active') || localStorage.getItem('doke_app_v2') === '1';
         try { resolvedUser = await dokeResolveAuthUser(); } catch (_) {}
         if (!resolvedUser) {
             try { resolvedUser = dokeEnsureAuthUserFromCacheSync(); } catch (_) {}
@@ -4404,7 +4405,7 @@ window.irParaMeuPerfil = function(event) {
         }
 
         if (!resolvedUser) {
-            window.location.href = loginHref;
+            window.location.replace(loginHref);
             return;
         }
 
@@ -4414,7 +4415,11 @@ window.irParaMeuPerfil = function(event) {
             localStorage.setItem("usuarioLogado", "true");
         } catch (_) {}
 
-        window.location.href = profileHref;
+        if (appV2Active && typeof window.__DOKE_V2_NAVIGATE__ === "function") {
+            window.__DOKE_V2_NAVIGATE__(profileHref);
+        } else {
+            window.location.href = profileHref;
+        }
     };
     if(event) event.preventDefault();
     go();
@@ -4423,6 +4428,7 @@ window.irParaMeuPerfil = function(event) {
 if (!window.__dokePerfilLinkInterceptorBound) {
     window.__dokePerfilLinkInterceptorBound = true;
     document.addEventListener("click", function (event) {
+        if (document.documentElement.classList.contains('doke-v2-active')) return;
         const trigger = event.target && event.target.closest
             ? event.target.closest('a[href="meuperfil.html"], a[data-nav="perfil"], .dropdown-item[href="meuperfil.html"]')
             : null;
@@ -16661,6 +16667,11 @@ document.addEventListener('DOMContentLoaded', function(){
   try{
     const mq = window.matchMedia && window.matchMedia("(max-width: 1024px)");
     if(!mq || !mq.matches) return;
+    const appV2Enabled =
+      document.documentElement.classList.contains("doke-v2-preboot") ||
+      document.documentElement.classList.contains("doke-v2-active") ||
+      new URLSearchParams(location.search || "").get("appv2") === "1";
+    if (appV2Enabled) return;
     const key = "doke_hide_app_banner_v1";
     if(localStorage.getItem(key)==="1") return;
 

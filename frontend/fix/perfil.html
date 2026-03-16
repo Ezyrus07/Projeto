@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <script src="doke-nav-boot.js?v=20260314v99"></script>
+  <script>
+(function(){
+  try {
+    var current = String((location.pathname||'').split('/').pop()||'').toLowerCase();
+    var protectedFiles = new Set(['pedidos.html','mensagens.html','notificacoes.html','meuperfil.html','perfil-profissional.html','perfil.html','perfil-cliente.html','perfil-usuario.html','perfil-empresa.html','tornar-profissional.html']);
+    if (!protectedFiles.has(current)) return;
+        function hasAuth(){
+      try {
+        var raw = localStorage.getItem('doke_usuario_perfil') || localStorage.getItem('perfil_usuario') || '';
+        var parsed = raw ? JSON.parse(raw) : null;
+        var uid = String((parsed&& (parsed.uid||parsed.id||parsed.email)) || localStorage.getItem('doke_uid') || '').trim();
+        var flag = ['usuarioLogado','logado','isLoggedIn','doke_logged_in'].some(function(key){ var v=String(localStorage.getItem(key)||'').toLowerCase(); return v==='true' || v==='1'; });
+        var hasCookie = String(document.cookie||'').indexOf('doke_dev_session=') !== -1;
+        var tokenKey = Object.keys(localStorage||{}).find(function(key){ return /^sb-[a-z0-9-]+-auth-token$/i.test(String(key||'')); });
+        var tokenOk = false;
+        if (tokenKey) {
+          try {
+            var tokenRaw = localStorage.getItem(tokenKey) || '';
+            var tokenObj = tokenRaw ? JSON.parse(tokenRaw) : null;
+            var expiresAt = Number(tokenObj && (tokenObj.expires_at || tokenObj.expiresAt || tokenObj.currentSession && tokenObj.currentSession.expires_at) || 0);
+            var access = String(tokenObj && (tokenObj.access_token || tokenObj.currentSession && tokenObj.currentSession.access_token) || '').trim();
+            tokenOk = !!(access && (!expiresAt || expiresAt * 1000 > Date.now()));
+          } catch(_e){}
+        }
+        var backup = String(localStorage.getItem('doke_auth_session_backup')||'').trim();
+        return !!(uid && flag && (tokenOk || hasCookie || backup));
+      } catch(_e){ return false; }
+    } catch(_e){ return false; }
+    }
+    if (!hasAuth()) {
+      var next = current + (location.search || '') + (location.hash || '');
+      location.replace('login.html?next=' + encodeURIComponent(next));
+    }
+  } catch(_e) {}
+})();
+</script>
+<title>Perfil | Doke</title>
+<style>.popup{display:none!important;}</style>
+  <link rel="stylesheet" href="site-global-polish.css">
+</head>
+<body style="font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial; padding:24px;">
+  Redirecionando…
+  <script>
+    (function(){
+      try {
+        var target = new URL("meuperfil.html", location.href);
+        location.replace(target.toString());
+      } catch(_e) {
+        location.replace("meuperfil.html");
+      }
+    })();
+  </script>
+  <script src="site-global-polish.js"></script>
+</body>
+</html>
+
+
+

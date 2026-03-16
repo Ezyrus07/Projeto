@@ -312,6 +312,11 @@
         releasePage();
         return;
       }
+      if (liveSession === false) {
+        redirectToLogin();
+        return;
+      }
+      // Only trust local/session markers when Supabase is not available yet.
       if (storedSession && storedSession.access_token) {
         releasePage();
         return;

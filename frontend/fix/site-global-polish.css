@@ -1,0 +1,244 @@
+:root{
+  --doke-safe-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+  --doke-safe-top: calc(env(safe-area-inset-top, 0px) + 12px);
+  --doke-panel-radius: 20px;
+  --doke-soft-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  --doke-ui-fast: 180ms;
+  --doke-ui-base: 260ms;
+  --doke-ui-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+body {
+  padding-bottom: var(--doke-safe-bottom);
+}
+
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+main, .page-content, .doke-main, .feed-shell, .app-shell-main {
+  min-width: 0;
+}
+
+#scrollTopBtn, .scroll-top-btn, .back-to-top, .doke-scrolltop, .fab-scroll-top {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 110px) !important;
+}
+
+.bottom-nav, .mobile-bottom-nav, .doke-bottom-nav, nav.bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  min-height: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
+.hero, .page-hero, .app-hero, .hero-card {
+  border-radius: 24px;
+  box-shadow: var(--doke-soft-shadow);
+}
+
+.card, .panel, .surface, .feed-card, .pedido-card, .message-card, .notification-card {
+  border-radius: 18px;
+  transition:
+    transform var(--doke-ui-fast) var(--doke-ui-ease),
+    box-shadow var(--doke-ui-fast) var(--doke-ui-ease),
+    border-color var(--doke-ui-fast) var(--doke-ui-ease),
+    background-color var(--doke-ui-fast) var(--doke-ui-ease);
+}
+
+@media (hover: hover) and (pointer: fine){
+  .card:hover,
+  .panel:hover,
+  .surface:hover,
+  .feed-card:hover,
+  .pedido-card:hover,
+  .message-card:hover,
+  .notification-card:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.1);
+  }
+}
+
+.pedido-card, .order-card, [class*="pedido-card"] {
+  min-height: unset !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.pedido-card__body, .pedido-card__footer, .order-card__body, .order-card__footer {
+  min-height: unset !important;
+  height: auto !important;
+}
+
+.modal, .dialog, .popup, .overlay-card, .doke-modal-card {
+  max-width: min(92vw, 760px) !important;
+}
+
+.search-dropdown, .search-panel, .autocomplete-dropdown, .typeahead-panel {
+  max-height: min(52vh, 420px);
+  overflow: auto;
+}
+
+.home-categories, .categories-strip, .filters-strip, .chip-row {
+  scrollbar-width: none;
+}
+
+.home-categories::-webkit-scrollbar,
+.categories-strip::-webkit-scrollbar,
+.filters-strip::-webkit-scrollbar,
+.chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.doke-inline-loader,
+.doke-inline-state,
+.dp-inlineLoader,
+.notif-loading,
+.doke-list-loading,
+.doke-chat-loading{
+  min-height: 0 !important;
+  width: max-content !important;
+  max-width: min(100%, 440px);
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  margin: 10px auto 16px !important;
+  padding: 10px 16px !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.94) !important;
+  border: 1px solid #dfe7f0 !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06) !important;
+  color: #23415f !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+}
+
+.doke-inline-state{
+  color: #4b647d !important;
+}
+
+.doke-inline-state.is-error{
+  border-color: rgba(220, 38, 38, 0.16) !important;
+  color: #8b1e1e !important;
+  background: rgba(255,255,255,.96) !important;
+}
+
+#listaComunidades .doke-inline-loader,
+#listaMeusGrupos .doke-inline-loader,
+#lista-notificacoes .doke-inline-loader,
+#lista-pedidos .doke-inline-loader,
+#lista-conversas .doke-inline-loader,
+#ordersGrid .doke-inline-loader{
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
+.notif-loading > div{
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.notif-loading p{
+  margin: 0 !important;
+}
+
+.notif-loading i,
+.doke-inline-loader__spinner,
+.dp-inlineLoaderSpinner,
+.doke-list-loading i,
+.doke-chat-loading i{
+  color: #0b7768 !important;
+  font-size: 1rem !important;
+}
+
+.doke-inline-loader__spinner,
+.dp-inlineLoaderSpinner{
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  border-radius: 999px !important;
+  border: 2px solid rgba(35, 65, 95, 0.18) !important;
+  border-top-color: #0b7768 !important;
+  display: inline-block !important;
+  animation: dokeInlineSpin .8s linear infinite !important;
+}
+
+@keyframes dokeInlineSpin{
+  to{ transform: rotate(360deg); }
+}
+
+.feed-skeleton,
+.comm-skeleton-grid,
+.notif-skeleton-list,
+.notif-skeleton-card,
+.v2-messages-list-skeleton,
+.v2-messages-thread-skeleton{
+  display: none !important;
+}
+
+.video-card, .short-video-card, .publication-card, .feed-card {
+  overflow: hidden;
+}
+
+[data-doke-skeleton="1"],
+.doke-skel-wrap,
+.feed-skeleton,
+.comm-skeleton-grid,
+.notif-skeleton-list,
+.v2-messages-list-skeleton,
+.v2-messages-thread-skeleton{
+  transition: opacity var(--doke-ui-fast) var(--doke-ui-ease);
+}
+
+.is-loaded [data-doke-skeleton="1"],
+.is-loaded .doke-skel-wrap{
+  opacity: 0;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 116px);
+  }
+
+  .hero, .page-hero, .app-hero, .hero-card {
+    border-radius: 22px;
+    padding-inline: 16px !important;
+    padding-block: 18px !important;
+  }
+
+  .hero h1, .page-hero h1, .app-hero h1 {
+    font-size: clamp(1.8rem, 7vw, 2.4rem) !important;
+    line-height: 1.05;
+  }
+
+  .hero p, .page-hero p, .app-hero p {
+    font-size: 0.98rem !important;
+    line-height: 1.45;
+  }
+
+  .home-categories, .categories-strip, .filters-strip, .chip-row {
+    display: flex !important;
+    gap: 12px !important;
+    overflow-x: auto !important;
+    padding-bottom: 6px !important;
+  }
+
+  .video-grid, .shorts-grid, .feed-grid, .publication-grid, .orders-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pedido-card, .order-card, [class*="pedido-card"] {
+    margin-bottom: 14px !important;
+  }
+
+  .search-dropdown, .search-panel, .autocomplete-dropdown, .typeahead-panel {
+    width: calc(100vw - 32px) !important;
+    left: 16px !important;
+    right: 16px !important;
+  }
+}

@@ -1,229 +1,484 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doke Layout</title>
+    <title>Doke - Nova Versão</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
-
 <style>:root {
-    --bg-color: #f0f2f5;
-    --card-white: #ffffff;
-    --primary-teal: #12848c;
-    --text-dark: #333333;
-    --gray-light: #f8f9fa;
-    --radius: 15px;
+    --bg-color: #f4f7f9;
+    --sidebar-bg: #ffffff;
+    --primary-blue: #1b4965;
+    --gradient-hero: linear-gradient(135deg, #2c5364, #0f2027);
+    --text-main: #334155;
+    --text-light: #64748b;
+    --border-color: #e2e8f0;
+    --accent: #ef4444;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 body {
     background-color: var(--bg-color);
-    color: var(--text-dark);
+    color: var(--text-main);
 }
 
-/* Header */
-.navbar {
-    height: 70px;
-    background: var(--card-white);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 40px;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.logo {
-    font-size: 24px;
-    font-weight: bold;
-    color: #235574;
-}
-
-.nav-links {
-    display: flex;
-    align-items: center;
-    gap: 25px;
-}
-
-.nav-links a {
-    text-decoration: none;
-    color: var(--text-dark);
-    font-weight: 500;
-}
-
-.user-avatar {
-    width: 40px;
-    height: 40px;
-    background: #e0e0e0;
-    border-radius: 50%;
-}
-
-/* Layout Grid Principal */
-.main-container {
+.app-container {
     display: grid;
-    grid-template-columns: 280px 1fr; /* Largura exata da sidebar */
-    gap: 25px;
-    padding: 25px;
-    max-width: 1400px;
-    margin: 0 auto;
+    grid-template-columns: 80px 1fr;
+    min-height: 100vh;
 }
 
-/* Sidebar Estilo Card */
+/* Sidebar */
 .sidebar {
-    background: var(--card-white);
-    border-radius: var(--radius);
-    padding: 30px 20px;
-    height: fit-content;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-}
-
-.profile-section {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.profile-img {
-    width: 100px;
-    height: 100px;
-    background: #e0e0e0;
-    border-radius: 50%;
-    margin: 0 auto 15px;
-}
-
-.profile-section h3 { font-size: 18px; }
-.profile-section a { color: #666; font-size: 14px; text-decoration: none; }
-
-.menu {
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    padding: 1.5rem 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
 }
 
-.menu-item {
-    padding: 15px;
-    background: var(--gray-light);
-    border-radius: 10px;
-    text-decoration: none;
-    color: var(--text-dark);
-    transition: 0.2s;
+.logo h2 {
+    color: var(--primary-blue);
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
 }
 
-.menu-item:hover, .menu-item.active {
-    background: #edf2f5;
-    font-weight: 600;
-}
-
-/* Conteúdo */
-.content {
+.nav-menu {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 1rem;
+    flex: 1;
 }
 
-.hero-card {
-    background: var(--primary-teal);
-    border-radius: var(--radius);
-    padding: 50px;
-    color: white;
-    text-align: center;
-}
-
-.search-box {
-    margin-top: 25px;
-}
-
-.search-box input {
-    width: 90%;
-    padding: 15px 25px;
-    border-radius: 30px;
-    border: none;
-    font-size: 16px;
-    outline: none;
-}
-
-.section-title {
-    margin: 10px 0;
-    font-size: 20px;
-}
-
-/* Grid de Categorias */
-.categories-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-}
-
-.cat-card {
-    background: var(--card-white);
-    height: 180px;
-    border-radius: var(--radius);
+.nav-item {
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 12px;
+    color: var(--text-light);
+    text-decoration: none;
+    font-size: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.nav-item:hover, .nav-item.active {
+    background-color: #e0f2fe;
+    color: #0284c7;
+}
+
+/* Main Content */
+.main-content {
+    padding: 2rem 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    overflow-x: hidden;
+}
+
+/* Header */
+.topbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.top-links {
+    display: flex;
+    gap: 2rem;
+    font-weight: 600;
+}
+
+.top-links a {
+    text-decoration: none;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.badge-novo {
+    background-color: #ff4d4f;
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+}
+
+.user-info {
+    position: absolute;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.points-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-align: right;
+    font-size: 0.8rem;
+}
+
+.points .value {
+    display: block;
+    font-weight: 700;
+    color: var(--primary-blue);
+    font-size: 1rem;
+}
+
+.level .progress-bar {
+    width: 80px;
+    height: 6px;
+    background: #cbd5e1;
+    border-radius: 4px;
+    margin-top: 4px;
+}
+
+.level .progress {
+    height: 100%;
+    background: var(--primary-blue);
+    border-radius: 4px;
+}
+
+.avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Hero Section */
+.hero {
+    background: var(--gradient-hero);
+    border-radius: 24px;
+    padding: 4rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.search-container {
+    width: 100%;
+    max-width: 800px;
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 1.2rem 2rem;
+    border-radius: 50px;
+    border: none;
+    font-size: 1.1rem;
+    outline: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.search-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: none;
+    background: var(--primary-blue);
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.search-btn:hover { background: #1e3a8a; }
+
+.subtitle {
+    color: white;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 0.8rem 2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
     transition: transform 0.2s;
 }
 
-.cat-card:hover {
+.btn:hover { transform: translateY(-2px); }
+
+.btn-primary {
+    background: white;
+    color: var(--primary-blue);
+}
+
+.btn-secondary {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+/* Categories Section */
+.categories-section {
+    margin-top: 1rem;
+}
+
+.section-title {
+    color: #0f766e;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.carousel-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.categories-list {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 1rem 0;
+    scrollbar-width: none; /* Firefox */
+}
+.categories-list::-webkit-scrollbar { display: none; } /* Chrome */
+
+.category-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+    min-width: 100px;
+    cursor: pointer;
+}
+
+.icon-box {
+    width: 80px;
+    height: 80px;
+    background: white;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--primary-blue);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.category-card:hover .icon-box {
     transform: translateY(-5px);
-}</style>
+    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    color: #0284c7;
+}
+
+.category-card span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.notification-badge {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: #a7f3d0;
+    color: #065f46;
+    font-size: 0.7rem;
+    font-weight: bold;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+}
+
+.carousel-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    cursor: pointer;
+    font-size: 1.2rem;
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.carousel-btn.left { left: -20px; }
+.carousel-btn.right { right: -20px; }</style>
 <body>
-
-    <header class="navbar">
-        <div class="logo">doke</div>
-        <div class="nav-links">
-            <a href="#">Anunciar</a>
-            <a href="#">Comunidades</a>
-            <div class="user-avatar"></div>
-        </div>
-    </header>
-
-    <div class="main-container">
-        
+    <div class="app-container">
         <aside class="sidebar">
-            <div class="profile-section">
-                <div class="profile-img"></div>
-                <h3>Seu Nome</h3>
-                <a href="#">Ver perfil</a>
+            <div class="logo">
+                <h2>doke</h2>
             </div>
-            
-            <nav class="menu">
-                <a href="#" class="menu-item active">Início</a>
-                <a href="#" class="menu-item">Meus Pedidos</a>
-                <a href="#" class="menu-item">Mensagens</a>
-                <a href="#" class="menu-item">Configurações</a>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active"><i class="ph ph-house"></i></a>
+                <a href="#" class="nav-item"><i class="ph ph-magnifying-glass"></i></a>
+                <a href="#" class="nav-item"><i class="ph ph-storefront"></i></a>
+                <a href="#" class="nav-item"><i class="ph ph-bell"></i></a>
+                <a href="#" class="nav-item"><i class="ph ph-chat-circle-dots"></i></a>
+                <a href="#" class="nav-item"><i class="ph ph-package"></i></a>
+                <a href="#" class="nav-item"><i class="ph ph-users"></i></a>
+                <a href="#" class="nav-item"><i class="ph ph-user"></i></a>
             </nav>
+            <div class="nav-bottom">
+                <a href="#" class="nav-item"><i class="ph ph-list"></i></a>
+            </div>
         </aside>
 
-        <main class="content">
-            
-            <section class="hero-card">
-                <h2>O que você está procurando?</h2>
-                <div class="search-box">
-                    <input type="text" placeholder="Ex: Eletricista, Pintor...">
+        <main class="main-content">
+            <header class="topbar">
+                <nav class="top-links">
+                    <a href="#">Anunciar</a>
+                    <a href="#">Comunidades <span class="badge-novo">NOVO</span></a>
+                    <a href="#">Novidades</a>
+                </nav>
+                <div class="user-info">
+                    <div class="points-wrapper">
+                        <div class="points">
+                            <span class="label">PONTOS</span>
+                            <span class="value">12.450</span>
+                        </div>
+                        <div class="level">
+                            <span class="label">NÍVEL 24</span>
+                            <div class="progress-bar">
+                                <div class="progress" style="width: 45%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <img src="https://i.pravatar.cc/150?img=11" alt="Perfil" class="avatar">
+                </div>
+            </header>
+
+            <section class="hero">
+                <div class="search-container">
+                    <input type="text" placeholder="Descreva o que você está procurando">
+                    <button class="search-btn"><i class="ph ph-arrow-right"></i></button>
+                </div>
+                <p class="subtitle">Encontre serviços e profissionais com mais contexto.</p>
+                <div class="action-buttons">
+                    <button class="btn btn-primary">Procurar serviços</button>
+                    <button class="btn btn-secondary">Anunciar meu serviço</button>
                 </div>
             </section>
 
-            <h3 class="section-title">Categorias em alta</h3>
-
-            <div class="categories-grid">
-                <div class="cat-card">Eletricista</div>
-                <div class="cat-card">Encanador</div>
-                <div class="cat-card">Pintura</div>
-                <div class="cat-card">Limpeza</div>
-            </div>
-
+            <section class="categories-section">
+                <h3 class="section-title">Categorias em alta</h3>
+                <div class="carousel-wrapper">
+                    <button class="carousel-btn left" id="scrollLeft"><i class="ph ph-caret-left"></i></button>
+                    <div class="categories-list" id="categoriesList">
+                        <div class="category-card">
+                            <div class="icon-box"><i class="ph ph-lightbulb"></i></div>
+                            <span>Eletricista</span>
+                        </div>
+                        <div class="category-card">
+                            <div class="icon-box">
+                                <i class="ph ph-wrench"></i>
+                                <span class="notification-badge">1</span>
+                            </div>
+                            <span>Encanador</span>
+                        </div>
+                        <div class="category-card">
+                            <div class="icon-box"><i class="ph ph-paint-brush"></i></div>
+                            <span>Pintura</span>
+                        </div>
+                        <div class="category-card">
+                            <div class="icon-box"><i class="ph ph-waves"></i></div>
+                            <span>Limpeza</span>
+                        </div>
+                        <div class="category-card">
+                            <div class="icon-box"><i class="ph ph-truck"></i></div>
+                            <span>Frete</span>
+                        </div>
+                        <div class="category-card">
+                            <div class="icon-box">
+                                <i class="ph ph-desktop"></i>
+                                <span class="notification-badge">1</span>
+                            </div>
+                            <span>Tecnologia</span>
+                        </div>
+                        <div class="category-card">
+                            <div class="icon-box"><i class="ph ph-book-open"></i></div>
+                            <span>Aulas</span>
+                        </div>
+                        <div class="category-card">
+                            <div class="icon-box"><i class="ph ph-scissors"></i></div>
+                            <span>Beleza</span>
+                        </div>
+                        <div class="category-card">
+                            <div class="icon-box">
+                                <i class="ph ph-house-line"></i>
+                                <span class="notification-badge">1</span>
+                            </div>
+                            <span>Reforma</span>
+                        </div>
+                    </div>
+                    <button class="carousel-btn right" id="scrollRight"><i class="ph ph-caret-right"></i></button>
+                </div>
+            </section>
         </main>
     </div>
-
+    <script src="script.js"></script>
 </body>
 </html>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+    const categoriesList = document.getElementById("categoriesList");
+    const scrollLeftBtn = document.getElementById("scrollLeft");
+    const scrollRightBtn = document.getElementById("scrollRight");
 
+    // Distância da rolagem ao clicar nas setas
+    const scrollAmount = 300; 
 
+    scrollLeftBtn.addEventListener("click", () => {
+        categoriesList.scrollBy({
+            left: -scrollAmount,
+            behavior: "smooth"
+        });
+    });
+
+    scrollRightBtn.addEventListener("click", () => {
+        categoriesList.scrollBy({
+            left: scrollAmount,
+            behavior: "smooth"
+        });
+    });
+});
+</script>

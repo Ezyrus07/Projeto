@@ -4,6 +4,28 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
+<script>
+(function(){
+  try {
+    const forced = Number(localStorage.getItem("doke_force_logged_out_at") || sessionStorage.getItem("doke_force_logged_out_at") || 0);
+    const recentForced = Number.isFinite(forced) && forced > 0 && (Date.now() - forced) < 7 * 24 * 60 * 60 * 1000;
+    const logged = String(localStorage.getItem("usuarioLogado") || "").toLowerCase() === "true";
+    const uid = String(localStorage.getItem("doke_uid") || "").trim();
+    if (recentForced || !logged || !uid) {
+      document.documentElement.style.visibility = 'hidden';
+      location.replace('login.html?noshell=1&next=' + encodeURIComponent('meuperfil.html'));
+    }
+  } catch(_e){}
+})();
+</script>
+
+<script src="auth-guard.js?v=20260312v03"></script>
+<script src="doke-nav-boot.js?v=20260312v11"></script>
+<script>
+try {
+  localStorage.setItem('doke_sidebar_mode_v1', 'compact');
+} catch (_) {}
+</script>
 <title>Meu Perfil (Profissional) | Doke</title>
 <meta content="Gerencie seu perfil, portfÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬ ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚ ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬ ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³lio e publicaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬ ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚ ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬ ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬ ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚ ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬ ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes com uma experiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬ ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚ ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬ ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªncia rÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬ ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚ ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬ ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡pida e responsiva." name="description"/>
 <meta content="Doke - Meu Perfil" property="og:title"/>
@@ -14,6 +36,8 @@
 <link href="style.css?v=20260211v45" rel="stylesheet"/>
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="perfil-upgrade.css?v=20260313v39" rel="stylesheet">
+<link href="page-perfil.css?v=20260314v86" rel="stylesheet"/>
+<link href="perfil-qna.css?v=20260205" rel="stylesheet">
 <link href="doke-beforeafter.css?v=20260211v3" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -46,7 +70,7 @@
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-responsive.css?v=20260209v24" rel="stylesheet"/>
-<link href="page-perfil.css?v=20260313v83" rel="stylesheet"/>
+<link href="page-perfil.css?v=20260314v86" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260213v2" rel="stylesheet"/>
 <link href="hotfix-20260304.css?v=20260304v5" rel="stylesheet"/>
   <link rel="stylesheet" href="ui-system.css">
@@ -71,7 +95,7 @@
 <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 
 <main class="dp-wrap">
-<div class="dp-skeleton dp-theme-profissional dp-loading" data-mode="self" data-theme="profissional" id="dpRoot">
+<div class="dp-theme-profissional" data-mode="self" data-theme="profissional" id="dpRoot">
 <section class="dp-card">
 <div class="dp-cover" id="dpCover">
 <div class="dp-coverActions">
@@ -104,6 +128,21 @@
 </div>
 </div>
 <div class="dp-actions">
+<section aria-label="Nivel e pontos" class="dp-progressCard" id="dpProgressCard">
+<div class="dp-progressPoints">
+<span class="dp-progressEyebrow">Pontos</span>
+<strong id="dpPointsValue">12.450</strong>
+</div>
+<div class="dp-progressMeta">
+<div class="dp-progressHead">
+<span class="dp-progressLevel" id="dpLevelValue">Nivel 24</span>
+<span class="dp-progressXp" id="dpXpValue">450 / 1.000 XP</span>
+</div>
+<div aria-hidden="true" class="dp-progressTrack">
+<span class="dp-progressFill" id="dpProgressFill" style="width:45%;"></span>
+</div>
+</div>
+</section>
 <div class="dp-availability" id="dpAvailabilityRow">
 <span id="dpStatusText"></span>
 <div class="dp-switch" id="dpSwitch"><span></span></div>
@@ -370,6 +409,49 @@
 <script src="doke-toast.js?v=20260313v03"></script>
 <script src="doke-alerts.js?v=20260313v03"></script>
 <script defer="True" src="doke-config.js"></script>
+<script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260314v107"></script>
+<script>
+(function(){
+  function formatPoints(value){
+    return new Intl.NumberFormat('pt-BR').format(Math.max(0, Number(value) || 0));
+  }
+  function readProfile(){
+    const keys = ['doke_usuario_perfil','perfil_usuario','usuario_logado','doke_usuario_logado','userLogado'];
+    for(const key of keys){
+      try{
+        const raw = localStorage.getItem(key);
+        if(!raw) continue;
+        const parsed = JSON.parse(raw);
+        if(parsed && typeof parsed === 'object') return parsed;
+      }catch(_){}
+    }
+    return {};
+  }
+  function applyProgress(){
+    const profile = readProfile();
+    const points = Number(profile.pontos ?? profile.points ?? profile.xpTotal ?? profile.xp_total ?? profile.score ?? 12450) || 12450;
+    const level = Math.max(1, Number(profile.nivel ?? profile.level ?? profile.lv ?? (Math.floor(points / 520) + 1)) || 1);
+    const currentXp = Math.max(0, Number(profile.xpAtual ?? profile.currentXp ?? profile.xp_atual ?? (points % 1000)) || 0);
+    const nextXp = Math.max(1000, Number(profile.proximoNivelXp ?? profile.nextLevelXp ?? profile.xp_proximo_nivel ?? 1000) || 1000);
+    const pct = Math.max(0, Math.min(100, (currentXp / nextXp) * 100));
+    const pointsEl = document.getElementById('dpPointsValue');
+    const levelEl = document.getElementById('dpLevelValue');
+    const xpEl = document.getElementById('dpXpValue');
+    const fillEl = document.getElementById('dpProgressFill');
+    if(pointsEl) pointsEl.textContent = formatPoints(points);
+    if(levelEl) levelEl.textContent = `Nivel ${level}`;
+    if(xpEl) xpEl.textContent = `${formatPoints(currentXp)} / ${formatPoints(nextXp)} XP`;
+    if(fillEl) fillEl.style.width = `${pct}%`;
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', applyProgress, { once:true });
+  } else {
+    applyProgress();
+  }
+  window.addEventListener('storage', applyProgress);
+})();
+</script>
   <script src="site-global-polish.js"></script>
 </body>
 </html>

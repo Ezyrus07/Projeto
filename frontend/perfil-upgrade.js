@@ -288,7 +288,7 @@
       setIconButton(msgBtn, "bx-message-rounded", canSend ? "Mensagem" : "Entrar para enviar mensagem");
       msgBtn.onclick = () => {
         if (!canSend) {
-          window.location.href = "login.html";
+          window.location.href = "login.html?noshell=1&next=meuperfil.html";
           return;
         }
         window.location.href = `mensagens.html?uid=${encodeURIComponent(otherUidMsg)}`;
@@ -344,7 +344,7 @@
     if(!btn) return;
     const status = btn.dataset.friendStatus || "none";
     if (status === "nologin") {
-      window.location.href = "login.html";
+      window.location.href = "login.html?noshell=1&next=meuperfil.html";
       return;
     }
     const relId = btn.dataset.friendId || "";
@@ -497,7 +497,7 @@
     const btn = $("#dpFollowBtn");
     if(!btn) return;
     if (btn.dataset.following === "nologin") {
-      window.location.href = "login.html";
+      window.location.href = "login.html?noshell=1&next=meuperfil.html";
       return;
     }
     const following = btn.dataset.following === "1";
@@ -1224,7 +1224,7 @@
         const next = `${location.pathname || ""}${location.search || ""}${location.hash || ""}`;
         const sep = "login.html".includes("?") ? "&" : "?";
         setTimeout(() => {
-          window.location.href = `login.html${sep}next=${encodeURIComponent(next)}`;
+          window.location.href = `login.html?noshell=1&next=${encodeURIComponent(next)}`;
         }, 250);
       }catch(_){}
     };
@@ -6106,8 +6106,6 @@ if(!rangeSel || !refreshBtn) return;
   // -----------------------------
   async function init(){
     const rootEl = $("#dpRoot");
-    rootEl?.classList.remove("dp-loading");
-    rootEl?.classList.add("dp-ready");
     setText("#dpName", "");
     setText("#dpHandle", "");
     setText("#dpBio", "");
@@ -6246,7 +6244,7 @@ if(!rangeSel || !refreshBtn) return;
           };
           if(!targetId) targetId = me.id || authUser.id;
         } else {
-          window.location.replace("login.html");
+          window.location.replace("login.html?noshell=1&next=meuperfil.html");
           return;
         }
       }

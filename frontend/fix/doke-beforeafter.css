@@ -1,0 +1,202 @@
+﻿/* DOKE Antes x Depois (shared) */
+.dp-ba{
+  position:relative;
+  width:100%;
+  /* O container pai (ex.: .dp-itemMedia) geralmente controla a proporção.
+     Mantemos 9/16 apenas como fallback quando estiver “solto”. */
+  aspect-ratio: 9 / 16;
+  /*
+    IMPORTANTE:
+    O card/pai (.dp-itemMedia / modal) já tem arredondamento.
+    Quando a mídia também tem border-radius, aparece uma “linha/borda” no encaixe.
+    Então aqui deixamos a mídia RETA por padrão.
+  */
+  border-radius: 0;
+  overflow:hidden;
+  background:#0f172a10;
+  --ba-dur: 2400ms; /* transição mais lenta */
+  --ba-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dp-ba-stack{
+  position:absolute;
+  inset:0;
+}
+.dp-ba-img{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  transform: scale(1.02);
+  transition: opacity var(--ba-dur) var(--ba-ease), transform var(--ba-dur) var(--ba-ease), filter var(--ba-dur) var(--ba-ease);
+  will-change: opacity, transform;
+}
+.dp-ba-img--before{ opacity:1; }
+.dp-ba-img--after{ opacity:0; transform: scale(1.05); }
+
+.dp-ba.is-after .dp-ba-img--before{ opacity:0; transform: scale(1.05); filter: blur(0.2px); }
+.dp-ba.is-after .dp-ba-img--after{ opacity:1; transform: scale(1.02); filter:none; }
+
+.dp-ba-dots{
+  /* Pontinhos embaixo (centro) – força para não ser sobrescrito pelo style.css */
+  position:absolute !important;
+  left:50% !important;
+  bottom:12px !important;
+  top:auto !important;
+  transform: translateX(-50%) !important;
+  display:flex;
+  gap:8px;
+  padding:6px 8px;
+  border-radius:999px;
+  background: rgba(0,0,0,0.22);
+  backdrop-filter: blur(6px);
+  z-index:4;
+}
+
+/* Toggle "Antes/Depois" (mais fácil de clicar do que um switch pequeno) */
+.dp-ba-toggle{
+  position:absolute;
+  left:12px;
+  top:10px;
+  display:flex;
+  gap:6px;
+  padding:6px;
+  border-radius:999px;
+  background: rgba(0,0,0,0.22);
+  backdrop-filter: blur(6px);
+  z-index:4;
+}
+.dp-ba-tbtn{
+  border:1px solid rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.12);
+  color:#fff;
+  font-weight:900;
+  font-size:11px;
+  padding:6px 10px;
+  border-radius:999px;
+  cursor:pointer;
+  line-height:1;
+  transition: transform 220ms var(--ba-ease), background 220ms var(--ba-ease), box-shadow 220ms var(--ba-ease);
+}
+.dp-ba-tbtn.is-active{
+  background: rgba(255,255,255,0.95);
+  color:#0f172a;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+  transform: translateY(-1px);
+}
+.dp-dot{
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  border:2px solid rgba(255,255,255,0.95);
+  background: rgba(255,255,255,0.25);
+  cursor:pointer;
+  padding:0;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+  transition: transform 260ms var(--ba-ease), background 260ms var(--ba-ease), box-shadow 260ms var(--ba-ease);
+}
+.dp-dot.is-active{
+  background: rgba(255,255,255,0.98);
+  transform: scale(1.18);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+}
+
+.dp-ba-badge{
+  display: none !important;
+  position:absolute;
+  right:12px;
+  top:10px;
+  left:auto;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:0.2px;
+  color:#0f172a;
+  background: rgba(255,255,255,0.92);
+  padding:6px 10px;
+  border-radius:999px;
+  z-index:4;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+}
+
+/* Setas (usadas no modal) */
+.dp-ba-arrow{
+  position:absolute;
+  top:50%;
+  transform: translateY(-50%);
+  width:42px;
+  height:42px;
+  border-radius:999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.28);
+  color: rgba(255,255,255,0.95);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:5;
+  cursor:pointer;
+  backdrop-filter: blur(6px);
+  transition: transform 220ms var(--ba-ease), background 220ms var(--ba-ease), opacity 220ms var(--ba-ease);
+}
+.dp-ba-arrow:hover{ background: rgba(0,0,0,0.38); transform: translateY(-50%) scale(1.03); }
+.dp-ba-arrow:active{ transform: translateY(-50%) scale(0.98); }
+.dp-ba-arrow--prev{ left: 12px; }
+.dp-ba-arrow--next{ right: 12px; }
+
+/* Remove qualquer “borda/linha” indesejada no bloco */
+.dp-ba{ border:0 !important; outline:0 !important; }
+.dp-ba-stack, .dp-ba-img{ border:0 !important; outline:0 !important; }
+
+/* Arrows (usado no MODAL) */
+.dp-ba-arrow{
+  position:absolute;
+  top:50%;
+  transform: translateY(-50%);
+  width:44px;
+  height:44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.20);
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  z-index: 5;
+  backdrop-filter: blur(8px);
+  transition: transform 200ms var(--ba-ease), background 200ms var(--ba-ease);
+}
+.dp-ba-arrow:hover{ background: rgba(0,0,0,0.46); transform: translateY(-50%) scale(1.04); }
+.dp-ba-arrow:active{ transform: translateY(-50%) scale(0.98); }
+.dp-ba-arrow--prev{ left: 12px; }
+.dp-ba-arrow--next{ right: 12px; }
+
+/* deixa clicável sem selecionar texto */
+.dp-ba, .dp-ba *{ user-select:none; -webkit-user-select:none; }
+
+
+/* embed fix: quando estiver dentro de um container que já controla proporção (ex.: .dp-itemMedia) */
+.dp-itemMedia .dp-ba{
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0 !important;
+}
+
+/* remove raio também do stack/imagens para eliminar “linha” no encaixe */
+.dp-ba-stack,
+.dp-ba-img{
+  border-radius: 0 !important;
+}
+
+
+/* remove linha/borda visual no topo quando é Antes x Depois */
+.dp-itemMedia.has-ba{
+  background: transparent !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.dp-itemMedia.has-ba .dp-ba{
+  border-radius: 0 !important;
+}
+
+

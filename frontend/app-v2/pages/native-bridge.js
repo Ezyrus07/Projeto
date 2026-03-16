@@ -87,7 +87,8 @@
         linkedScripts: Array.from(doc.querySelectorAll('script[src]'))
           .map((el) => String(el.getAttribute("src") || "").trim())
           .filter(Boolean)
-          .filter((src) => !/app-v2\//i.test(src)),
+          .filter((src) => !/app-v2\//i.test(src))
+          .filter((src) => !/(^|\/)(doke-shell|doke-nav-boot|auth-guard)\.js/i.test(src)),
         inlineScripts: Array.from(doc.querySelectorAll("script:not([src])"))
           .map((el) => String(el.textContent || "").trim())
           .filter(Boolean)
@@ -175,11 +176,156 @@
     if (hero instanceof HTMLElement) hero.classList.add('doke-v2-hero');
   }
 
+  function isProfileRoute(file) {
+    const normalized = normalizeFile(file);
+    return [
+      "meuperfil.html",
+      "perfil-profissional.html",
+      "perfil.html",
+      "perfil-cliente.html",
+      "perfil-usuario.html",
+      "perfil-empresa.html"
+    ].includes(normalized);
+  }
+
+  function isLoggedInByMarkers() {
+    try {
+      const forced = Number(localStorage.getItem("doke_force_logged_out_at") || sessionStorage.getItem("doke_force_logged_out_at") || 0);
+      if (Number.isFinite(forced) && forced > 0 && (Date.now() - forced) < 1000 * 60 * 60 * 24 * 7) return false;
+      const flag = String(localStorage.getItem("usuarioLogado") || "").toLowerCase();
+      const uid = String(localStorage.getItem("doke_uid") || "").trim();
+      return (flag === "true" || flag === "1") && !!uid;
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function redirectProfileLogin(file) {
+    try {
+      const next = encodeURIComponent(normalizeFile(file || "meuperfil.html"));
+      const target = `login.html?noshell=1&next=${next}`;
+      if (window.top && window.top !== window) {
+        window.top.location.replace(target);
+      } else {
+        location.replace(target);
+      }
+    } catch (_e) {
+      location.replace(`login.html?noshell=1&next=${encodeURIComponent(normalizeFile(file || "meuperfil.html"))}`);
+    }
+  }
+
+  function buildProfileFrameSrc(file) {
+    const url = new URL(file, location.href);
+    const current = new URLSearchParams(location.search || "");
+    current.forEach((value, key) => {
+      if (String(key || "").toLowerCase() === "appv2") return;
+      url.searchParams.set(key, value);
+    });
+    url.searchParams.set("v2frame", "1");
+    url.searchParams.set("noshell", "1");
+    url.searchParams.set("embed", "1");
+    return url.toString();
+  }
+
+  function mountProfileFrame(page, shell, file) {
+    const wrap = document.createElement("div");
+    wrap.className = "doke-v2-bridge-frame-wrap";
+    const frame = document.createElement("iframe");
+    frame.className = "doke-v2-bridge-frame";
+    frame.loading = "eager";
+    frame.referrerPolicy = "same-origin";
+    frame.setAttribute("title", file.replace(/\.html$/i, ""));
+    frame.setAttribute("scrolling", "no");
+    frame.src = buildProfileFrameSrc(file);
+    wrap.appendChild(frame);
+    shell.appendChild(wrap);
+
+    let syncTimer = 0;
+    let ro = null;
+    let readyPoll = 0;
+    let revealTimer = 0;
+    let revealed = false;
+    const syncHeight = () => {
+      try {
+        const doc = frame.contentDocument;
+        const body = doc?.body;
+        const html = doc?.documentElement;
+        const next = Math.max(
+          body?.scrollHeight || 0,
+          body?.offsetHeight || 0,
+          html?.scrollHeight || 0,
+          html?.offsetHeight || 0,
+          640
+        );
+        frame.style.height = `${next}px`;
+      } catch (_e) {}
+    };
+    const reveal = () => {
+      if (revealed) return;
+      revealed = true;
+      wrap.classList.add("is-ready");
+      try { clearInterval(readyPoll); } catch (_e) {}
+      try { clearTimeout(revealTimer); } catch (_e) {}
+      syncHeight();
+    };
+    const isProfileReady = () => {
+      try {
+        const doc = frame.contentDocument;
+        const root = doc?.querySelector("#dpRoot");
+        const name = doc?.querySelector("#dpName");
+        const cover = doc?.querySelector("#dpCover");
+        const rootReady = !!root && !root.classList.contains("dp-loading");
+        const hasName = !!String(name?.textContent || "").trim();
+        const coverStyle = String(cover?.style?.backgroundImage || "").trim();
+        const coverReady = coverStyle.includes("url(") || coverStyle === "none";
+        return rootReady && hasName && coverReady;
+      } catch (_e) {
+        return false;
+      }
+    };
+    frame.addEventListener("load", () => {
+      syncHeight();
+      clearInterval(syncTimer);
+      syncTimer = window.setInterval(syncHeight, 400);
+      window.setTimeout(() => {
+        clearInterval(syncTimer);
+        syncTimer = 0;
+      }, 12000);
+      try {
+        const doc = frame.contentDocument;
+        const body = doc?.body;
+        if (body && "ResizeObserver" in window) {
+          ro = new ResizeObserver(() => syncHeight());
+          ro.observe(body);
+        }
+      } catch (_e) {}
+      clearInterval(readyPoll);
+      readyPoll = window.setInterval(() => {
+        syncHeight();
+        if (isProfileReady()) reveal();
+      }, 160);
+      reveal();
+      revealTimer = window.setTimeout(() => reveal(), 600);
+    });
+
+    return {
+      unmount() {
+        try { clearInterval(syncTimer); } catch (_e) {}
+        try { clearInterval(readyPoll); } catch (_e) {}
+        try { clearTimeout(revealTimer); } catch (_e) {}
+        try { ro?.disconnect(); } catch (_e) {}
+        try { frame.src = "about:blank"; } catch (_e) {}
+        try { page.remove(); } catch (_e) {}
+      }
+    };
+  }
+
   async function mountNativeBridge(ctx) {
     const file = normalizeFile(ctx?.path || "");
     const slug = slugify(file);
     const page = document.createElement("section");
     page.className = `doke-v2-page doke-v2-page-bridge doke-v2-page-bridge-${slug}`;
+    if (isProfileRoute(file)) page.classList.add("doke-v2-page-bridge-profile");
     page.innerHTML = `
       <div class="doke-v2-bridge-shell">
         <div class="doke-v2-bridge-loading">
@@ -203,6 +349,20 @@
     if (!(shell instanceof HTMLElement)) return { unmount() { try { page.remove(); } catch (_e) {} } };
     shell.innerHTML = "";
 
+    if (isProfileRoute(file)) {
+      if (!isLoggedInByMarkers()) {
+        redirectProfileLogin(file);
+        return {
+          unmount() {
+            try { page.remove(); } catch (_e) {}
+          }
+        };
+      }
+      try { document.body.setAttribute("data-page", "perfil"); } catch (_e) {}
+      try { window.dispatchEvent(new Event("resize")); } catch (_e) {}
+      return mountProfileFrame(page, shell, file);
+    }
+
     if (layout.html) {
       const surface = document.createElement("div");
       surface.className = "doke-v2-bridge-surface";
@@ -218,7 +378,7 @@
       const content = document.createElement("div");
       content.className = "doke-v2-bridge-content";
       content.innerHTML = layout.html;
-      surface.appendChild(head);
+      if (!isProfileRoute(file)) surface.appendChild(head);
       surface.appendChild(content);
       if (layout.footerHtml) {
         const footerWrap = document.createElement("div");

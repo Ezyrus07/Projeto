@@ -1,5 +1,5 @@
 (function(){
-  window.__DOKE_SHELL_BUILD__ = "20260313v106";
+  window.__DOKE_SHELL_BUILD__ = "20260316compactfix01";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
   try {
@@ -9,9 +9,12 @@
   const DOKE_DISABLE_SHELL_PAGES = ["login.html","cadastro.html","senha.html"];
   const __dokeCurrentFile = String((location.pathname||"").split("/").pop()||"").toLowerCase();
   const __dokeQs = new URLSearchParams(location.search || "");
-  const __dokeAppV2Enabled = (__dokeQs.get("appv2") === "1") || (localStorage.getItem("doke_app_v2") === "1");
+  const __dokeAppV2Enabled = (__dokeQs.get("appv2") === "1") || (__dokeCurrentFile === "index.html");
   const __dokeAppV2LegacyOnlyRoutes = new Set([]);
   const __dokeIsV2Frame = (__dokeQs.get("v2frame") === "1") || (__dokeQs.get("embed") === "1") || (__dokeQs.get("noshell") === "1");
+  try { localStorage.setItem("doke_sidebar_mode_v1", "compact"); } catch(_e) {}
+  try { document.documentElement.classList.remove("doke-structure-reform"); } catch(_e) {}
+
   if (DOKE_DISABLE_SHELL_PAGES.includes(__dokeCurrentFile)) {
     try { document.documentElement.classList.add("doke-no-shell"); } catch(_e) {}
     return;
@@ -148,14 +151,10 @@
   }
 
   function ensureStructureReformCss(){
-    try{
-      if(document.getElementById("dokeStructureReformCss")) return;
-      const link = document.createElement("link");
-      link.id = "dokeStructureReformCss";
-      link.rel = "stylesheet";
-      link.href = "doke-structure-reform.css?v=20260312v01";
-      document.head.appendChild(link);
-    }catch(_e){}
+    try {
+      const existing = document.getElementById("dokeStructureReformCss");
+      if (existing) { try { existing.remove(); } catch(_e){} }
+    } catch(_e){}
   }
 
   function ensureProUpsellModal(){
@@ -229,7 +228,19 @@
       .replace(/'/g, "&#39;");
   }
 
-    function sanitizePlainText(value){
+  function getProfileGlyphMarkup(extraClass){
+    const cls = String(extraClass || "").trim();
+    return `
+      <span class="doke-profile-glyph ${cls}" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <path d="M12 12a4.25 4.25 0 1 0-4.25-4.25A4.25 4.25 0 0 0 12 12Z"></path>
+          <path d="M4.5 19.25a7.5 7.5 0 0 1 15 0"></path>
+        </svg>
+      </span>
+    `;
+  }
+
+  function sanitizePlainText(value){
     return String(value ?? "")
       .replace(/<[^>]*>/g, " ")
       .replace(/\s+/g, " ")
@@ -772,7 +783,7 @@
     const buildProfileDropdown = (photo) => `
       <div class="profile-container doke-shell-profile-container">
         <button type="button" class="doke-shell-profile-btn" onclick="return dokeShellToggleProfile(this, event)" aria-label="Abrir menu de perfil" style="all:unset;cursor:pointer;display:inline-flex;align-items:center;">
-          ${photo ? `<img src="${photo}" class="profile-img-btn" alt="Perfil" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid #ddd;">` : `<span class="profile-img-btn" style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:2px solid #ddd;background:#fff;color:#2f5f8f;"><i class='bx bx-user'></i></span>`}
+          ${photo ? `<img src="${photo}" class="profile-img-btn" alt="Perfil" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid #ddd;">` : `<span class="profile-img-btn doke-profile-img-fallback" style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:2px solid #ddd;background:#fff;color:#2f5f8f;">${getProfileGlyphMarkup("is-header")}</span>`}
         </button>
         <div class="doke-shell-profile-menu" hidden>
           <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">${nomePerfilSafe}</div>
@@ -942,6 +953,7 @@
 
     const file = getDesktopCurrentFileName();
     const topTarget = desktopMenuTargetForDesktopFile(file);
+    const protectedHref = (href) => String(href || "").trim();
     const isActive = (href) => {
       const h = String(href || "").split("?")[0].trim().toLowerCase();
       if (h === "mensagens.html") return file === "mensagens.html";
@@ -980,7 +992,7 @@ const sidebarMarkup = `
   ${item(protectedHref("mensagens.html?aba=conversas"), "bx-message-rounded-dots", "azul", "Mensagens")}
   ${item(protectedHref("pedidos.html"), "bx-package", "verde", "Pedidos")}
   ${item("comunidade.html", "bx-group", "verde", "Comunidades")}
-  <div class="item ${file === "meuperfil.html" ? "active" : ""}"><a ${PROFILE_NAV_ATTRS}><i class="bx bx-user icon verde"></i><span>Perfil</span></a></div>
+  <div class="item ${file === "meuperfil.html" ? "active" : ""}"><a ${PROFILE_NAV_ATTRS}>${getProfileGlyphMarkup("icon verde is-sidebar")}<span>Perfil</span></a></div>
   ${item("mais.html", "bx-menu", "azul", "Mais")}
 </aside>`;
 
@@ -1221,6 +1233,35 @@ function isVisibleModalLayer(el){
       st.id = id;
       st.textContent = `
 @media (min-width: 1025px){
+  .doke-profile-glyph{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:24px;
+    height:24px;
+    color:currentColor;
+    flex:0 0 auto;
+  }
+  .doke-profile-glyph svg{
+    width:100%;
+    height:100%;
+    display:block;
+    overflow:visible;
+  }
+  .doke-profile-glyph svg path{
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.85;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  .doke-profile-glyph.is-header{
+    width:20px;
+    height:20px;
+  }
+  .doke-profile-img-fallback{
+    color:#2f5f8f;
+  }
   .navbar-desktop[data-shell="unified-desktop"]{
     left: var(--sidebar-width) !important;
     width: calc(100% - var(--sidebar-width)) !important;
@@ -1241,12 +1282,18 @@ function isVisibleModalLayer(el){
     justify-self: center !important;
     justify-content: center !important;
     margin: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     padding: 0 !important;
     transform: none !important;
   }
   .navbar-desktop[data-shell="unified-desktop"] .doke-header-right{
     justify-self: end !important;
     margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: max-content !important;
   }
   .navbar-desktop[data-shell="unified-desktop"] .profile-container{
     position: relative !important;
@@ -1383,15 +1430,15 @@ function isVisibleModalLayer(el){
     const readMode = () => {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
-        return saved === "compact" ? "compact" : "expanded";
+        return "compact";
       }
-      catch(_e){ return "expanded"; }
+      catch(_e){ return "compact"; }
     };
     const writeMode = (mode) => {
-      try { localStorage.setItem(STORAGE_KEY, mode === "expanded" ? "expanded" : "compact"); } catch(_e){}
+      try { localStorage.setItem(STORAGE_KEY, "compact"); } catch(_e){}
     };
     const applyMode = (mode) => {
-      body.classList.toggle("doke-sidebar-expanded", mode === "expanded");
+      body.classList.remove("doke-sidebar-expanded");
     };
     const syncBtn = (btn) => {
       if(!(btn instanceof HTMLElement)) return;
@@ -1407,28 +1454,8 @@ function isVisibleModalLayer(el){
       }
     };
 
-    applyMode(readMode());
-
-    sidebar.querySelectorAll(".doke-sidebar-toggle").forEach((el, idx) => {
-      if (idx > 0) { try { el.remove(); } catch(_e){} }
-    });
-    let btn = sidebar.querySelector(".doke-sidebar-toggle");
-    if(!(btn instanceof HTMLButtonElement)){
-      btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "doke-sidebar-toggle";
-      btn.innerHTML = "<i class='bx bx-chevrons-right'></i><span class='lbl'>Expandir</span>";
-      sidebar.insertBefore(btn, sidebar.firstChild);
-    }
-    syncBtn(btn);
-    if(btn.dataset.bound === "1") return;
-    btn.dataset.bound = "1";
-    btn.addEventListener("click", () => {
-      const nextMode = isExpanded() ? "compact" : "expanded";
-      applyMode(nextMode);
-      writeMode(nextMode);
-      syncBtn(btn);
-    });
+    applyMode("compact");
+    sidebar.querySelectorAll(".doke-sidebar-toggle").forEach((el) => { try { el.remove(); } catch(_e){} });
   }
   function clearUnifiedDesktopChrome(){
     try{
@@ -1466,8 +1493,7 @@ async function ensureShell(){
         return;
       }
     } else {
-      try { ensureStructureReformCss(); } catch(_e) {}
-      if (body) body.classList.add("doke-structure-reform");
+      if (body) body.classList.remove("doke-structure-reform");
       try { ensureUnifiedDesktopCssLock(); } catch(_e) {}
       try { ensureUnifiedDesktopChrome(); } catch(_e) {}
       try { forceUnifiedDesktopHeaderLayout(); } catch(_e) {}
@@ -1518,8 +1544,8 @@ async function ensureShell(){
 const isPro = profile && (profile.isProfissional === true || profile.tipo === "profissional" || profile.role === "profissional");
     const nomePerfil = sanitizePlainText((profile && (profile.user || profile.nome || profile.name)) || (isLogged ? "Minha conta" : "Visitante"));
     const nomePerfilSafe = escapeHtml(nomePerfil);
-    const profileHref = isLogged ? PAGES.perfil : "login.html";
-    const protectedHref = (href) => isLogged ? href : "login.html";
+    const profileHref = isLogged ? PAGES.perfil : "login.html?noshell=1&next=meuperfil.html";
+    const protectedHref = (href) => isLogged ? href : "login.html?noshell=1";
     const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
     const labelAnunciar = "Anunciar";
     const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
@@ -3467,6 +3493,15 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     initPersistentShellNavigation();
     ensureShell();
   }
+  window.addEventListener("load", ()=>{
+    [0, 180, 650].forEach((delay) => {
+      setTimeout(() => {
+        try { ensureShell(); } catch(_e) {}
+        try { ensureCompactSidebarMode(); } catch(_e) {}
+        try { forceUnifiedDesktopHeaderLayout(); } catch(_e) {}
+      }, delay);
+    });
+  }, { once:true });
 })();
 
 

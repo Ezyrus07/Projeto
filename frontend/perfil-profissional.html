@@ -113,6 +113,21 @@
 </div>
 </div>
 <div class="dp-actions">
+<section aria-label="Nivel e pontos" class="dp-progressCard" id="dpProgressCard">
+<div class="dp-progressPoints">
+<span class="dp-progressEyebrow">Pontos</span>
+<strong id="dpPointsValue">12.450</strong>
+</div>
+<div class="dp-progressMeta">
+<div class="dp-progressHead">
+<span class="dp-progressLevel" id="dpLevelValue">Nivel 24</span>
+<span class="dp-progressXp" id="dpXpValue">450 / 1.000 XP</span>
+</div>
+<div aria-hidden="true" class="dp-progressTrack">
+<span class="dp-progressFill" id="dpProgressFill" style="width:45%;"></span>
+</div>
+</div>
+</section>
 <div class="dp-availability" id="dpAvailabilityRow">
 <span id="dpStatusText">Disponível</span>
 <div class="dp-switch" id="dpSwitch"><span></span></div>
@@ -374,6 +389,47 @@
 <script src="doke-alerts.js?v=20260313v02"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
 <script src="doke-shell.js?v=20260313v106"></script>
+<script>
+(function(){
+  function formatPoints(value){
+    return new Intl.NumberFormat('pt-BR').format(Math.max(0, Number(value) || 0));
+  }
+  function readProfile(){
+    const keys = ['doke_usuario_perfil','perfil_usuario','usuario_logado','doke_usuario_logado','userLogado'];
+    for(const key of keys){
+      try{
+        const raw = localStorage.getItem(key);
+        if(!raw) continue;
+        const parsed = JSON.parse(raw);
+        if(parsed && typeof parsed === 'object') return parsed;
+      }catch(_){}
+    }
+    return {};
+  }
+  function applyProgress(){
+    const profile = readProfile();
+    const points = Number(profile.pontos ?? profile.points ?? profile.xpTotal ?? profile.xp_total ?? profile.score ?? 12450) || 12450;
+    const level = Math.max(1, Number(profile.nivel ?? profile.level ?? profile.lv ?? (Math.floor(points / 520) + 1)) || 1);
+    const currentXp = Math.max(0, Number(profile.xpAtual ?? profile.currentXp ?? profile.xp_atual ?? (points % 1000)) || 0);
+    const nextXp = Math.max(1000, Number(profile.proximoNivelXp ?? profile.nextLevelXp ?? profile.xp_proximo_nivel ?? 1000) || 1000);
+    const pct = Math.max(0, Math.min(100, (currentXp / nextXp) * 100));
+    const pointsEl = document.getElementById('dpPointsValue');
+    const levelEl = document.getElementById('dpLevelValue');
+    const xpEl = document.getElementById('dpXpValue');
+    const fillEl = document.getElementById('dpProgressFill');
+    if(pointsEl) pointsEl.textContent = formatPoints(points);
+    if(levelEl) levelEl.textContent = `Nivel ${level}`;
+    if(xpEl) xpEl.textContent = `${formatPoints(currentXp)} / ${formatPoints(nextXp)} XP`;
+    if(fillEl) fillEl.style.width = `${pct}%`;
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', applyProgress, { once:true });
+  } else {
+    applyProgress();
+  }
+  window.addEventListener('storage', applyProgress);
+})();
+</script>
   <script src="site-global-polish.js"></script>
 </body>
 </html>
