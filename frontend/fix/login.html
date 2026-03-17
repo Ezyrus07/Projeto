@@ -6,7 +6,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <script>window.__DOKE_LEGACY_SHELL_DISABLED__=true;try{document.documentElement.classList.add("doke-no-shell");}catch(e){}</script>
 <script>(function(){try{var u=new URL(location.href);if(!u.searchParams.has("noshell")){u.searchParams.set("noshell","1");location.replace(u.toString());}}catch(e){}})();</script>
-<script src="doke-nav-boot.js?v=20260312v11"></script>
+<script src="doke-nav-boot.js?v=20260314v99"></script>
 <title>Entrar | Doke</title>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
@@ -451,39 +451,17 @@ function showMsg(type, text){
       eye.classList.toggle("bx-hide", isPw);
     });
 
-    const APP_ONLY_ROUTES = new Set([
-      "busca.html","detalhes.html","notificacoes.html","pedidos.html","mensagens.html","mais.html","novidades.html",
-      "escolheranuncio.html","ajuda.html","carteira.html","historico.html","dadospessoais.html","enderecos.html",
-      "preferencia-notif.html","idioma.html","privacidade.html","senha.html","pagamentos.html","comunidade.html",
-      "grupo.html","meuperfil.html","perfil-profissional.html","perfil.html","perfil-cliente.html","perfil-usuario.html",
-      "perfil-empresa.html","feed.html","publicacoes.html","interacoes.html","orcamento.html","pagar.html","pedido.html",
-      "projeto.html","resultado.html","anunciar.html","anunciar-negocio.html","editar-anuncio.html","avaliar.html",
-      "quiz.html","diagnostico.html","diagnostico-avancado.html","tornar-profissional.html","explorar.html","estatistica.html",
-      "admin-validacoes.html","negocios.html","acompanhamento-profissional.html","empresas.html","meuempreendimento.html",
-      "negocio.html","sobre-doke.html"
-    ]);
-
-    const normalizeNextAfterLogin = (raw) => {
-      try {
-        const base = new URL("./", window.location.href);
-        const u = new URL(String(raw || "index.html"), base);
-        if (u.origin !== window.location.origin) return "index.html";
-        const file = String((u.pathname || "").split("/").pop() || "index.html").toLowerCase();
-        if (!file || /login\.html/i.test(file)) return "index.html";
-        if (file !== "index.html" && APP_ONLY_ROUTES.has(file)) {
-          return `index.html?fromLegacyRoute=1&route=${encodeURIComponent(`${file}${u.search || ""}`)}`;
-        }
-        return `${u.pathname || ""}${u.search || ""}${u.hash || ""}` || "index.html";
-      } catch (_) {
-        return "index.html";
-      }
-    };
-
     const getNextAfterLogin = () => {
       try{
         const params = new URLSearchParams(window.location.search || "");
         const raw = String(params.get("next") || "").trim();
-        return normalizeNextAfterLogin(raw || "index.html");
+        if(!raw) return "index.html";
+        const base = new URL("./", window.location.href);
+        const u = new URL(raw, base);
+        if(u.origin !== window.location.origin) return "index.html";
+        const path = `${u.pathname || ""}${u.search || ""}${u.hash || ""}`;
+        if(!path || /login\.html/i.test(path)) return "index.html";
+        return path;
       }catch(_){
         return "index.html";
       }

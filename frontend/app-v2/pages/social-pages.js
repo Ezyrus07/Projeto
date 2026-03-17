@@ -237,30 +237,12 @@
     const root = page.querySelector('#dpRoot');
     if (!(root instanceof HTMLElement)) return false;
     const body = root.querySelector('.dp-card .dp-body');
+    const info = root.querySelector('.dp-info');
     const actions = root.querySelector('.dp-actions');
-    if (!(body instanceof HTMLElement) || !(actions instanceof HTMLElement)) return false;
-
-    const shouldShow = hasLocalAuth();
-    const nativeCard = root.querySelector('#dpProgressCard');
-    const progress = buildProgressState();
-    if (nativeCard instanceof HTMLElement) {
-      const pointsEl = nativeCard.querySelector('#dpPointsValue');
-      const levelEl = nativeCard.querySelector('#dpLevelValue');
-      const xpEl = nativeCard.querySelector('#dpXpValue');
-      const fillEl = nativeCard.querySelector('#dpProgressFill');
-      if (pointsEl) pointsEl.textContent = progress.pointsLabel;
-      if (levelEl) levelEl.textContent = `Nivel ${progress.levelLabel}`;
-      if (xpEl) xpEl.textContent = progress.xpLabel;
-      if (fillEl instanceof HTMLElement) fillEl.style.width = `${progress.progressPct}%`;
-      nativeCard.hidden = !shouldShow;
-      if (!shouldShow) nativeCard.removeAttribute('style');
-      body.classList.add('doke-v2-profile-progress-ready');
-      const extra = body.querySelector('.doke-v2-profile-progress');
-      if (extra instanceof HTMLElement) extra.remove();
-      return true;
-    }
+    if (!(body instanceof HTMLElement) || !(info instanceof HTMLElement) || !(actions instanceof HTMLElement)) return false;
 
     const existing = body.querySelector('.doke-v2-profile-progress');
+    const shouldShow = hasLocalAuth();
     if (!shouldShow) {
       if (existing instanceof HTMLElement) existing.remove();
       return false;

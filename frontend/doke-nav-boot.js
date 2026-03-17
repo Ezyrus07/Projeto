@@ -3,26 +3,7 @@
   const ENTER_CLASS = "doke-nav-enter";
   const READY_CLASS = "doke-nav-enter-ready";
   const currentPath = `${location.pathname || ""}${location.search || ""}`;
-  const rawCurrentFileName = String((location.pathname || "").split("/").pop() || "").toLowerCase();
-  const effectiveCurrentTarget = (() => {
-    try {
-      if (rawCurrentFileName !== "index.html" && rawCurrentFileName !== "") return `${rawCurrentFileName}${location.search || ""}`;
-      const params = new URLSearchParams(location.search || "");
-      if (params.get("fromLegacyRoute") !== "1") return `${rawCurrentFileName || "index.html"}${location.search || ""}`;
-      const routeRaw = String(params.get("route") || "").trim();
-      if (!routeRaw) return `${rawCurrentFileName || "index.html"}${location.search || ""}`;
-      return routeRaw;
-    } catch (_e) {
-      return `${rawCurrentFileName || "index.html"}${location.search || ""}`;
-    }
-  })();
-  const currentFileName = (() => {
-    try {
-      return String(effectiveCurrentTarget.split("?")[0] || "index.html").toLowerCase().split("/").pop() || rawCurrentFileName;
-    } catch (_e) {
-      return rawCurrentFileName;
-    }
-  })();
+  const currentFileName = String((location.pathname || "").split("/").pop() || "").toLowerCase();
   const isHomePage = currentFileName === "" || currentFileName === "index.html";
   const migratedAppRoutes = new Set([
     "index.html",
@@ -36,7 +17,6 @@
     "escolheranuncio.html",
     "ajuda.html",
     "carteira.html",
-    "historico.html",
     "dadospessoais.html",
     "enderecos.html",
     "preferencia-notif.html",
@@ -288,21 +268,6 @@
     return;
   }
 
-
-  function normalizeAppEntryTarget(rawPath) {
-    try {
-      const u = new URL(String(rawPath || "index.html"), location.href);
-      if (u.origin !== location.origin) return "index.html";
-      const file = String((u.pathname || "").split("/").pop() || "index.html").toLowerCase();
-      if (file !== "index.html" && migratedAppRoutes.has(file)) {
-        return `index.html?fromLegacyRoute=1&route=${encodeURIComponent(`${file}${u.search || ""}`)}`;
-      }
-      return `${u.pathname || ""}${u.search || ""}${u.hash || ""}` || "index.html";
-    } catch (_e) {
-      return "index.html";
-    }
-  }
-
   function maybeRedirectMigratedRouteToApp() {
     try {
       if (isHomePage) return false;
@@ -325,7 +290,7 @@
       if (!protectedFiles.has(currentFileName)) return false;
       if (hasValidStoredSession()) return false;
       try { document.documentElement.style.visibility = "hidden"; } catch (_e) {}
-      const next = normalizeAppEntryTarget(`${effectiveCurrentTarget || currentFileName || "index.html"}${location.hash || ""}`);
+      const next = `${currentFileName || "index.html"}${location.search || ""}${location.hash || ""}`;
       location.replace(`login.html?noshell=1&next=${encodeURIComponent(next)}`);
       return true;
     } catch (_e) {

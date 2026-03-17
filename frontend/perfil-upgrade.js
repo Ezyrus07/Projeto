@@ -1518,74 +1518,23 @@ function ensureTheme(ctx, theme){
     $$(selector).forEach(el => setVisible(el, !!cond));
   }
 
-  function readLocalProfileSources(){
-    const keys = ['doke_usuario_perfil','perfil_usuario','usuario_logado','doke_usuario_logado','userLogado','doke_profile_v1'];
-    const out = [];
-    for(const key of keys){
-      try{
-        const raw = localStorage.getItem(key);
-        if(!raw) continue;
-        const parsed = JSON.parse(raw);
-        if(parsed && typeof parsed === 'object') out.push(parsed);
-      }catch(_){ }
-    }
-    return out;
-  }
-
-  function isMeaningfulValue(value){
-    if(value === null || value === undefined) return false;
-    if(typeof value === 'string') return value.trim() !== '';
-    if(Array.isArray(value)) return value.length > 0;
-    if(typeof value === 'object') return Object.keys(value).length > 0;
-    return true;
-  }
-
-  function mergeProfileSources(){
-    const result = {};
-    const sources = Array.from(arguments).flat().filter(Boolean);
-    for(const src of sources){
-      if(!src || typeof src !== 'object') continue;
-      for(const [key, value] of Object.entries(src)){
-        if(key === 'stats' && value && typeof value === 'object' && !Array.isArray(value)){
-          const current = (result.stats && typeof result.stats === 'object' && !Array.isArray(result.stats)) ? result.stats : {};
-          result.stats = deepMerge(structuredClone(current), structuredClone(value));
-          continue;
-        }
-        if(key === 'media' && value && typeof value === 'object' && !Array.isArray(value)){
-          const current = (result.media && typeof result.media === 'object' && !Array.isArray(result.media)) ? result.media : {};
-          result.media = deepMerge(structuredClone(current), structuredClone(value));
-          continue;
-        }
-        if(isMeaningfulValue(value)) result[key] = value;
-      }
-    }
-    return result;
-  }
-
   function getCachedProfileFallback(){
     try{
-      const cached = mergeProfileSources(readLocalProfileSources());
-      if(!cached || typeof cached !== "object" || !Object.keys(cached).length) return null;
-      const nome = String(cached.nome || cached.name || cached.user || cached.username || "").trim();
-      if(!nome && !cached.foto && !cached.avatar && !cached.avatar_url && !cached.foto_url) return null;
-      const local = cached.local || [cached.cidade, cached.estado].filter(Boolean).join(' • ') || "Brasil";
+      const cached = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null");
+      if(!cached || typeof cached !== "object") return null;
+      const nome = String(cached.nome || cached.name || cached.user || "").trim();
+      if(!nome && !cached.foto && !cached.avatar) return null;
       return {
-        id: cached.id || cached.uid || cached.user_uid || cached.userId || cached.profile_id || null,
-        uid: cached.uid || cached.id || cached.user_uid || cached.userId || cached.profile_id || null,
+        id: cached.id || cached.uid || cached.user_uid || cached.userId || null,
+        uid: cached.uid || cached.id || cached.user_uid || cached.userId || null,
         nome: nome || "Usuário",
-        user: cached.user || cached.username || cached.handle || "",
+        user: cached.user || cached.username || "",
         foto: cached.foto || cached.avatar || cached.avatar_url || cached.foto_url || null,
         foto_url: cached.foto_url || cached.avatar_url || cached.foto || cached.avatar || null,
-        capa: cached.capa || cached.cover_url || cached.capa_url || null,
-        capa_url: cached.capa_url || cached.cover_url || cached.capa || null,
-        tipo: cached.tipo || cached.role || "usuario",
-        bio: cached.bio || cached.profissao || cached.headline || "",
-        sobre: cached.sobre || cached.about || "",
-        local: local,
-        created_at: cached.created_at || cached.createdAt || null,
-        membroDesde: cached.membroDesde || cached.member_since || null,
-        stats: cached.stats || {},
-        media: cached.media || {}
+        tipo: cached.tipo || "usuario",
+        bio: cached.bio || "",
+        local: cached.local || "Brasil",
+        created_at: cached.created_at || null
       };
     }catch(_){
       return null;
@@ -5828,10 +5777,17 @@ if(!rangeSel || !refreshBtn) return;
   // -----------------------------
   function getBestProfileIdentity(ctx){
     const cached = buildCachedSelfProfile(ctx?.authUser) || {};
-    const locals = readLocalProfileSources();
-    return mergeProfileSources(
+    const local = (() => {
+      try{
+        return JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null") || {};
+      }catch(_){
+        return {};
+      }
+    })();
+    return Object.assign(
+      {},
       cached,
-      locals,
+      local,
       ctx?.me || {},
       ctx?.target || {}
     );
@@ -5857,26 +5813,25 @@ if(!rangeSel || !refreshBtn) return;
     const cleanHandle = String(u.user || "").trim().replace(/^@+/, "");
     setText("#dpHandle", cleanHandle ? `@${cleanHandle}` : "");
 
-    const bio = u.bio || u.headline || u.profissao || (isProfissionalUsuario(u) ? "Profissional na Doke." : "Olá! Sou novo na comunidade Doke.");
+    const bio = u.bio || (isProfissionalUsuario(u) ? "Profissional na Doke." : "Olá! Sou novo na comunidade Doke.");
     setText("#dpBio", bio);
-    const aboutText = stats?.about || u.sobre || u.about || "";
+    const aboutText = stats?.about || u.sobre || "";
     const aboutFallback = "As informações do perfil aparecem aqui. (Bio, local e tempo de membro são editáveis no botão \"Editar perfil\".)";
     setText("#dpAboutText", aboutText || aboutFallback);
 
     // chips
-    const local = u.local || [u.cidade, u.estado].filter(Boolean).join(' • ') || "Brasil";
-    const memberDate = u.membroDesde || u.member_since || u.created_at || u.createdAt || null;
-    const membro = memberDate ? `Membro desde ${fmtDateShort(memberDate)}` : "Membro da comunidade";
+    const local = u.local || "Brasil";
+    const membro = u.membroDesde ? `Membro desde ${fmtDateShort(u.membroDesde)}` : `Membro desde ${fmtDateShort(u.created_at)}`;
     setHTML("#dpChips", `
       <span class="dp-chip"> <span>${escapeHtml(local)}</span></span>
       <span class="dp-chip"> <span>${escapeHtml(membro)}</span></span>
     `);
 
-    // stats (usa cache local quando disponível e depois sincroniza via queries reais)
-    setText("#dpFollowers", String(stats?.followers_count ?? stats?.seguidores ?? u.followers_count ?? u.seguidores ?? 0));
-    setText("#dpFollowing", String(stats?.following_count ?? stats?.seguindo ?? u.following_count ?? u.seguindo ?? 0));
-    setText("#dpReviews", String(stats?.reviews_count ?? stats?.avaliacoes_count ?? u.reviews_count ?? 0));
-    setText("#dpServicesCount", String(stats?.services_count ?? stats?.servicos_count ?? u.services_count ?? u.servicos_count ?? 0));
+    // stats (placeholder; você pode ligar com tabelas de seguidores etc depois)
+    setText("#dpFollowers", (u.stats?.followers_count || 0).toString());
+    setText("#dpFollowing", (u.stats?.following_count || 0).toString());
+    setText("#dpReviews", "0");
+    setText("#dpServicesCount", "0");
 
     // buttons visibility
     const isPro = isProfissionalUsuario(u);
@@ -6089,36 +6044,34 @@ if(!rangeSel || !refreshBtn) return;
   }
 
   function buildCachedSelfProfile(authUser){
-    const localMerged = mergeProfileSources(readLocalProfileSources());
-    const cached = localMerged && typeof localMerged === 'object' ? localMerged : null;
+    let cached = null;
+    try{
+      cached = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null");
+    }catch(_){
+      cached = null;
+    }
     const uid = normalizeIdentity(
       cached?.uid ||
       cached?.id ||
       cached?.user_uid ||
       cached?.userId ||
-      cached?.profile_id ||
       authUser?.id ||
       authUser?.uid
     );
     if(!uid) return null;
     const emailNick = authUser?.email ? String(authUser.email).split("@")[0] : "usuario";
     return {
-      id: cached?.id || uid,
+      id: uid,
       uid,
-      nome: cached?.nome || cached?.name || authUser?.user_metadata?.nome || authUser?.user_metadata?.name || emailNick || "Usuário",
-      user: cached?.user || cached?.username || cached?.handle || authUser?.user_metadata?.user || authUser?.user_metadata?.username || emailNick || "",
-      foto: cached?.foto || cached?.avatar || cached?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.foto || null,
-      foto_url: cached?.foto_url || cached?.avatar_url || cached?.foto || cached?.avatar || authUser?.user_metadata?.avatar_url || null,
-      capa: cached?.capa || cached?.capa_url || cached?.cover_url || null,
-      capa_url: cached?.capa_url || cached?.cover_url || cached?.capa || null,
-      bio: cached?.bio || cached?.headline || authUser?.user_metadata?.bio || "",
-      sobre: cached?.sobre || cached?.about || "",
-      local: cached?.local || [cached?.cidade, cached?.estado].filter(Boolean).join(' • ') || "",
-      tipo: cached?.tipo || cached?.role || authUser?.user_metadata?.tipo || "usuario",
-      created_at: cached?.created_at || cached?.createdAt || null,
-      membroDesde: cached?.membroDesde || cached?.member_since || null,
-      stats: cached?.stats || {},
-      media: cached?.media || {}
+      nome: cached?.nome || authUser?.user_metadata?.nome || authUser?.user_metadata?.name || emailNick || "Usuário",
+      user: cached?.user || authUser?.user_metadata?.user || authUser?.user_metadata?.username || emailNick || "",
+      foto: cached?.foto || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.foto || null,
+      bio: cached?.bio || authUser?.user_metadata?.bio || "",
+      local: cached?.local || "",
+      tipo: cached?.tipo || authUser?.user_metadata?.tipo || "usuario",
+      created_at: cached?.created_at || null,
+      membroDesde: cached?.membroDesde || null,
+      stats: cached?.stats || {}
     };
   }
 

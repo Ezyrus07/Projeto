@@ -1,25 +1,6 @@
 (function () {
   try {
-    var currentTarget = (function(){
-      try {
-        var raw = String((location.pathname || "").split("/").pop() || "index.html").toLowerCase();
-        if (raw !== "index.html") return raw + (location.search || "");
-        var params = new URLSearchParams(location.search || "");
-        if (params.get("fromLegacyRoute") !== "1") return raw + (location.search || "");
-        var routeRaw = String(params.get("route") || "").trim();
-        if (!routeRaw) return raw + (location.search || "");
-        return routeRaw;
-      } catch (_e) {
-        return String((location.pathname || "").split("/").pop() || "index.html").toLowerCase() + (location.search || "");
-      }
-    })();
-    var current = (function(){
-      try {
-        return String(currentTarget.split("?")[0] || "index.html").toLowerCase().split("/").pop() || "index.html";
-      } catch (_e) {
-        return String((location.pathname || "").split("/").pop() || "index.html").toLowerCase();
-      }
-    })();
+    var current = String((location.pathname || "").split("/").pop() || "index.html").toLowerCase();
     var publicFiles = new Set([
       "",
       "index.html",
@@ -239,34 +220,8 @@
       return hasTrustedLoginMarkers();
     }
 
-    function normalizeAppEntry(path) {
-      try {
-        var raw = String(path || "index.html");
-        var u = new URL(raw, location.href);
-        if (u.origin !== location.origin) return "index.html";
-        var file = String((u.pathname || "").split("/").pop() || "index.html").toLowerCase();
-        var appOnlyRoutes = new Set([
-          "busca.html","detalhes.html","notificacoes.html","pedidos.html","mensagens.html","mais.html","novidades.html",
-          "escolheranuncio.html","ajuda.html","carteira.html","historico.html","dadospessoais.html","enderecos.html",
-          "preferencia-notif.html","idioma.html","privacidade.html","senha.html","pagamentos.html","comunidade.html",
-          "grupo.html","meuperfil.html","perfil-profissional.html","perfil.html","perfil-cliente.html","perfil-usuario.html",
-          "perfil-empresa.html","feed.html","publicacoes.html","interacoes.html","orcamento.html","pagar.html","pedido.html",
-          "projeto.html","resultado.html","anunciar.html","anunciar-negocio.html","editar-anuncio.html","avaliar.html",
-          "quiz.html","diagnostico.html","diagnostico-avancado.html","tornar-profissional.html","explorar.html","estatistica.html",
-          "admin-validacoes.html","negocios.html","acompanhamento-profissional.html","empresas.html","meuempreendimento.html",
-          "negocio.html","sobre-doke.html"
-        ]);
-        if (file !== "index.html" && appOnlyRoutes.has(file)) {
-          return "index.html?fromLegacyRoute=1&route=" + encodeURIComponent(file + (u.search || ""));
-        }
-        return (u.pathname || "") + (u.search || "") + (u.hash || "");
-      } catch (_e) {
-        return "index.html";
-      }
-    }
-
     function redirectToLogin() {
-      var next = normalizeAppEntry(currentTarget + (location.hash || ""));
+      var next = current + (location.search || "") + (location.hash || "");
       location.replace("login.html?noshell=1&next=" + encodeURIComponent(next));
     }
 

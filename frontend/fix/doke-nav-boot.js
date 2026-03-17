@@ -3,28 +3,18 @@
   const ENTER_CLASS = "doke-nav-enter";
   const READY_CLASS = "doke-nav-enter-ready";
   const currentPath = `${location.pathname || ""}${location.search || ""}`;
-  const rawCurrentFileName = String((location.pathname || "").split("/").pop() || "").toLowerCase();
-  const effectiveCurrentTarget = (() => {
-    try {
-      if (rawCurrentFileName !== "index.html" && rawCurrentFileName !== "") return `${rawCurrentFileName}${location.search || ""}`;
-      const params = new URLSearchParams(location.search || "");
-      if (params.get("fromLegacyRoute") !== "1") return `${rawCurrentFileName || "index.html"}${location.search || ""}`;
-      const routeRaw = String(params.get("route") || "").trim();
-      if (!routeRaw) return `${rawCurrentFileName || "index.html"}${location.search || ""}`;
-      return routeRaw;
-    } catch (_e) {
-      return `${rawCurrentFileName || "index.html"}${location.search || ""}`;
-    }
-  })();
-  const currentFileName = (() => {
-    try {
-      return String(effectiveCurrentTarget.split("?")[0] || "index.html").toLowerCase().split("/").pop() || rawCurrentFileName;
-    } catch (_e) {
-      return rawCurrentFileName;
-    }
-  })();
+  const currentFileName = String((location.pathname || "").split("/").pop() || "").toLowerCase();
   const isHomePage = currentFileName === "" || currentFileName === "index.html";
-  const migratedAppRoutes = new Set([
+  const LOGO_SRC = "assets/Imagens/doke-logo.png";
+  const TRANSITION_MIN_MS = 320;
+  const TRANSITION_FADE_MS = 170;
+  const BOOT_HOLD_ATTR = "data-doke-boot-hold";
+  const BOOT_HOLD_TIMEOUT_MS = 4500;
+  let overlayShownAt = 0;
+  let overlayClearTimer = 0;
+  let overlayHoldTimer = 0;
+  let overlayHoldReleased = false;
+  const appShellRouteFiles = new Set([
     "index.html",
     "busca.html",
     "detalhes.html",
@@ -42,7 +32,6 @@
     "preferencia-notif.html",
     "idioma.html",
     "privacidade.html",
-    "senha.html",
     "pagamentos.html",
     "comunidade.html",
     "grupo.html",
@@ -71,22 +60,15 @@
     "explorar.html",
     "estatistica.html",
     "admin-validacoes.html",
-    "negocios.html",
     "acompanhamento-profissional.html",
     "empresas.html",
     "meuempreendimento.html",
-    "negocio.html",
+    "negocios.html",
+    "pedido.html",
+    "perfil-qna.html",
     "sobre-doke.html"
   ]);
-  const LOGO_SRC = "assets/Imagens/doke-logo.png";
-  const TRANSITION_MIN_MS = 320;
-  const TRANSITION_FADE_MS = 170;
-  const BOOT_HOLD_ATTR = "data-doke-boot-hold";
-  const BOOT_HOLD_TIMEOUT_MS = 4500;
-  let overlayShownAt = 0;
-  let overlayClearTimer = 0;
-  let overlayHoldTimer = 0;
-  let overlayHoldReleased = false;
+
   const protectedFiles = new Set([
     "acompanhamento-profissional.html",
     "admin-validacoes.html",
@@ -288,32 +270,20 @@
     return;
   }
 
-
-  function normalizeAppEntryTarget(rawPath) {
+  function maybeRedirectDirectPageToAppShell() {
     try {
-      const u = new URL(String(rawPath || "index.html"), location.href);
-      if (u.origin !== location.origin) return "index.html";
-      const file = String((u.pathname || "").split("/").pop() || "index.html").toLowerCase();
-      if (file !== "index.html" && migratedAppRoutes.has(file)) {
-        return `index.html?fromLegacyRoute=1&route=${encodeURIComponent(`${file}${u.search || ""}`)}`;
-      }
-      return `${u.pathname || ""}${u.search || ""}${u.hash || ""}` || "index.html";
-    } catch (_e) {
-      return "index.html";
-    }
-  }
-
-  function maybeRedirectMigratedRouteToApp() {
-    try {
-      if (isHomePage) return false;
-      if (!migratedAppRoutes.has(currentFileName)) return false;
-      const params = new URLSearchParams(location.search || '');
-      if (params.get('noshell') === '1' || params.get('embed') === '1' || params.get('v2frame') === '1') return false;
-      if (params.get('fromLegacyRoute') === '1') return false;
-      const target = new URL('index.html', location.href);
-      target.searchParams.set('fromLegacyRoute', '1');
-      target.searchParams.set('route', `${currentFileName}${location.search || ''}`);
-      location.replace(target.toString());
+      if (currentFileName === "" || currentFileName === "index.html") return false;
+      if (!appShellRouteFiles.has(currentFileName)) return false;
+      const qs = new URLSearchParams(location.search || "");
+      const noShell = String(qs.get("noshell") || "") === "1";
+      const isEmbed = String(qs.get("embed") || "") === "1" || String(qs.get("modal") || "") === "1";
+      let insideFrame = false;
+      try { insideFrame = window.self !== window.top; } catch (_e) { insideFrame = true; }
+      if (noShell || isEmbed || insideFrame) return false;
+      const routeTarget = `${currentFileName}${location.search || ""}${location.hash || ""}`;
+      const targetUrl = `index.html?route=${encodeURIComponent(routeTarget)}&fromLegacyRoute=1`;
+      try { document.documentElement.style.visibility = "hidden"; } catch (_e) {}
+      location.replace(targetUrl);
       return true;
     } catch (_e) {
       return false;
@@ -325,7 +295,7 @@
       if (!protectedFiles.has(currentFileName)) return false;
       if (hasValidStoredSession()) return false;
       try { document.documentElement.style.visibility = "hidden"; } catch (_e) {}
-      const next = normalizeAppEntryTarget(`${effectiveCurrentTarget || currentFileName || "index.html"}${location.hash || ""}`);
+      const next = `${currentFileName || "index.html"}${location.search || ""}${location.hash || ""}`;
       location.replace(`login.html?noshell=1&next=${encodeURIComponent(next)}`);
       return true;
     } catch (_e) {
@@ -572,8 +542,8 @@
   cleanupDevServiceWorker();
   try { sessionStorage.removeItem(NAV_PREBOOT_KEY); } catch (_e) {}
   try { document.documentElement.classList.remove(ENTER_CLASS, READY_CLASS, "doke-route-pending"); } catch (_e) {}
-  if (maybeRedirectMigratedRouteToApp()) return;
   if (maybeRedirectProtectedPage()) return;
+  if (maybeRedirectDirectPageToAppShell()) return;
 
   activateOverlay();
   forceHomeTop();

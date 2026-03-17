@@ -1,272 +1,587 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-<link rel="preconnect" href="https://cdn.jsdelivr.net"/>
-<link rel="preconnect" href="https://unpkg.com"/>
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script defer src="supabase-init.js?v=20260312v44"></script>
-<script defer src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script defer src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
+<link href="https://cdn.jsdelivr.net" rel="preconnect"/>
+<link href="https://unpkg.com" rel="preconnect"/>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script defer="" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer="" src="supabase-init.js?v=20260312v44"></script>
+<script defer="" src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script defer="" src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <script src="doke-nav-boot.js?v=20260313v13"></script>
 <title>Comunidades - Doke</title>
-<meta name="description" content="Participe de comunidades, publique conteúdos e interaja com grupos locais."/>
-<meta property="og:title" content="Doke - Comunidades"/>
-<meta property="og:description" content="Participe de comunidades, publique conteúdos e interaja com grupos locais."/>
-<meta property="og:type" content="website"/>
-<meta property="og:image" content="assets/Imagens/doke-logo.png"/>
-<meta name="theme-color" content="#0b7768"/>
-<link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"/>
-<link rel="stylesheet" href="style.css?v=20260207v26"/>
-<link rel="stylesheet" href="doke-a11y.css?v=20260207v21"/>
-<link rel="stylesheet" href="doke-layout-fix.css?v=20260207v21"/>
-<link rel="stylesheet" href="comunidade-modern-fix.css?v=20260316v5"/>
-<script defer src="script.js?v=20260313v73"></script>
-<script defer src="comunidades-supabase-patch.js?v=20260313v01"></script>
-<script defer src="comunidades-meusgrupos-fix.js?v=20260316v5"></script>
-<script defer src="comunidade-v2.js?v=20260316v5"></script>
-<link rel="stylesheet" href="doke-toast.css"/>
-<link rel="stylesheet" href="doke-alerts.css"/>
-<link rel="stylesheet" href="doke-ux.css?v=20260207v21"/>
-<link rel="stylesheet" href="doke-shell.css?v=20260207v21"/>
-<link rel="stylesheet" href="doke-responsive.css?v=20260207v21"/>
-<link rel="stylesheet" href="page-comunidade.css?v=20260209v24"/>
-<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1"/>
-<link rel="stylesheet" href="ui-system.css"/>
-<link rel="stylesheet" href="site-global-polish.css?v=20260313v24"/>
+    <meta name="description" content="Participe de comunidades, publique conte�dos e interaja com grupos locais.">
+    <meta property="og:title" content="Doke - Comunidades">
+    <meta property="og:description" content="Participe de comunidades, publique conte�dos e interaja com grupos locais.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/Imagens/doke-logo.png">
+    <meta name="theme-color" content="#0b7768">
+
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<script defer="" src="script.js?v=20260313v73"></script>
+<script defer="" src="comunidades-supabase-patch.js?v=20260313v01"></script>
+<script defer="" src="comunidades-meusgrupos-fix.js?v=20260313v02"></script>
 <style>
-body[data-page="comunidade"]{background:#f4f7fb !important;}
-body[data-page="comunidade"] main.comunidade-page{padding-top:18px !important;}
-body[data-page="comunidade"] .doke-inline-loader,
-body[data-page="comunidade"] .doke-inline-state{display:none !important;}
+        /* ======================================================
+           ESTILOS ESPECÍFICOS DA PÁGINA COMUNIDADES
+           ====================================================== */
+        
+        body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); }
+
+        main { padding: 20px; max-width: 1600px; }
+        @media (min-width: 1024px) {
+            main { margin-left: 270px; padding: 30px 40px; width: auto; }
+        }
+
+        .comm-hero-container {
+                background: radial-gradient(1200px 500px at 50% 0%, rgba(255, 255, 255, 0.20), transparent 55%), linear-gradient(135deg, #1f4d75 0%, #13324f 55%, #0b7768 140%);
+            padding: 20px 22px; border-radius: 20px; margin-bottom: 18px;
+            color: white; box-shadow: 0 10px 30px rgba(42, 95, 144, 0.25);
+            position: relative; overflow: hidden;
+        }
+        .comm-hero-container::before {
+            content: ''; position: absolute; top: -50px; right: -50px;
+            width: 200px; height: 200px; background: rgba(255,255,255,0.05);
+            border-radius: 50%; pointer-events: none;
+        }
+
+        .comm-header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: 10px; flex-wrap: wrap; gap: 12px; position: relative; z-index: 2;
+        }
+        .comm-title h1 { color: white; font-size: 1.9rem; margin-bottom: 6px; font-weight: 700; }
+        .comm-title p { color: rgba(255,255,255,0.85); font-size: 0.95rem; max-width: 500px; }
+
+        .header-actions { display: flex; gap: 15px; align-items: center; }
+        .search-bar-comm {
+            display: flex; align-items: center; background: white;
+            padding: 0 20px; border-radius: 50px; width: 360px; height: 44px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: 0.3s;
+        }
+        .search-bar-comm input { background: transparent; border: none; outline: none; width: 100%; color: #333; }
+        
+        .btn-create-comm {
+            background: #00d2d3; color: #005f5f; border: none; padding: 0 20px;
+            height: 44px; border-radius: 30px; font-weight: 800; cursor: pointer; display: flex; 
+            align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0, 210, 211, 0.3);
+            transition: 0.2s; white-space: nowrap;
+        }
+        .btn-create-comm:hover { background: #fff; color: var(--cor2); }
+
+        /* Meus Grupos */
+        .my-groups-section { position: relative; z-index: 2; }
+        .section-label { color: white; font-size: 0.85rem; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; opacity: 0.8; }
+        .groups-scroll { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; min-height: 72px; }
+        .my-group-item { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; min-width: 80px; transition: 0.2s; }
+        .group-img-ring {
+            width: 70px; height: 70px; border-radius: 20px; padding: 3px;
+            background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;
+        }
+        .group-img-ring img { width: 100%; height: 100%; border-radius: 17px; object-fit: cover; background: white; }
+        .my-group-item span { color: white; font-size: 0.8rem; font-weight: 600; text-align: center; }
+
+        /* Layout Principal */
+        .comm-layout { display: grid; grid-template-columns: 1fr 350px; gap: 30px; }
+        .main-feed-comm{ min-width: 0; width: 100%; }
+        /* Filtros (chips) com setas �?� scroll horizontal com toque */
+        .comm-filter-nav{ position: relative; display:flex; align-items:center; gap: 10px; margin-bottom: 25px; min-width: 0; }
+        .filter-tabs { 
+            display: flex; gap: 12px; 
+            overflow-x: auto; overflow-y: hidden;
+            flex: 1 1 auto;
+            min-width: 0;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+            touch-action: pan-x pan-y;
+            padding: 0 52px; /* evita chips ficarem embaixo das setas */
+        }
+        .filter-tabs::-webkit-scrollbar{ display:none; }
+
+/* Mobile: swipe nos chips (sem setas) */
+@media (max-width: 1024px){
+  .chips-arrow.comm-filter-arrow{ display:none !important; }
+  .filter-tabs{ padding: 0 !important; }
+}
+
+        .tab-btn{ scroll-snap-align: start; }
+        .chips-arrow.comm-filter-arrow{
+            width: 42px; height: 42px;
+            border-radius: 14px;
+            border: 1px solid #e6e9ef;
+            background: #fff;
+            display:flex; align-items:center; justify-content:center;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+        }
+        .chips-arrow.comm-filter-arrow i{ font-size: 22px; color: var(--cor2); }
+        .chips-arrow.comm-filter-arrow:disabled{ opacity: .35; cursor: default; }
+        .comm-filter-arrow.left{ position:absolute; left: 6px; z-index: 5; }
+        .comm-filter-arrow.right{ position:absolute; right: 6px; z-index: 5; }
+
+        .tab-btn {
+            padding: 10px 22px; border: 1px solid #d7dee8; background: white; border-radius: 30px;
+            font-weight: 700; color: #49586b; cursor: pointer; white-space: nowrap; transition: 0.2s;
+        }
+        .tab-btn.active { background: var(--cor2); color: white; border-color: var(--cor2); box-shadow: 0 6px 14px rgba(42,95,144,.22); }
+
+        .grid-comunidades { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 16px; width: 100%; min-width: 0; }
+        
+
+/* ===========================
+   Compat com render do script.js?v=20260313v73"";
+    position:absolute;
+    inset:0;
+    background: linear-gradient(180deg, rgba(2,6,23,0) 45%, rgba(2,6,23,0.28) 100%);
+    pointer-events:none;
+}
+.com-body{
+    padding: 14px 14px 12px;
+    display:flex; gap: 12px; align-items: flex-start;
+}
+.com-avatar{
+    width: 64px; height: 64px; border-radius: 16px; background: white;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.10);
+    border: 1px solid #eef0f4;
+    flex: 0 0 auto;
+    margin-top: -34px;
+    overflow:hidden;
+}
+.com-avatar img{ width:100%; height:100%; object-fit:cover; }
+.com-avatar i{ font-size: 28px; color: var(--cor2); }
+.com-info{ min-width:0; flex:1; }
+.com-title{ font-size: 1.15rem; font-weight: 800; color: #1d2b3a; margin-bottom: 6px; }
+.com-desc{ font-size: 0.88rem; font-weight: 700; color: #5a6676; line-height: 1.3; margin-bottom: 8px; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+.com-meta{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.pill{
+    font-size: 0.72rem; font-weight: 900; border-radius: 999px;
+    padding: 6px 10px; border: 1px solid #e6e9ef; background:#fff; color:#1d2b3a;
+}
+.meta-small{ font-size: 0.78rem; color:#7a8797; font-weight: 800; }
+.btn-ver-grupo{
+    margin-left:0;
+    align-self:center;
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid #e6e9ef;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #0b7768, #2f80ed);
+    color:#fff;
+    font-weight: 900;
+    cursor:pointer;
+    white-space: nowrap;
+}
+.btn-ver-grupo:hover{ filter: brightness(1.02); }
+
+/* Meus grupos (render novo do script.js?v=20260313v73"high"]{ border-color: #ffe2b3; }
+        .tab-btn[data-view="near"]{ border-color: #d7f3ec; }
+        .tab-btn[data-view="new"]{ border-color: #d8e7ff; }
+        .comm-floating-create{
+            position: fixed;
+            right: 14px;
+            bottom: calc(var(--bottom-nav-height) + 16px);
+            width: 54px;
+            height: 54px;
+            border-radius: 16px;
+            border: none;
+            background: linear-gradient(135deg, #0b7768, #2f80ed);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 14px 28px rgba(15,23,42,.25);
+            z-index: 12000;
+        }
+        .comm-floating-create i{ font-size: 1.55rem; line-height: 1; }
+        @media (min-width: 1025px){
+            .comm-floating-create{ display: none; }
+        }
+        .comm-skeleton-grid{
+            display:grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .comm-skel{
+            border-radius: 14px;
+            border: 1px solid #e5e9f1;
+            background: linear-gradient(90deg, #f1f4f8 25%, #e7edf5 37%, #f1f4f8 63%);
+            background-size: 400% 100%;
+            animation: commSkel 1.2s ease infinite;
+        }
+        .comm-skel-cover{ height: 76px; border-radius: 14px 14px 10px 10px; }
+        .comm-skel-line{ height: 12px; margin: 8px 10px; border-radius: 999px; }
+        .comm-skel-line.short{ width: 50%; }
+        @keyframes commSkel{
+            0%{ background-position: 100% 0; }
+            100%{ background-position: 0 0; }
+        }
+        @media (max-width: 560px){
+            .comm-skeleton-grid{ grid-template-columns: 1fr; }
+        }
+        #listaComunidades > *{
+            content-visibility: auto;
+            contain-intrinsic-size: 220px;
+        }
+    
+/* clean hero + feed */
+.comm-hero-container{padding:20px 22px !important;border-radius:22px !important;}
+.comm-title h1{font-size:clamp(1.6rem,2.7vw,2.2rem) !important;margin:0 0 6px !important;}
+.comm-title p{max-width:680px;line-height:1.55;}
+.search-bar-comm{height:46px !important;border-radius:14px !important;background:rgba(255,255,255,.98) !important;box-shadow:none !important;border:1px solid #dfe7f0;}
+.btn-create-comm{height:46px !important;border-radius:14px !important;background:#fff !important;color:#123153 !important;box-shadow:none !important;}
+.comm-hero-stats{margin-top:14px !important;}
+.comm-hero-stat{background:rgba(255,255,255,.14) !important;border:1px solid rgba(255,255,255,.2) !important;border-radius:16px !important;padding:12px 14px !important;}
+.comm-filter-nav,.grid-comunidades .card-comm,.fallback-card{box-shadow:0 10px 24px rgba(15,23,42,.05) !important;}
+.comm-filter-nav{position:sticky;top:12px;z-index:5;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border:1px solid #dfe7f0;border-radius:18px;padding:10px;}
+.fallback-card{border-radius:18px !important;border:1px solid #dfe7f0 !important;padding:18px !important;background:#fff !important;}
+.fallback-card-top span{background:#eff6ff;border:1px solid #d8e6f8;color:#21527b;border-radius:999px;padding:6px 10px;font-size:.76rem;font-weight:800;}
+.fallback-card-btn{border:none;border-radius:12px;padding:12px 14px;background:linear-gradient(135deg,#21527b,#0b7768);color:#fff;font-weight:800;}
+@media (max-width:768px){.comm-hero-container{padding:18px !important;}.comm-filter-nav{top:8px;}}
+
 </style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+  <link rel="stylesheet" href="page-comunidade.css?v=20260209v24">
+
+<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+
+<style id="clean-community-overrides">
+body{background:#f4f7fb !important;}
+main{padding-top:18px !important;}
+.comm-hero-container{background:linear-gradient(135deg,#1f4d75 0%,#0b7768 100%) !important;border-radius:24px !important;padding:24px !important;box-shadow:0 18px 40px rgba(15,23,42,.10) !important;margin-bottom:20px !important;}
+.comm-title h1{font-size:clamp(1.7rem,3vw,2.4rem) !important;letter-spacing:-.02em;}
+.comm-title p{max-width:720px !important;line-height:1.55 !important;color:rgba(255,255,255,.88) !important;}
+.comm-hero-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:10px 0 8px;}
+.comm-hero-stat{padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(8px);}
+.comm-hero-stat small{display:block;color:rgba(255,255,255,.82);font-size:.78rem;font-weight:700;margin-bottom:4px;}
+.comm-hero-stat strong{font-size:1.25rem;color:#fff;}
+.search-bar-comm{background:rgba(255,255,255,.96) !important;border:1px solid rgba(255,255,255,.2);box-shadow:none !important;height:48px !important;width:min(100%,360px) !important;}
+.btn-create-comm{background:#fff !important;color:#10385a !important;box-shadow:none !important;height:48px !important;padding:0 18px !important;}
+.comm-layout{gap:20px !important;grid-template-columns:minmax(0,1fr) !important;}
+.fallback-card{padding:20px;border:1px solid #dbe5f0;border-radius:20px;background:linear-gradient(180deg,#fff,#f8fbff);box-shadow:0 10px 24px rgba(15,23,42,.05);display:grid;gap:12px;}
+.fallback-card-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.fallback-card-top span{padding:6px 10px;border-radius:999px;background:#e9f5f2;color:#0b7768;font-size:.78rem;font-weight:800;}
+.fallback-card p{margin:0;color:#5b6b7e;line-height:1.55;}
+.fallback-card-btn{height:42px;border:none;border-radius:12px;background:#10385a;color:#fff;font-weight:800;padding:0 14px;justify-self:start;}
+@media (max-width:768px){.comm-header{align-items:flex-start !important;}.header-actions{width:100%;flex-direction:column;align-items:stretch;}.search-bar-comm,.btn-create-comm{width:100% !important;}.comm-hero-stats{grid-template-columns:1fr;}.groups-scroll{gap:10px;}.group-img-ring{width:56px;height:56px;border-radius:16px;}.my-group-item span{font-size:.75rem;}}
+</style>
+  <link rel="stylesheet" href="ui-system.css">
+  <link rel="stylesheet" href="site-global-polish.css?v=20260313v24">
+
+<link href="comunidade-clean.css?v=20260317v26" rel="stylesheet"/>
+<script defer src="comunidade-clean.js?v=20260317v26"></script>
 </head>
 <body data-page="comunidade">
 <div class="popup" id="popup">
-  <div class="popup-content">
-    <span class="close-btn" onclick="fecharPopup()">&times;</span>
-    <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
-    <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
-    <p class="criar">Não tem uma conta? <a href="cadastro.html">Criar conta</a></p>
-  </div>
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
 </div>
 
 <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 
-<main class="comunidade-page">
-  <section class="comm-hero-container" aria-labelledby="comunidades-title">
-    <div class="comm-header">
-      <div class="comm-title">
-        <h1 id="comunidades-title">Comunidades</h1>
-        <p>Explore grupos locais, profissionais e interesses próximos com uma navegação mais rápida e um visual mais limpo.</p>
-      </div>
-      <div class="header-actions">
-        <label class="search-bar-comm" aria-label="Buscar comunidades">
-          <i class="bx bx-search"></i>
-          <input id="inputBuscaComm" type="text" placeholder="Buscar comunidades ou assuntos..." onkeyup="filtrarComunidadesTela(this.value)"/>
-        </label>
-        <button class="btn-create-comm" type="button" onclick="abrirModalCriarComm()">
-          <i class="bx bx-plus-circle"></i>
-          <span>Criar Grupo</span>
-        </button>
-      </div>
-    </div>
 
-    <section class="my-groups-section" aria-labelledby="meus-grupos-title">
-      <div class="section-label" id="meus-grupos-title">Meus grupos</div>
-      <div class="groups-scroll" id="listaMeusGrupos">
-        <div class="my-group-skeleton" aria-hidden="true"><div class="my-group-skeleton__thumb"></div><div class="my-group-skeleton__line"></div></div>
-        <div class="my-group-skeleton" aria-hidden="true"><div class="my-group-skeleton__thumb"></div><div class="my-group-skeleton__line"></div></div>
-        <div class="my-group-skeleton" aria-hidden="true"><div class="my-group-skeleton__thumb"></div><div class="my-group-skeleton__line"></div></div>
-      </div>
-    </section>
-  </section>
 
-  <div class="comm-layout">
-    <div class="main-feed-comm">
-      <div class="comm-filter-nav">
-        <button class="chips-arrow comm-filter-arrow left" type="button" aria-label="Categorias anteriores" onclick="scrollCommFiltros(-1)">
-          <i class="bx bx-chevron-left"></i>
-        </button>
-        <div class="filter-tabs" id="commFilterTabs">
-          <button class="tab-btn active" data-view="all" onclick="filtrarComunidadesTipo('todos', this)">Todos</button>
-          <button class="tab-btn" data-view="high" onclick="filtrarComunidadesTipo('em-alta', this)">Em alta</button>
-          <button class="tab-btn" data-view="near" onclick="filtrarComunidadesTipo('perto', this)">Perto de você</button>
-          <button class="tab-btn" data-view="new" onclick="filtrarComunidadesTipo('novos', this)">Novos</button>
-          <button class="tab-btn" data-view="pro" onclick="filtrarComunidadesTipo('Pro', this)">Profissionais</button>
-          <button class="tab-btn" data-view="condo" onclick="filtrarComunidadesTipo('Condomínio', this)">Condomínios</button>
-          <button class="tab-btn" data-view="hobby" onclick="filtrarComunidadesTipo('Hobby', this)">Hobbies</button>
-        </div>
-        <button class="chips-arrow comm-filter-arrow right" type="button" aria-label="Próximas categorias" onclick="scrollCommFiltros(1)">
-          <i class="bx bx-chevron-right"></i>
-        </button>
-      </div>
 
-      <div class="grid-comunidades" id="listaComunidades">
-        <div class="comm-skeleton-grid" aria-hidden="true">
-          <article class="comm-skeleton-card"><div class="comm-skeleton-card__cover"></div><div class="comm-skeleton-card__body"><div class="comm-skeleton-card__avatar"></div><div class="comm-skeleton-card__content"><div class="comm-skeleton-card__line is-title"></div><div class="comm-skeleton-card__line"></div><div class="comm-skeleton-card__line is-short"></div><div class="comm-skeleton-card__chips"><span></span><span></span><span></span></div></div><div class="comm-skeleton-card__button"></div></div></article>
-          <article class="comm-skeleton-card"><div class="comm-skeleton-card__cover"></div><div class="comm-skeleton-card__body"><div class="comm-skeleton-card__avatar"></div><div class="comm-skeleton-card__content"><div class="comm-skeleton-card__line is-title"></div><div class="comm-skeleton-card__line"></div><div class="comm-skeleton-card__line is-short"></div><div class="comm-skeleton-card__chips"><span></span><span></span><span></span></div></div><div class="comm-skeleton-card__button"></div></div></article>
-          <article class="comm-skeleton-card"><div class="comm-skeleton-card__cover"></div><div class="comm-skeleton-card__body"><div class="comm-skeleton-card__avatar"></div><div class="comm-skeleton-card__content"><div class="comm-skeleton-card__line is-title"></div><div class="comm-skeleton-card__line"></div><div class="comm-skeleton-card__line is-short"></div><div class="comm-skeleton-card__chips"><span></span><span></span><span></span></div></div><div class="comm-skeleton-card__button"></div></div></article>
-          <article class="comm-skeleton-card"><div class="comm-skeleton-card__cover"></div><div class="comm-skeleton-card__body"><div class="comm-skeleton-card__avatar"></div><div class="comm-skeleton-card__content"><div class="comm-skeleton-card__line is-title"></div><div class="comm-skeleton-card__line"></div><div class="comm-skeleton-card__line is-short"></div><div class="comm-skeleton-card__chips"><span></span><span></span><span></span></div></div><div class="comm-skeleton-card__button"></div></div></article>
-        </div>
-      </div>
-    </div>
-  </div>
-</main>
 
-<button class="comm-floating-create" type="button" aria-label="Criar grupo" onclick="abrirModalCriarComm()"><i class="bx bx-plus"></i></button>
 
-<nav class="bottom-nav">
-  <a class="item" href="index.html"><img class="icon azul" loading="lazy" decoding="async" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
-  <a class="item active" href="comunidade.html"><img class="icon verde" loading="lazy" decoding="async" src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png"/><span>Grupos</span></a>
-  <a class="item" href="meuperfil.html"><img class="icon verde" loading="lazy" decoding="async" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
-</nav>
-
-<div class="modal-overlay" id="modalCriarComm">
-  <div class="modal-card">
-    <button type="button" aria-label="Fechar" onclick="fecharModalCriarComm()" style="position:absolute;top:15px;right:15px;border:none;background:none;font-size:1.5rem;cursor:pointer;line-height:1;">×</button>
-    <h2 style="margin-bottom:20px;color:var(--cor2);">Novo Grupo</h2>
-    <form onsubmit="criarNovaComunidade(event)">
-      <label class="form-label">Nome do grupo</label>
-      <input class="form-input" id="commNome" type="text" placeholder="Ex: Eletricistas Unidos" required/>
-      <label class="form-label">Descrição</label>
-      <textarea class="form-textarea" id="commDesc" placeholder="Sobre o que é este grupo?" required></textarea>
-      <label class="form-label">Tipo de comunidade</label>
-      <select class="form-select" id="commTipo">
-        <option value="Pro">Profissional (networking)</option>
-        <option value="Condomínio">Condomínio / vizinhos</option>
-        <option value="Hobby">Hobby / interesse</option>
-      </select>
-      <label class="form-label">Privacidade</label>
-      <select class="form-select" id="commPrivacidade">
-        <option value="publico">Público</option>
-        <option value="privado">Privado</option>
-      </select>
-      <label class="form-label">Imagem do grupo (opcional)</label>
-      <input class="form-input" id="commFoto" type="file" accept="image/*"/>
-      <label class="form-label">Capa do grupo (opcional)</label>
-      <input class="form-input" id="commCapa" type="file" accept="image/*"/>
-      <button class="btn-submit-modal" type="submit">Criar comunidade</button>
-    </form>
-  </div>
+<main>
+<div class="comm-hero-container">
+<div class="comm-header">
+<div class="comm-title">
+<h1>Comunidades</h1>
+<p>Explore grupos locais, profissionais e interesses pr�ximos em uma p�gina mais leve e previs�vel.</p>
 </div>
-
+<div class="header-actions">
+<div class="search-bar-comm">
+<i class="bx bx-search"></i>
+<input id="inputBuscaComm" onkeyup="filtrarComunidadesTela(this.value)" placeholder="Buscar comunidades ou assuntos..." type="text"/>
+</div>
+<button class="btn-create-comm" onclick="abrirModalCriarComm()"><i class="bx bx-plus-circle"></i> Criar Grupo</button>
+</div>
+</div>
+<section class="my-groups-section">
+<div class="section-label">Resumo r�pido</div>
+<div class="comm-hero-stats" aria-label="Resumo das comunidades">
+<div class="comm-hero-stat"><small>Comunidades</small><strong id="heroTotalGroups">120+</strong></div>
+<div class="comm-hero-stat"><small>Ativas agora</small><strong id="heroOnlineNow">24</strong></div>
+<div class="comm-hero-stat"><small>Seus grupos</small><strong id="heroJoinedGroups">0</strong></div>
+</div>
+<div class="groups-scroll" id="listaMeusGrupos">
+<div class="doke-inline-loader"><span aria-hidden="true" class="doke-inline-loader__spinner"></span><span>Carregando seus grupos...</span></div>
+</div>
+</section>
+</div>
+<div class="comm-layout">
+<div class="main-feed-comm">
+<div class="comm-filter-nav">
+<button aria-label="Categorias anteriores" class="chips-arrow comm-filter-arrow left" onclick="scrollCommFiltros(-1)" type="button">
+<i class="bx bx-chevron-left"></i>
+</button>
+<div class="filter-tabs" id="commFilterTabs">
+<button class="tab-btn active" data-view="all" onclick="filtrarComunidadesTipo('todos', this)">Todos</button>
+<button class="tab-btn" data-view="high" onclick="filtrarComunidadesTipo('em-alta', this)">Em alta</button>
+<button class="tab-btn" data-view="near" onclick="filtrarComunidadesTipo('perto', this)">Perto de voc�</button>
+<button class="tab-btn" data-view="new" onclick="filtrarComunidadesTipo('novos', this)">Novos</button>
+<button class="tab-btn" data-view="pro" onclick="filtrarComunidadesTipo('Pro', this)">Profissionais</button>
+<button class="tab-btn" data-view="condo" onclick="filtrarComunidadesTipo('Condom�nio', this)">Condom�nios</button>
+<button class="tab-btn" data-view="hobby" onclick="filtrarComunidadesTipo('Hobby', this)">Hobbies</button>
+</div>
+<button aria-label="Pr�ximas categorias" class="chips-arrow comm-filter-arrow right" onclick="scrollCommFiltros(1)" type="button">
+<i class="bx bx-chevron-right"></i>
+</button>
+</div>
+<div class="grid-comunidades" id="listaComunidades">
+<div class="doke-inline-loader"><span aria-hidden="true" class="doke-inline-loader__spinner"></span><span>Carregando comunidades...</span></div>
+</div>
+</div>
+</div>
+</main>
+<button class="comm-floating-create" onclick="abrirModalCriarComm()" type="button" aria-label="Criar grupo"><i class="bx bx-plus"></i></button>
+<nav class="bottom-nav">
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>In�cio</span></a>
+<a class="item active" href="comunidade.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png"/><span>Grupos</span></a>
+<a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
+</nav>
+<div class="modal-overlay" id="modalCriarComm">
+<div class="modal-card">
+<button onclick="fecharModalCriarComm()" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:1.5rem; cursor:pointer;">�</button>
+<h2 style="margin-bottom:20px; color:var(--cor2);">Novo Grupo</h2>
+<form onsubmit="criarNovaComunidade(event)">
+<label class="form-label">Nome do Grupo</label>
+<input class="form-input" id="commNome" placeholder="Ex: Eletricistas Unidos" required="" type="text"/>
+<label class="form-label">Descrição</label>
+<textarea class="form-textarea" id="commDesc" placeholder="Sobre o que �. este grupo?" required=""></textarea>
+<label class="form-label">Tipo de Comunidade</label>
+<select class="form-select" id="commTipo">
+<option value="Pro">Profissional (Networking)</option>
+<option value="Condom�nio">Condom�nio / Vizinhos</option>
+<option value="Hobby">Hobby / Interesse</option>
+</select>
+<label class="form-label">Imagem de Capa (Opcional)</label>
+<input accept="image/*" class="form-input" id="commFoto" type="file"/>
+<button class="btn-submit-modal" type="submit">Criar Comunidade</button>
+</form>
+</div>
+</div>
 <script>
-window.abrirModalCriarComm = function(){
-  const modal = document.getElementById('modalCriarComm');
-  if (modal) modal.style.display = 'flex';
-};
-window.fecharModalCriarComm = function(){
-  const modal = document.getElementById('modalCriarComm');
-  if (modal) modal.style.display = 'none';
-};
+  window.abrirModalCriarComm = function() {
+    document.getElementById('modalCriarComm').style.display = 'flex';
+  }
+  window.fecharModalCriarComm = function() {
+    document.getElementById('modalCriarComm').style.display = 'none';
+  }
 
-function _getCardTitle(card){
-  const title = card.querySelector('.com-title') || card.querySelector('.card-title') || card.querySelector('[data-title]');
-  return (title ? title.textContent : '').trim();
-}
-function _getCardTipo(card){
-  const attr = (card.getAttribute('data-tipo') || '').trim();
-  if (attr) return attr;
-  const pill = card.querySelector('.pill');
-  return (pill ? pill.textContent : '').trim();
-}
-window.atualizarHeroStats = function(){};
-window.filtrarComunidadesTela = function(termo){
-  const q = String(termo || '').toLowerCase().trim();
-  document.querySelectorAll('#listaComunidades .com-card, #listaComunidades .card-comm').forEach((card)=>{
-    const text = `${_getCardTitle(card)} ${(card.querySelector('.com-desc')?.textContent || '')} ${_getCardTipo(card)}`.toLowerCase();
-    card.style.display = !q || text.includes(q) ? '' : 'none';
-  });
-};
-window.filtrarComunidadesTipo = function(tipo, btn){
-  document.querySelectorAll('.tab-btn').forEach((b)=>b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  const target = String(tipo || 'todos').toLowerCase();
-  const cards = Array.from(document.querySelectorAll('#listaComunidades .com-card, #listaComunidades .card-comm'));
-  const newCutoff = Math.max(0, Math.ceil(cards.length * 0.35));
-  cards.forEach((card, index)=>{
-    const text = String(card.textContent || '').toLowerCase();
-    const tipoCard = _getCardTipo(card).toLowerCase();
-    const members = Number((text.match(/(\d+)\s*membros?/i) || [0, 0])[1] || 0);
-    let ok = false;
-    if (target === 'todos') ok = true;
-    else if (target === 'em-alta') ok = members >= 50 || tipoCard.includes('pro');
-    else if (target === 'novos') ok = index < newCutoff;
-    else if (target === 'perto') ok = /bairro|cidade|regiao|região|local|vizinh/.test(text) || tipoCard.includes('condom');
-    else ok = tipoCard === target || tipoCard.includes(target);
-    card.style.display = ok ? '' : 'none';
-  });
-};
-function atualizarSetasFiltrosComm(){
-  const tabs = document.getElementById('commFilterTabs');
-  if (!tabs) return;
-  const prev = document.querySelector('.comm-filter-arrow.left');
-  const next = document.querySelector('.comm-filter-arrow.right');
-  const maxLeft = Math.max(0, tabs.scrollWidth - tabs.clientWidth);
-  if (prev) prev.disabled = tabs.scrollLeft <= 2;
-  if (next) next.disabled = tabs.scrollLeft >= maxLeft - 2;
-}
-window.scrollCommFiltros = function(dir){
-  const tabs = document.getElementById('commFilterTabs');
-  if (!tabs) return;
-  const amount = Math.max(150, Math.floor(tabs.clientWidth * 0.75));
-  tabs.scrollBy({ left: dir < 0 ? -amount : amount, behavior: 'smooth' });
-};
-(function(){
-  const runtime = window.dokePageRuntime || null;
-  const on = (target, type, handler, options) => {
-    if (!target || typeof target.addEventListener !== 'function') return;
-    if (runtime && typeof runtime.on === 'function') return runtime.on(target, type, handler, options);
+  function _getCardTitle(card){
+    const t = card.querySelector('.com-title') || card.querySelector('.card-title') || card.querySelector('[data-title]');
+    return (t ? t.textContent : '').trim();
+  }
+
+  function _getCardTipo(card){
+    const attr = (card.getAttribute('data-tipo') || '').trim();
+    if (attr) return attr;
+    const pill = card.querySelector('.pill');
+    return (pill ? pill.textContent : '').trim();
+  }
+
+  window.filtrarComunidadesTela = function(termo) {
+    const q = (termo || '').toLowerCase().trim();
+    const cards = document.querySelectorAll('.com-card, .card-comm');
+    cards.forEach(card => {
+      const titulo = _getCardTitle(card).toLowerCase();
+      card.style.display = (!q || titulo.includes(q)) ? '' : 'none';
+    });
+    atualizarHeroStats();
+  }
+
+  window.filtrarComunidadesTipo = function(tipo, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const target = (tipo || 'todos').toLowerCase();
+    const cards = Array.from(document.querySelectorAll('.com-card, .card-comm'));
+    const total = cards.length;
+    const newCutoff = Math.max(1, Math.ceil(total * 0.2));
+
+    cards.forEach((card, index) => {
+      const t = _getCardTipo(card).toLowerCase();
+      const text = (card.textContent || '').toLowerCase();
+      const membersText = text.match(/(\d+)\s*membros?/i);
+      const members = membersText ? Number(membersText[1]) : 0;
+      let ok = false;
+      if (target === 'todos') ok = true;
+      else if (target === 'em-alta') ok = members >= 50 || t.includes('pro');
+      else if (target === 'novos') ok = index < newCutoff;
+      else if (target === 'perto') ok = /bairro|cidade|regiao|local|vizinh/.test(text) || t.includes('condom');
+      else ok = (t === target) || (t.includes(target));
+      card.style.display = ok ? '' : 'none';
+    });
+    atualizarHeroStats();
+  }
+
+  function atualizarSetasFiltrosComm() {
+    const tabs = document.getElementById('commFilterTabs');
+    if (!tabs) return;
+    const prev = document.querySelector('.comm-filter-arrow.left');
+    const next = document.querySelector('.comm-filter-arrow.right');
+    const maxLeft = Math.max(0, tabs.scrollWidth - tabs.clientWidth);
+    if (prev) prev.disabled = tabs.scrollLeft <= 2;
+    if (next) next.disabled = tabs.scrollLeft >= maxLeft - 2;
+  }
+
+  window.scrollCommFiltros = function(dir) {
+    const tabs = document.getElementById('commFilterTabs');
+    if (!tabs) return;
+    const amount = Math.max(150, Math.floor(tabs.clientWidth * 0.75));
+    tabs.scrollBy({ left: (dir < 0 ? -amount : amount), behavior: 'smooth' });
+  }
+
+  function atualizarHeroStats() {
+    const allCards = Array.from(document.querySelectorAll('#listaComunidades .com-card, #listaComunidades .card-comm'));
+    const visibleCards = allCards.filter((c) => c.style.display !== 'none');
+    const joined = document.querySelectorAll('#listaMeusGrupos .my-group-item').length;
+    let membersTotal = 0;
+    visibleCards.forEach((card) => {
+      const m = (card.textContent || '').match(/(\d+)\s*membros?/i);
+      if (m) membersTotal += Number(m[1] || 0);
+    });
+    const avgOnline = visibleCards.length ? Math.max(4, Math.round((membersTotal / visibleCards.length) * 0.12)) : 0;
+    const totalEl = document.getElementById('heroTotalGroups');
+    const joinedEl = document.getElementById('heroJoinedGroups');
+    const onlineEl = document.getElementById('heroOnlineNow');
+    if (totalEl) totalEl.textContent = String(visibleCards.length || allCards.length || 0);
+    if (joinedEl) joinedEl.textContent = String(joined || 0);
+    if (onlineEl) onlineEl.textContent = String(avgOnline || 0);
+  }
+
+  const __commRuntime = window.dokePageRuntime || null;
+  const __commOn = (target, type, handler, options) => {
+    if (!target || typeof target.addEventListener !== 'function' || !type || typeof handler !== 'function') return;
+    if (__commRuntime && typeof __commRuntime.on === 'function') {
+      __commRuntime.on(target, type, handler, options);
+      return;
+    }
     target.addEventListener(type, handler, options);
   };
-  const later = (handler, ms) => {
-    if (runtime && typeof runtime.timeout === 'function') return runtime.timeout(handler, ms);
-    return setTimeout(handler, ms);
-  };
-  function setup(){
-    const tabs = document.getElementById('commFilterTabs');
-    if (tabs){
-      on(tabs, 'scroll', atualizarSetasFiltrosComm, { passive:true });
-      on(window, 'resize', atualizarSetasFiltrosComm);
-      later(atualizarSetasFiltrosComm, 40);
+  const __commLater = (handler, ms) => {
+    if (typeof handler !== 'function') return;
+    if (__commRuntime && typeof __commRuntime.timeout === 'function') {
+      __commRuntime.timeout(handler, ms);
+      return;
     }
-    const runLoaders = async () => {
-      const attempts = [0, 220, 650, 1500];
-      for (const delay of attempts){
-        if (delay) await new Promise((resolve)=>later(resolve, delay));
-        const list = document.getElementById('listaComunidades');
-        const mine = document.getElementById('listaMeusGrupos');
-        const hasGeneralCards = !!list && !!list.querySelector('.com-card, .card-comm');
-        const hasGeneralState = !!list && !!list.querySelector('.comm-state[data-kind="empty"], .comm-state[data-kind="error"]');
-        const hasMineCards = !!mine && !!mine.querySelector('.my-group-item');
-        const hasMineState = !!mine && !!mine.querySelector('.comm-state[data-kind="empty"], .comm-state[data-kind="error"]');
+    setTimeout(handler, ms);
+  };
+  const __commObserve = (observer) => {
+    if (!observer) return observer;
+    if (__commRuntime && typeof __commRuntime.observer === 'function') {
+      return __commRuntime.observer(observer);
+    }
+    if (typeof window.dokeRegisterTeardown === 'function') {
+      window.dokeRegisterTeardown(() => { try { observer.disconnect(); } catch(_){} });
+    }
+    return observer;
+  };
 
-        if (!hasGeneralCards && !hasGeneralState){
-          try { if (typeof window.carregarComunidadesGerais === 'function') await window.carregarComunidadesGerais({ forceFresh: delay > 0, preserveVisible: true }); } catch(e) { console.warn(e); }
-        }
-        if (!hasMineCards && !hasMineState){
-          try { if (typeof window.carregarMeusGrupos === 'function') await window.carregarMeusGrupos({ forceFresh: delay > 0, preserveVisible: true }); } catch(e) { console.warn(e); }
-        }
-
-        const readyGeneral = !!list && !!list.querySelector('.com-card, .card-comm, .comm-state[data-kind="empty"], .comm-state[data-kind="error"]');
-        const readyMine = !!mine && !!mine.querySelector('.my-group-item, .comm-state[data-kind="empty"], .comm-state[data-kind="error"]');
-        if (readyGeneral && readyMine) break;
-      }
+  function setupCommObservers() {
+    const list = document.getElementById('listaComunidades');
+    const my = document.getElementById('listaMeusGrupos');
+    if (!list) return;
+    const sync = () => {
+      atualizarHeroStats();
     };
-    runLoaders().catch((e)=>console.warn(e));
+    const mo = __commObserve(new MutationObserver(sync));
+    mo.observe(list, { childList: true, subtree: true });
+    if (my) {
+      const moMy = __commObserve(new MutationObserver(sync));
+      moMy.observe(my, { childList: true, subtree: true });
+    }
+    sync();
   }
-  if (document.readyState === 'loading') on(document, 'DOMContentLoaded', setup);
-  else setup();
+
+  // Inicia carregamento (dados reais)
+  const __initComunidadePage = () => {
+    try{
+      if (window.carregarComunidadesGerais) window.carregarComunidadesGerais();
+      const bootMyGroups = () => { if (window.carregarMeusGrupos) window.carregarMeusGrupos(); };
+      if ('requestIdleCallback' in window) requestIdleCallback(bootMyGroups, { timeout: 1200 });
+      else __commLater(bootMyGroups, 220);
+    }catch(e){ console.warn(e); }
+
+    const tabs = document.getElementById('commFilterTabs');
+    if (tabs) {
+      __commOn(tabs, 'scroll', atualizarSetasFiltrosComm, { passive: true });
+      __commOn(window, 'resize', atualizarSetasFiltrosComm);
+      __commLater(atualizarSetasFiltrosComm, 40);
+    }
+    setupCommObservers();
+  };
+  if (document.readyState === 'loading') __commOn(document, 'DOMContentLoaded', __initComunidadePage);
+  else __initComunidadePage();
+</script>
+<script defer="" src="doke-toast.js?v=20260313v03"></script>
+<script defer="" src="doke-alerts.js?v=20260313v03"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js?v=20260313v02"></script>
+
+<script>
+(function(){
+  const sample = [
+    {titulo:'Profissionais perto de voc�',desc:'Encontre trocas �teis, oportunidades locais e networking por cidade.',tag:'Em alta',acao:'Explorar'},
+    {titulo:'Neg�cios e servi�os',desc:'Discuss�es mais objetivas sobre atendimento, pre�o, agenda e capta��o.',tag:'Profissional',acao:'Abrir'},
+    {titulo:'Comunidade do bairro',desc:'Pedidos r�pidos, indica��es e avisos �teis sem exagero visual.',tag:'Perto de voc�',acao:'Ver grupos'}
+  ];
+  function esc(v){return String(v||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));}
+  function paintFallback(){
+    const list = document.getElementById('listaComunidades');
+    if(!list) return;
+    const hasCards = list.querySelector('.com-card,.card-comm');
+    if(hasCards) return;
+    list.innerHTML = sample.map((item)=>`<article class="card-comm fallback-card"><div class="comm-card-content"><div class="comm-card-header"><h3>${esc(item.titulo)}</h3><span class="pill">${esc(item.tag)}</span></div><p>${esc(item.desc)}</p><button class="btn-ver-grupo" type="button">${esc(item.acao)}</button></div></article>`).join('');
+  }
+  function bindSearch(){
+    const input = document.getElementById('inputBuscaComm');
+    const list = document.getElementById('listaComunidades');
+    if(!input || !list || input.__dokeBound) return;
+    input.__dokeBound = true;
+    input.addEventListener('input', function(){
+      const q = String(this.value||'').toLowerCase();
+      list.querySelectorAll('.com-card,.card-comm').forEach((card)=>{
+        const txt = String(card.textContent||'').toLowerCase();
+        card.style.display = !q || txt.includes(q) ? '' : 'none';
+      });
+    });
+  }
+  window.addEventListener('load', function(){ setTimeout(bindSearch, 300); }, {once:true});
 })();
 </script>
-<script defer src="doke-toast.js?v=20260313v03"></script>
-<script defer src="doke-alerts.js?v=20260313v03"></script>
-<script defer src="doke-config.js"></script>
-<script defer src="doke-ux.js?v=20260313v02"></script>
-<script defer src="doke-shell.js?v=20260313v106"></script>
-<script src="site-global-polish.js"></script>
-<script defer src="comunidade-modal-fix.js?v=20260316v5"></script>
+<script defer="" src="doke-shell.js?v=20260313v106"></script>
+  <script src="site-global-polish.js"></script>
+<script defer src="comunidade-modal-fix.js?v=20260316v2"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
