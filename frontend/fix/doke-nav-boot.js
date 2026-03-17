@@ -5,16 +5,7 @@
   const currentPath = `${location.pathname || ""}${location.search || ""}`;
   const currentFileName = String((location.pathname || "").split("/").pop() || "").toLowerCase();
   const isHomePage = currentFileName === "" || currentFileName === "index.html";
-  const LOGO_SRC = "assets/Imagens/doke-logo.png";
-  const TRANSITION_MIN_MS = 320;
-  const TRANSITION_FADE_MS = 170;
-  const BOOT_HOLD_ATTR = "data-doke-boot-hold";
-  const BOOT_HOLD_TIMEOUT_MS = 4500;
-  let overlayShownAt = 0;
-  let overlayClearTimer = 0;
-  let overlayHoldTimer = 0;
-  let overlayHoldReleased = false;
-  const appShellRouteFiles = new Set([
+  const migratedAppRoutes = new Set([
     "index.html",
     "busca.html",
     "detalhes.html",
@@ -26,12 +17,12 @@
     "escolheranuncio.html",
     "ajuda.html",
     "carteira.html",
-    "historico.html",
     "dadospessoais.html",
     "enderecos.html",
     "preferencia-notif.html",
     "idioma.html",
     "privacidade.html",
+    "senha.html",
     "pagamentos.html",
     "comunidade.html",
     "grupo.html",
@@ -60,15 +51,22 @@
     "explorar.html",
     "estatistica.html",
     "admin-validacoes.html",
+    "negocios.html",
     "acompanhamento-profissional.html",
     "empresas.html",
     "meuempreendimento.html",
-    "negocios.html",
-    "pedido.html",
-    "perfil-qna.html",
+    "negocio.html",
     "sobre-doke.html"
   ]);
-
+  const LOGO_SRC = "assets/Imagens/doke-logo.png";
+  const TRANSITION_MIN_MS = 320;
+  const TRANSITION_FADE_MS = 170;
+  const BOOT_HOLD_ATTR = "data-doke-boot-hold";
+  const BOOT_HOLD_TIMEOUT_MS = 4500;
+  let overlayShownAt = 0;
+  let overlayClearTimer = 0;
+  let overlayHoldTimer = 0;
+  let overlayHoldReleased = false;
   const protectedFiles = new Set([
     "acompanhamento-profissional.html",
     "admin-validacoes.html",
@@ -219,7 +217,7 @@
         if (stored.uid) persistLoginMarkers(stored.uid);
         return true;
       }
-      return hasWeakTrustedMarkers();
+      return false;
     } catch (_e) {
       return false;
     }
@@ -270,20 +268,17 @@
     return;
   }
 
-  function maybeRedirectDirectPageToAppShell() {
+  function maybeRedirectMigratedRouteToApp() {
     try {
-      if (currentFileName === "" || currentFileName === "index.html") return false;
-      if (!appShellRouteFiles.has(currentFileName)) return false;
-      const qs = new URLSearchParams(location.search || "");
-      const noShell = String(qs.get("noshell") || "") === "1";
-      const isEmbed = String(qs.get("embed") || "") === "1" || String(qs.get("modal") || "") === "1";
-      let insideFrame = false;
-      try { insideFrame = window.self !== window.top; } catch (_e) { insideFrame = true; }
-      if (noShell || isEmbed || insideFrame) return false;
-      const routeTarget = `${currentFileName}${location.search || ""}${location.hash || ""}`;
-      const targetUrl = `index.html?route=${encodeURIComponent(routeTarget)}&fromLegacyRoute=1`;
-      try { document.documentElement.style.visibility = "hidden"; } catch (_e) {}
-      location.replace(targetUrl);
+      if (isHomePage) return false;
+      if (!migratedAppRoutes.has(currentFileName)) return false;
+      const params = new URLSearchParams(location.search || '');
+      if (params.get('noshell') === '1' || params.get('embed') === '1' || params.get('v2frame') === '1') return false;
+      if (params.get('fromLegacyRoute') === '1') return false;
+      const target = new URL('index.html', location.href);
+      target.searchParams.set('fromLegacyRoute', '1');
+      target.searchParams.set('route', `${currentFileName}${location.search || ''}`);
+      location.replace(target.toString());
       return true;
     } catch (_e) {
       return false;
@@ -542,8 +537,8 @@
   cleanupDevServiceWorker();
   try { sessionStorage.removeItem(NAV_PREBOOT_KEY); } catch (_e) {}
   try { document.documentElement.classList.remove(ENTER_CLASS, READY_CLASS, "doke-route-pending"); } catch (_e) {}
+  if (maybeRedirectMigratedRouteToApp()) return;
   if (maybeRedirectProtectedPage()) return;
-  if (maybeRedirectDirectPageToAppShell()) return;
 
   activateOverlay();
   forceHomeTop();

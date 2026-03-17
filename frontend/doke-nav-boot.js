@@ -217,7 +217,7 @@
         if (stored.uid) persistLoginMarkers(stored.uid);
         return true;
       }
-      return hasWeakTrustedMarkers();
+      return false;
     } catch (_e) {
       return false;
     }

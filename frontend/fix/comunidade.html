@@ -1,769 +1,337 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Comunidades - Doke</title>
-  <meta name="description" content="Explore grupos, assuntos e comunidades da Doke em uma experiência limpa e estável.">
-  <script src="doke-nav-boot.js?v=20260315c01"></script>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
-  <link rel="preconnect" href="https://unpkg.com">
-  <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
-  <link rel="stylesheet" href="style.css?v=20260207v26">
-  <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
-  <link rel="stylesheet" href="doke-layout-fix.css?v=20260207v21">
-  <link rel="stylesheet" href="doke-shell.css?v=20260207v21">
-  <link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
-  <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+<link href="https://cdn.jsdelivr.net" rel="preconnect"/>
+<link href="https://unpkg.com" rel="preconnect"/>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script defer="" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer="" src="supabase-init.js?v=20260312v44"></script>
+<script defer="" src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script defer="" src="firebase-auth-compat-supabase.js?v=20260312v13"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="doke-nav-boot.js?v=20260313v13"></script>
+<title>Comunidades - Doke</title>
+    <meta name="description" content="Participe de comunidades, publique conte�dos e interaja com grupos locais.">
+    <meta property="og:title" content="Doke - Comunidades">
+    <meta property="og:description" content="Participe de comunidades, publique conte�dos e interaja com grupos locais.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/Imagens/doke-logo.png">
+    <meta name="theme-color" content="#0b7768">
+
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<script defer="" src="script.js?v=20260313v73"></script>
+<script defer="" src="comunidades-supabase-patch.js?v=20260313v01"></script>
+<script defer="" src="comunidades-meusgrupos-fix.js?v=20260313v02"></script>
+<link rel="stylesheet" href="comunidade-reset.css?v=20260317v30">
+  <link rel="stylesheet" href="ui-system.css">
   <link rel="stylesheet" href="site-global-polish.css?v=20260313v24">
-  <link rel="stylesheet" href="page-comunidade.css?v=20260315overlay7">
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script defer src="supabase-init.js?v=20260312v44"></script>
+<link rel="stylesheet" href="comunidade-hero-guard.css?v=20260317v30">
+<script defer src="comunidade-hero-guard.js?v=20260317v30"></script>
 </head>
 <body data-page="comunidade">
-  <div class="comm-boot" id="commBoot" aria-hidden="true">
-    <img class="comm-boot__logo" src="assets/Imagens/doke-logo.png" alt="Doke">
-  </div>
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
 
-  <main class="comm-page">
-    <div class="comm-shell">
-      <section class="comm-hero" aria-labelledby="commHeroTitle">
-        <div class="comm-hero__copy">
-          <h1 id="commHeroTitle">Comunidades</h1>
-          <p>Explore grupos locais, profissionais e interesses em uma navegação mais previsível, com busca rápida e cards mais limpos.</p>
-        </div>
-        <div class="comm-hero__actions">
-          <label class="comm-search" aria-label="Buscar comunidades">
-            <i class="bx bx-search"></i>
-            <input id="commSearch" type="search" placeholder="Buscar comunidades ou assuntos...">
-          </label>
-          <button class="comm-create-btn" type="button" id="commCreateBtn"><i class="bx bx-plus-circle"></i> Criar grupo</button>
-        </div>
-      </section>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 
-      <section class="comm-joined" id="joinedWrap" aria-label="Meus grupos" hidden>
-        <div class="comm-section-label">Meus grupos</div>
-        <div class="comm-joined__list" id="joinedGroups"></div>
-      </section>
 
-      <section class="comm-filters" aria-label="Filtros de comunidades">
-        <button class="comm-filters__arrow" type="button" id="filtersPrev" aria-label="Categorias anteriores"><i class="bx bx-chevron-left"></i></button>
-        <div class="comm-filters__track" id="filtersTrack">
-          <button class="comm-filter is-active" data-filter="all" type="button">Todos</button>
-          <button class="comm-filter" data-filter="trending" type="button">Em alta</button>
-          <button class="comm-filter" data-filter="near" type="button">Perto de você</button>
-          <button class="comm-filter" data-filter="new" type="button">Novos</button>
-          <button class="comm-filter" data-filter="pro" type="button">Profissionais</button>
-          <button class="comm-filter" data-filter="condominio" type="button">Condomínios</button>
-          <button class="comm-filter" data-filter="hobby" type="button">Hobbies</button>
-        </div>
-        <button class="comm-filters__arrow" type="button" id="filtersNext" aria-label="Próximas categorias"><i class="bx bx-chevron-right"></i></button>
-      </section>
 
-      <section class="comm-grid" id="communitiesGrid" aria-live="polite"></section>
-    </div>
 
-      <section class="comm-compose" id="commCreateModal" hidden aria-labelledby="commCreateTitle">
-        <button class="comm-compose__backdrop" type="button" data-close-create aria-label="Fechar criação de grupo"></button>
-        <div class="comm-compose__sheet" role="dialog" aria-modal="true" aria-labelledby="commCreateTitle">
-          <div class="comm-compose__head">
-            <div class="comm-compose__titlewrap">
-              <span class="comm-compose__eyebrow">Novo grupo</span>
-              <h2 id="commCreateTitle">Criar grupo</h2>
-              <p>Monte sua comunidade com nome, descrição, tipo, privacidade e foto sem sair da página.</p>
-            </div>
-            <button class="comm-compose__close" type="button" data-close-create aria-label="Fechar"><i class="bx bx-x"></i></button>
-          </div>
 
-          <div class="comm-compose__body">
-            <form class="comm-form" id="commCreateForm">
-              <div class="comm-form__hero">
-                <div class="comm-form__hero-copy">
-                  <h3>Informações principais</h3>
-                  <p>Preencha os dados abaixo para publicar seu grupo do jeito certo já na primeira versão.</p>
-                </div>
-                <div class="comm-form__hero-badge">
-                  <i class="bx bx-group"></i>
-                  <span>Doke</span>
-                </div>
-              </div>
 
-              <label class="comm-form__field">
-                <span>Nome do grupo</span>
-                <input id="commNome" name="nome" type="text" maxlength="70" placeholder="Ex: Profissionais de Salvador" required>
-              </label>
-              <label class="comm-form__field">
-                <span>Descrição</span>
-                <textarea id="commDesc" name="descricao" rows="5" maxlength="220" placeholder="Explique rapidamente o objetivo da comunidade." required></textarea>
-              </label>
-              <div class="comm-form__row">
-                <label class="comm-form__field">
-                  <span>Tipo</span>
-                  <select id="commTipo" name="tipo">
-                    <option value="Profissional">Profissional</option>
-                    <option value="Condomínio">Condomínio</option>
-                    <option value="Hobby">Hobby</option>
-                    <option value="Bairro">Bairro</option>
-                  </select>
-                </label>
-                <label class="comm-form__field">
-                  <span>Privacidade</span>
-                  <select id="commPrivacidade" name="privacidade">
-                    <option value="publico">Público</option>
-                    <option value="privado">Privado</option>
-                  </select>
-                </label>
-              </div>
-              <label class="comm-form__field">
-                <span>Foto do grupo</span>
-                <div class="comm-upload">
-                  <input class="comm-upload__input" id="commFoto" name="foto" type="file" accept="image/*">
-                  <label class="comm-upload__button" for="commFoto">Escolher foto</label>
-                  <span class="comm-upload__name" id="commFotoName">Nenhum arquivo escolhido</span>
-                </div>
-              </label>
-              <label class="comm-form__field">
-                <span>Foto da capa</span>
-                <div class="comm-upload comm-upload--cover">
-                  <input class="comm-upload__input" id="commCapa" name="capa" type="file" accept="image/*">
-                  <label class="comm-upload__button" for="commCapa">Escolher capa</label>
-                  <div class="comm-upload__meta">
-                    <span class="comm-upload__name" id="commCapaName">Nenhum arquivo escolhido</span>
-                    <small>Use uma imagem horizontal para a capa do card.</small>
-                  </div>
-                </div>
-              </label>
-              <div class="comm-form__actions">
-                <button class="comm-form__ghost" type="button" data-close-create>Cancelar</button>
-                <button class="comm-create-btn" type="submit" id="commCreateSubmit"><i class="bx bx-plus-circle"></i> Criar grupo</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </section>
-  </main>
+<main>
+<div class="comm-hero-container">
+<div class="comm-header">
+<div class="comm-title">
+<h1>Comunidades</h1>
+<p>Explore grupos locais, profissionais e interesses pr�ximos em uma p�gina mais leve e previs�vel.</p>
+</div>
+<div class="header-actions">
+<div class="search-bar-comm">
+<i class="bx bx-search"></i>
+<input id="inputBuscaComm" onkeyup="filtrarComunidadesTela(this.value)" placeholder="Buscar comunidades ou assuntos..." type="text"/>
+</div>
+<button class="btn-create-comm" onclick="abrirModalCriarComm()"><i class="bx bx-plus-circle"></i> Criar Grupo</button>
+</div>
+</div>
+<section class="my-groups-section">
+<div class="section-label">Resumo r�pido</div>
+<div class="comm-hero-stats" aria-label="Resumo das comunidades">
+<div class="comm-hero-stat"><small>Comunidades</small><strong id="heroTotalGroups">120+</strong></div>
+<div class="comm-hero-stat"><small>Ativas agora</small><strong id="heroOnlineNow">24</strong></div>
+<div class="comm-hero-stat"><small>Seus grupos</small><strong id="heroJoinedGroups">0</strong></div>
+</div>
+<div class="groups-scroll" id="listaMeusGrupos">
+<div class="comm-skeleton-row"><div class="comm-skel-thumb"></div><div class="comm-skel-thumb"></div><div class="comm-skel-thumb"></div></div>
+</div>
+</section>
+</div>
+<div class="comm-layout">
+<div class="main-feed-comm">
+<div class="comm-filter-nav">
+<button aria-label="Categorias anteriores" class="chips-arrow comm-filter-arrow left" onclick="scrollCommFiltros(-1)" type="button">
+<i class="bx bx-chevron-left"></i>
+</button>
+<div class="filter-tabs" id="commFilterTabs">
+<button class="tab-btn active" data-view="all" onclick="filtrarComunidadesTipo('todos', this)">Todos</button>
+<button class="tab-btn" data-view="high" onclick="filtrarComunidadesTipo('em-alta', this)">Em alta</button>
+<button class="tab-btn" data-view="near" onclick="filtrarComunidadesTipo('perto', this)">Perto de voc�</button>
+<button class="tab-btn" data-view="new" onclick="filtrarComunidadesTipo('novos', this)">Novos</button>
+<button class="tab-btn" data-view="pro" onclick="filtrarComunidadesTipo('Pro', this)">Profissionais</button>
+<button class="tab-btn" data-view="condo" onclick="filtrarComunidadesTipo('Condom�nio', this)">Condom�nios</button>
+<button class="tab-btn" data-view="hobby" onclick="filtrarComunidadesTipo('Hobby', this)">Hobbies</button>
+</div>
+<button aria-label="Pr�ximas categorias" class="chips-arrow comm-filter-arrow right" onclick="scrollCommFiltros(1)" type="button">
+<i class="bx bx-chevron-right"></i>
+</button>
+</div>
+<div class="grid-comunidades" id="listaComunidades">
+<div class="comm-skeleton-grid"><div class="comm-skel-card"></div><div class="comm-skel-card"></div><div class="comm-skel-card"></div></div>
+</div>
+</div>
+</div>
+</main>
+<button class="comm-floating-create" onclick="abrirModalCriarComm()" type="button" aria-label="Criar grupo"><i class="bx bx-plus"></i></button>
+<nav class="bottom-nav">
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>In�cio</span></a>
+<a class="item active" href="comunidade.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png"/><span>Grupos</span></a>
+<a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
+</nav>
+<div class="modal-overlay" id="modalCriarComm">
+<div class="modal-card">
+<button onclick="fecharModalCriarComm()" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:1.5rem; cursor:pointer;">�</button>
+<h2 style="margin-bottom:20px; color:var(--cor2);">Novo Grupo</h2>
+<form onsubmit="criarNovaComunidade(event)">
+<label class="form-label">Nome do Grupo</label>
+<input class="form-input" id="commNome" placeholder="Ex: Eletricistas Unidos" required="" type="text"/>
+<label class="form-label">Descrição</label>
+<textarea class="form-textarea" id="commDesc" placeholder="Sobre o que �. este grupo?" required=""></textarea>
+<label class="form-label">Tipo de Comunidade</label>
+<select class="form-select" id="commTipo">
+<option value="Pro">Profissional (Networking)</option>
+<option value="Condom�nio">Condom�nio / Vizinhos</option>
+<option value="Hobby">Hobby / Interesse</option>
+</select>
+<label class="form-label">Imagem de Capa (Opcional)</label>
+<input accept="image/*" class="form-input" id="commFoto" type="file"/>
+<button class="btn-submit-modal" type="submit">Criar Comunidade</button>
+</form>
+</div>
+</div>
+<script>
+  window.abrirModalCriarComm = function() {
+    document.getElementById('modalCriarComm').style.display = 'flex';
+  }
+  window.fecharModalCriarComm = function() {
+    document.getElementById('modalCriarComm').style.display = 'none';
+  }
 
-  <script>
-    (function(){
-      const state = { all: [], filtered: [], filter: 'all', query: '', uid: '', joinedIds: new Set() };
-      const grid = document.getElementById('communitiesGrid');
-      const joinedWrap = document.getElementById('joinedWrap');
-      const joinedEl = document.getElementById('joinedGroups');
-      const searchInput = document.getElementById('commSearch');
-      const filterButtons = Array.from(document.querySelectorAll('.comm-filter'));
-      const filtersTrack = document.getElementById('filtersTrack');
-      const btnPrev = document.getElementById('filtersPrev');
-      const btnNext = document.getElementById('filtersNext');
-      const createBtn = document.getElementById('commCreateBtn');
-      const createModal = document.getElementById('commCreateModal');
-      const createForm = document.getElementById('commCreateForm');
-      const commPage = document.querySelector('.comm-page');
-      const createSubmit = document.getElementById('commCreateSubmit');
-      const LOCAL_COMMUNITY_KEYS = ['doke.communidades.created','doke_created_communities','doke_comunidades_created'];
+  function _getCardTitle(card){
+    const t = card.querySelector('.com-title') || card.querySelector('.card-title') || card.querySelector('[data-title]');
+    return (t ? t.textContent : '').trim();
+  }
 
-      function esc(v){return String(v ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));}
-      function slug(text){ return String(text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim(); }
-      function coverFromIndex(index){
-        const covers = [
-          'linear-gradient(135deg,#2c5f95 0%,#0f7f70 100%)',
-          'linear-gradient(135deg,#285581 0%,#1f7f8a 100%)',
-          'linear-gradient(135deg,#376ca4 0%,#148574 100%)',
-          'linear-gradient(135deg,#244f7b 0%,#0a7267 100%)'
-        ];
-        return covers[index % covers.length];
-      }
-      function getSupabaseClient(){ return window.supabase || window.supabaseClient || window.sb || null; }
-      function isUrl(v){ return /^https?:\/\//i.test(String(v||'')) || /^data:/i.test(String(v||'')); }
-      function pickMedia(raw, keys){
-        for (const key of keys){
-          const value = raw?.[key];
-          if (typeof value === 'string' && value.trim()) return value.trim();
-        }
-        return '';
-      }
-      function looksLikeCommunity(obj){
-        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
-        const keys = Object.keys(obj);
-        const joined = keys.some((k) => /comun|grupo|community|membro|privad|public|avatar|foto|capa|cover|categoria|tipo/i.test(k));
-        const named = ['nome','titulo','title','name'].some((k) => typeof obj[k] === 'string' && obj[k].trim());
-        return joined && named;
-      }
-      function extractCommunitiesDeep(input, out, seen = new Set(), depth = 0){
-        if (depth > 5 || input == null) return;
-        if (Array.isArray(input)){
-          input.forEach((item) => extractCommunitiesDeep(item, out, seen, depth + 1));
-          return;
-        }
-        if (typeof input !== 'object') return;
-        if (seen.has(input)) return;
-        seen.add(input);
-        if (looksLikeCommunity(input)) out.push(input);
-        Object.values(input).forEach((value) => extractCommunitiesDeep(value, out, seen, depth + 1));
-      }
+  function _getCardTipo(card){
+    const attr = (card.getAttribute('data-tipo') || '').trim();
+    if (attr) return attr;
+    const pill = card.querySelector('.pill');
+    return (pill ? pill.textContent : '').trim();
+  }
 
-      async function getUid(){
-        try {
-          if (window.firebase && window.firebase.auth && window.firebase.auth().currentUser?.uid) return String(window.firebase.auth().currentUser.uid);
-        } catch(_) {}
-        try {
-          const sb = getSupabaseClient();
-          if (sb?.auth?.getSession) {
-            const { data } = await sb.auth.getSession();
-            const uid = data?.session?.user?.id || data?.session?.user?.uid || '';
-            if (uid) return String(uid);
-          }
-        } catch(_) {}
-        return '';
-      }
+  window.filtrarComunidadesTela = function(termo) {
+    const q = (termo || '').toLowerCase().trim();
+    const cards = document.querySelectorAll('.com-card, .card-comm');
+    cards.forEach(card => {
+      const titulo = _getCardTitle(card).toLowerCase();
+      card.style.display = (!q || titulo.includes(q)) ? '' : 'none';
+    });
+    atualizarHeroStats();
+  }
 
-      function goToLogin(nextHref){
-        const next = nextHref || ('comunidade.html' + (window.location.search || '') + (window.location.hash || ''));
-        try { window.top.location.replace(`login.html?noshell=1&next=${encodeURIComponent(next)}`); } catch(_) { window.location.replace(`login.html?noshell=1&next=${encodeURIComponent(next)}`); }
-      }
+  window.filtrarComunidadesTipo = function(tipo, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
 
-      async function requireAuthForCreate(){
-        const uid = await getUid();
-        if (!uid) {
-          goToLogin('comunidade.html');
-          return '';
-        }
-        state.uid = uid;
-        return uid;
-      }
+    const target = (tipo || 'todos').toLowerCase();
+    const cards = Array.from(document.querySelectorAll('.com-card, .card-comm'));
+    const total = cards.length;
+    const newCutoff = Math.max(1, Math.ceil(total * 0.2));
 
-      async function detectJoinedIds(){
-        const ids = new Set();
-        const sb = getSupabaseClient();
-        if (!sb || typeof sb.from !== 'function' || !state.uid) return ids;
-        const tries = [
-          { communityCol: 'comunidade_id', userCol: 'user_uid', statusCol: 'status' },
-          { communityCol: 'community_id', userCol: 'user_id', statusCol: 'status' },
-          { communityCol: 'grupo_id', userCol: 'uid', statusCol: 'status' },
-          { communityCol: 'comunidadeId', userCol: 'userUid', statusCol: 'status' },
-          { communityCol: 'communityId', userCol: 'userId', statusCol: 'status' }
-        ];
-        for (const attempt of tries){
-          try {
-            const cols = [attempt.communityCol];
-            if (attempt.statusCol) cols.push(attempt.statusCol);
-            const res = await sb.from('comunidade_membros').select(cols.join(',')).eq(attempt.userCol, state.uid).limit(200);
-            if (!res.error && Array.isArray(res.data)) {
-              res.data.forEach((row) => {
-                const cid = String(row?.[attempt.communityCol] || '');
-                const status = String(row?.[attempt.statusCol] || '').toLowerCase();
-                if (cid && !status.includes('pend')) ids.add(cid);
-              });
-              if (ids.size) return ids;
-            }
-          } catch(_) {}
-        }
-        return ids;
-      }
+    cards.forEach((card, index) => {
+      const t = _getCardTipo(card).toLowerCase();
+      const text = (card.textContent || '').toLowerCase();
+      const membersText = text.match(/(\d+)\s*membros?/i);
+      const members = membersText ? Number(membersText[1]) : 0;
+      let ok = false;
+      if (target === 'todos') ok = true;
+      else if (target === 'em-alta') ok = members >= 50 || t.includes('pro');
+      else if (target === 'novos') ok = index < newCutoff;
+      else if (target === 'perto') ok = /bairro|cidade|regiao|local|vizinh/.test(text) || t.includes('condom');
+      else ok = (t === target) || (t.includes(target));
+      card.style.display = ok ? '' : 'none';
+    });
+    atualizarHeroStats();
+  }
 
-      function mapCommunity(raw, index, membershipMap){
-        const title = raw.nome || raw.titulo || raw.name || raw.title || `Comunidade ${index + 1}`;
-        const description = raw.descricao || raw.description || raw.desc || raw.sobre || raw.bio || 'Grupo da Doke para troca de contexto, indicações e interação útil.';
-        const tipoBruto = String(raw.tipo || raw.tipo_comunidade || raw.categoria || raw.category || raw.tag || '').toLowerCase();
-        const category = tipoBruto.includes('cond') ? 'condominio'
-          : tipoBruto.includes('hobby') || tipoBruto.includes('pet') || tipoBruto.includes('foto') ? 'hobby'
-          : tipoBruto.includes('bairro') || tipoBruto.includes('perto') || tipoBruto.includes('cidade') ? 'near'
-          : tipoBruto.includes('novo') ? 'new'
-          : 'pro';
-        const members = Number(raw.membrosCount || raw.membros_count || raw.members_count || raw.members || raw.membros_total || (Array.isArray(raw.membros) ? raw.membros.length : 0) || 0) || 0;
-        const id = String(raw.id || raw.comunidade_id || raw.comunidadeId || raw.uuid || raw._id || `comm-${index}`);
-        const ownerUid = String(raw.dono_uid || raw.donoUid || raw.owner_uid || raw.ownerUid || raw.criado_por || raw.criadoPor || raw.created_by || raw.createdBy || raw.user_uid || raw.userUid || raw.autor_uid || raw.autorUid || '');
-        const lower = slug(`${title} ${description} ${tipoBruto}`);
-        const photo = pickMedia(raw, ['foto','avatar','imagem','foto_url','avatar_url','image_url','url_foto','photo','logo','thumb','thumbnail','icon']);
-        const cover = pickMedia(raw, ['capa_url','capa','imagem_capa','cover','cover_url','banner','banner_url']) || coverFromIndex(index);
-        const joined = !!(raw.joined || raw.entrou || raw.isMember || membershipMap.get(id) === 'active' || state.joinedIds.has(id) || (ownerUid && state.uid && ownerUid === state.uid) || (Array.isArray(raw.membros) && state.uid && raw.membros.map(String).includes(state.uid)));
-        const pending = membershipMap.get(id) === 'pending';
-        const privacyRaw = raw.privacidade || raw.privacy || (typeof raw.privado === 'boolean' ? (raw.privado ? 'Privado' : 'Público') : '') || raw.publico;
-        let privacy = 'Público';
-        if (typeof privacyRaw === 'string' && privacyRaw.trim()) privacy = privacyRaw;
-        else if (typeof privacyRaw === 'boolean') privacy = privacyRaw ? 'Público' : 'Privado';
-        const createdText = String(raw.created_at || raw.dataCriacao || raw.createdAt || raw.criado_em || '').trim();
-        return {
-          id,
-          title,
-          description,
-          category,
-          members,
-          joined,
-          pending,
-          trending: members >= 80 || /pro|network|servic|obra|condominio/.test(lower),
-          isNew: Boolean(raw.isNew || raw.novo || raw.new) || /novo/.test(lower) || /2026|2025/.test(createdText),
-          near: /bairro|cidade|pituba|salvador|vizinh|condominio/.test(lower),
-          tags: [category === 'condominio' ? 'Condomínio' : category === 'hobby' ? 'Hobby' : category === 'near' ? 'Bairro' : category === 'new' ? 'Novo' : 'Profissional', privacy],
-          photo,
-          cover,
-          ownerUid
-        };
-      }
+  function atualizarSetasFiltrosComm() {
+    const tabs = document.getElementById('commFilterTabs');
+    if (!tabs) return;
+    const prev = document.querySelector('.comm-filter-arrow.left');
+    const next = document.querySelector('.comm-filter-arrow.right');
+    const maxLeft = Math.max(0, tabs.scrollWidth - tabs.clientWidth);
+    if (prev) prev.disabled = tabs.scrollLeft <= 2;
+    if (next) next.disabled = tabs.scrollLeft >= maxLeft - 2;
+  }
 
-      async function detectMembership(ids){
-        const map = new Map();
-        const sb = getSupabaseClient();
-        if (!sb || typeof sb.from !== 'function' || !ids.length || !state.uid) return map;
-        const tries = [
-          { communityCol: 'comunidade_id', userCol: 'user_uid', statusCol: 'status' },
-          { communityCol: 'community_id', userCol: 'user_id', statusCol: 'status' },
-          { communityCol: 'grupo_id', userCol: 'uid', statusCol: 'status' },
-          { communityCol: 'comunidadeId', userCol: 'userUid', statusCol: 'status' },
-          { communityCol: 'communityId', userCol: 'userId', statusCol: 'status' },
-          { communityCol: 'comunidade_id', userCol: 'user_uid', statusCol: null }
-        ];
-        for (const attempt of tries){
-          try {
-            const cols = [attempt.communityCol];
-            if (attempt.statusCol) cols.push(attempt.statusCol);
-            const res = await sb.from('comunidade_membros').select(cols.join(',')).eq(attempt.userCol, state.uid).in(attempt.communityCol, ids).limit(200);
-            if (!res.error && Array.isArray(res.data)) {
-              res.data.forEach((row) => {
-                const gid = String(row?.[attempt.communityCol] || '');
-                if (!gid) return;
-                const rawStatus = attempt.statusCol ? String(row?.[attempt.statusCol] || '').toLowerCase() : 'ativo';
-                map.set(gid, rawStatus.includes('pend') ? 'pending' : 'active');
-              });
-              return map;
-            }
-          } catch(_) {}
-        }
-        return map;
-      }
+  window.scrollCommFiltros = function(dir) {
+    const tabs = document.getElementById('commFilterTabs');
+    if (!tabs) return;
+    const amount = Math.max(150, Math.floor(tabs.clientWidth * 0.75));
+    tabs.scrollBy({ left: (dir < 0 ? -amount : amount), behavior: 'smooth' });
+  }
 
-      function parseStored(value){
-        try {
-          const parsed = JSON.parse(value);
-          const rows = [];
-          extractCommunitiesDeep(parsed, rows);
-          return rows;
-        } catch(_) {}
-        return [];
-      }
+  function atualizarHeroStats() {
+    const allCards = Array.from(document.querySelectorAll('#listaComunidades .com-card, #listaComunidades .card-comm'));
+    const visibleCards = allCards.filter((c) => c.style.display !== 'none');
+    const joined = document.querySelectorAll('#listaMeusGrupos .my-group-item').length;
+    let membersTotal = 0;
+    visibleCards.forEach((card) => {
+      const m = (card.textContent || '').match(/(\d+)\s*membros?/i);
+      if (m) membersTotal += Number(m[1] || 0);
+    });
+    const avgOnline = visibleCards.length ? Math.max(4, Math.round((membersTotal / visibleCards.length) * 0.12)) : 0;
+    const totalEl = document.getElementById('heroTotalGroups');
+    const joinedEl = document.getElementById('heroJoinedGroups');
+    const onlineEl = document.getElementById('heroOnlineNow');
+    if (totalEl) totalEl.textContent = String(visibleCards.length || allCards.length || 0);
+    if (joinedEl) joinedEl.textContent = String(joined || 0);
+    if (onlineEl) onlineEl.textContent = String(avgOnline || 0);
+  }
 
-      function isExampleSeed(raw){
-        const title = slug(raw?.nome || raw?.titulo || raw?.name || raw?.title || '');
-        const desc = slug(raw?.descricao || raw?.description || raw?.desc || raw?.sobre || raw?.bio || '');
-        const hasAuthor = Boolean(raw?.owner_uid || raw?.ownerUid || raw?.dono_uid || raw?.donoUid || raw?.criado_por || raw?.created_by || raw?.__createdViaDoke);
-        if (/^teste+(\s*\d+)?$/i.test(title) || /^test+(\s*\d+)?$/i.test(title)) return true;
-        if (!hasAuthor && desc.includes('grupo da doke para troca de contexto')) return true;
-        return false;
-      }
+  const __commRuntime = window.dokePageRuntime || null;
+  const __commOn = (target, type, handler, options) => {
+    if (!target || typeof target.addEventListener !== 'function' || !type || typeof handler !== 'function') return;
+    if (__commRuntime && typeof __commRuntime.on === 'function') {
+      __commRuntime.on(target, type, handler, options);
+      return;
+    }
+    target.addEventListener(type, handler, options);
+  };
+  const __commLater = (handler, ms) => {
+    if (typeof handler !== 'function') return;
+    if (__commRuntime && typeof __commRuntime.timeout === 'function') {
+      __commRuntime.timeout(handler, ms);
+      return;
+    }
+    setTimeout(handler, ms);
+  };
+  const __commObserve = (observer) => {
+    if (!observer) return observer;
+    if (__commRuntime && typeof __commRuntime.observer === 'function') {
+      return __commRuntime.observer(observer);
+    }
+    if (typeof window.dokeRegisterTeardown === 'function') {
+      window.dokeRegisterTeardown(() => { try { observer.disconnect(); } catch(_){} });
+    }
+    return observer;
+  };
 
-      function readStorageCommunities(storage){
-        if (!storage) return [];
-        const rows = [];
-        const seen = new Set();
-        LOCAL_COMMUNITY_KEYS.forEach((key) => {
-          const raw = storage.getItem(key);
-          if (!raw) return;
-          const parsedRows = parseStored(raw);
-          parsedRows.forEach((row, index) => {
-            const id = String(row?.id || row?.comunidade_id || row?.comunidadeId || row?.uuid || row?._id || row?.nome || row?.titulo || `${key}-${index}`);
-            const authored = row?.__createdViaDoke || row?.owner_uid || row?.ownerUid || row?.dono_uid || row?.donoUid || row?.created_at || row?.dataCriacao;
-            if (!id || seen.has(id) || !authored || isExampleSeed(row)) return;
-            seen.add(id);
-            rows.push(row);
-          });
-        });
-        return rows;
-      }
+  function setupCommObservers() {
+    const list = document.getElementById('listaComunidades');
+    const my = document.getElementById('listaMeusGrupos');
+    if (!list) return;
+    const sync = () => {
+      atualizarHeroStats();
+    };
+    const mo = __commObserve(new MutationObserver(sync));
+    mo.observe(list, { childList: true, subtree: true });
+    if (my) {
+      const moMy = __commObserve(new MutationObserver(sync));
+      moMy.observe(my, { childList: true, subtree: true });
+    }
+    sync();
+  }
 
-      async function readSupabaseCommunities(){
-        const sb = getSupabaseClient();
-        if (!sb || typeof sb.from !== 'function') return [];
-        const attempts = [
-          () => sb.from('comunidades').select('*').order('created_at', { ascending: false }).limit(96),
-          () => sb.from('comunidades').select('*').order('dataCriacao', { ascending: false }).limit(96),
-          () => sb.from('comunidades').select('*').limit(96)
-        ];
-        for (const attempt of attempts){
-          try {
-            const res = await attempt();
-            if (!res.error && Array.isArray(res.data)) return res.data;
-          } catch(_) {}
-        }
-        return [];
-      }
+  // Inicia carregamento (dados reais)
+  const __initComunidadePage = () => {
+    try{
+      if (window.carregarComunidadesGerais) window.carregarComunidadesGerais();
+      const bootMyGroups = () => { if (window.carregarMeusGrupos) window.carregarMeusGrupos(); };
+      if ('requestIdleCallback' in window) requestIdleCallback(bootMyGroups, { timeout: 1200 });
+      else __commLater(bootMyGroups, 220);
+    }catch(e){ console.warn(e); }
 
-      async function readSupabaseCommunitiesByIds(ids){
-        const sb = getSupabaseClient();
-        if (!sb || typeof sb.from !== 'function' || !ids.length) return [];
-        try {
-          const res = await sb.from('comunidades').select('*').in('id', ids.slice(0, 96));
-          if (!res.error && Array.isArray(res.data)) return res.data;
-        } catch(_) {}
-        return [];
-      }
+    const tabs = document.getElementById('commFilterTabs');
+    if (tabs) {
+      __commOn(tabs, 'scroll', atualizarSetasFiltrosComm, { passive: true });
+      __commOn(window, 'resize', atualizarSetasFiltrosComm);
+      __commLater(atualizarSetasFiltrosComm, 40);
+    }
+    setupCommObservers();
+  };
+  if (document.readyState === 'loading') __commOn(document, 'DOMContentLoaded', __initComunidadePage);
+  else __initComunidadePage();
+</script>
+<script defer="" src="doke-toast.js?v=20260313v03"></script>
+<script defer="" src="doke-alerts.js?v=20260313v03"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js?v=20260313v02"></script>
 
-      function renderSkeleton(){
-        grid.innerHTML = Array.from({length:6}).map(() => `
-          <article class="comm-skeleton" aria-hidden="true">
-            <div class="comm-skeleton__cover"></div>
-            <div class="comm-skeleton__body">
-              <div class="comm-skeleton__avatar"></div>
-              <div class="comm-skeleton__line short"></div>
-              <div class="comm-skeleton__line"></div>
-              <div class="comm-skeleton__line"></div>
-              <div class="comm-skeleton__chips"><div class="comm-skeleton__chip"></div><div class="comm-skeleton__chip"></div></div>
-            </div>
-          </article>
-        `).join('');
-      }
-
-      async function loadCommunities(){
-        renderSkeleton();
-        state.uid = await getUid();
-        state.joinedIds = await detectJoinedIds();
-
-        const [supabaseRows, joinedRows, localRows, sessionRows] = await Promise.all([
-          readSupabaseCommunities(),
-          readSupabaseCommunitiesByIds(Array.from(state.joinedIds)),
-          Promise.resolve(readStorageCommunities(window.localStorage)),
-          Promise.resolve(readStorageCommunities(window.sessionStorage))
-        ]);
-
-        const mergedMap = new Map();
-        [...joinedRows, ...supabaseRows, ...localRows, ...sessionRows].forEach((row, index) => {
-          const id = String(row?.id || row?.comunidade_id || row?.comunidadeId || row?.uuid || row?._id || row?.nome || row?.titulo || `row-${index}`);
-          if (!id) return;
-          const current = mergedMap.get(id) || {};
-          mergedMap.set(id, Object.assign({}, row, current, row));
-        });
-        const mergedRows = Array.from(mergedMap.values()).filter((row) => !isExampleSeed(row));
-        const ids = mergedRows.map((row, index) => String(row?.id || row?.comunidade_id || row?.comunidadeId || row?.uuid || row?._id || row?.nome || row?.titulo || `row-${index}`));
-        const membership = await detectMembership(ids);
-
-        state.all = mergedRows.map((row, index) => mapCommunity(row, index, membership));
-        state.all.sort((a, b) => Number(b.joined) - Number(a.joined) || b.members - a.members || a.title.localeCompare(b.title, 'pt-BR'));
-        applyFilters();
-      }
-
-      function currentFilterMatch(item){
-        switch(state.filter){
-          case 'trending': return item.trending;
-          case 'near': return item.near || item.category === 'near' || item.category === 'condominio';
-          case 'new': return item.isNew;
-          case 'pro': return item.category === 'pro';
-          case 'condominio': return item.category === 'condominio';
-          case 'hobby': return item.category === 'hobby';
-          default: return true;
-        }
-      }
-
-      function applyFilters(){
-        const query = slug(state.query);
-        state.filtered = state.all.filter((item) => {
-          const matchesFilter = currentFilterMatch(item);
-          const text = slug(`${item.title} ${item.description} ${item.tags.join(' ')}`);
-          const matchesQuery = !query || text.includes(query);
-          return matchesFilter && matchesQuery;
-        });
-        renderJoined();
-        renderCards();
-        updateFilterButtons();
-      }
-
-      function renderJoined(){
-        const joined = state.all.filter((item) => item.joined).slice(0, 10);
-        if (!joined.length){
-          joinedWrap.hidden = true;
-          joinedEl.innerHTML = '';
-          return;
-        }
-        joinedWrap.hidden = false;
-        joinedEl.innerHTML = joined.map((item) => `
-          <button class="comm-chip" type="button" data-id="${esc(item.id)}">
-            <span class="comm-chip__icon ${item.photo ? 'has-photo' : ''}">${item.photo ? `<img src="${esc(item.photo)}" alt="${esc(item.title)}">` : '<i class="bx bx-group"></i>'}</span>
-            <span>${esc(item.title)}</span>
-          </button>
-        `).join('');
-      }
-
-      function renderCards(){
-        if(!state.all.length){
-          grid.innerHTML = `<div class="comm-empty"><i class="bx bx-group"></i><strong>Nenhuma comunidade encontrada</strong><span>Não achei grupos antigos no Supabase nem no cache deste navegador. Se eles estiverem em outra conta, outro navegador ou outro dispositivo, não tenho como recuperar daqui.</span></div>`;
-          return;
-        }
-        if(!state.filtered.length){
-          grid.innerHTML = `<div class="comm-empty"><i class="bx bx-search-alt"></i><strong>Nenhuma comunidade encontrada com esse filtro</strong><span>Tente buscar por outro termo ou limpar os filtros.</span></div>`;
-          return;
-        }
-        grid.innerHTML = state.filtered.map((item) => {
-          const action = item.pending ? 'Solicitação enviada' : item.joined ? 'Abrir grupo' : 'Entrar no grupo';
-          const bg = isUrl(item.cover) ? `url('${String(item.cover).replace(/'/g, "\'")}') center/cover no-repeat` : item.cover;
-          return `
-            <article class="comm-card" data-id="${esc(item.id)}">
-              <div class="comm-card__cover" style="background:${bg}"></div>
-              <div class="comm-card__body">
-                <div class="comm-card__head">
-                  <div class="comm-card__avatar ${item.photo ? 'has-photo' : ''}">${item.photo ? `<img src="${esc(item.photo)}" alt="${esc(item.title)}">` : '<i class="bx bx-group"></i>'}</div>
-                  <div class="comm-card__headcopy">
-                    <h3 class="comm-card__title">${esc(item.title)}</h3>
-                    <p class="comm-card__desc">${esc(item.description)}</p>
-                  </div>
-                </div>
-                <div class="comm-card__meta">
-                  ${item.tags.map((tag) => `<span class="comm-pill">${esc(tag)}</span>`).join('')}
-                  ${item.joined ? '<span class="comm-pill comm-pill--status">Entrou</span>' : ''}
-                  ${item.pending ? '<span class="comm-pill comm-pill--status">Pendente</span>' : ''}
-                </div>
-                <div class="comm-card__footer">
-                  <span class="comm-card__members">+${esc(item.members)} membros</span>
-                  <button class="comm-card__btn" type="button" data-open-group="${esc(item.id)}">${action}</button>
-                </div>
-              </div>
-            </article>
-          `;
-        }).join('');
-      }
-
-      function updateFilterButtons(){
-        filterButtons.forEach((button) => button.classList.toggle('is-active', button.dataset.filter === state.filter));
-      }
-
-      function syncFilterArrows(){
-        const maxLeft = Math.max(0, filtersTrack.scrollWidth - filtersTrack.clientWidth);
-        btnPrev.disabled = filtersTrack.scrollLeft <= 2;
-        btnNext.disabled = filtersTrack.scrollLeft >= maxLeft - 2;
-      }
-
-      filterButtons.forEach((button) => button.addEventListener('click', () => {
-        state.filter = button.dataset.filter || 'all';
-        applyFilters();
-      }));
-      searchInput.addEventListener('input', (event) => {
-        state.query = event.target.value || '';
-        applyFilters();
+<script>
+(function(){
+  const sample = [
+    {titulo:'Profissionais perto de voc�',desc:'Encontre trocas �teis, oportunidades locais e networking por cidade.',tag:'Em alta',acao:'Explorar'},
+    {titulo:'Neg�cios e servi�os',desc:'Discuss�es mais objetivas sobre atendimento, pre�o, agenda e capta��o.',tag:'Profissional',acao:'Abrir'},
+    {titulo:'Comunidade do bairro',desc:'Pedidos r�pidos, indica��es e avisos �teis sem exagero visual.',tag:'Perto de voc�',acao:'Ver grupos'}
+  ];
+  function esc(v){return String(v||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));}
+  function paintFallback(){
+    const list = document.getElementById('listaComunidades');
+    if(!list) return;
+    const hasCards = list.querySelector('.com-card,.card-comm');
+    if(hasCards) return;
+    list.innerHTML = sample.map((item)=>`<article class="card-comm fallback-card"><div class="comm-card-content"><div class="comm-card-header"><h3>${esc(item.titulo)}</h3><span class="pill">${esc(item.tag)}</span></div><p>${esc(item.desc)}</p><button class="btn-ver-grupo" type="button">${esc(item.acao)}</button></div></article>`).join('');
+  }
+  function bindSearch(){
+    const input = document.getElementById('inputBuscaComm');
+    const list = document.getElementById('listaComunidades');
+    if(!input || !list || input.__dokeBound) return;
+    input.__dokeBound = true;
+    input.addEventListener('input', function(){
+      const q = String(this.value||'').toLowerCase();
+      list.querySelectorAll('.com-card,.card-comm').forEach((card)=>{
+        const txt = String(card.textContent||'').toLowerCase();
+        card.style.display = !q || txt.includes(q) ? '' : 'none';
       });
-      btnPrev.addEventListener('click', () => filtersTrack.scrollBy({left:-260,behavior:'smooth'}));
-      btnNext.addEventListener('click', () => filtersTrack.scrollBy({left:260,behavior:'smooth'}));
-      filtersTrack.addEventListener('scroll', syncFilterArrows, {passive:true});
-      window.addEventListener('resize', syncFilterArrows);
-      window.addEventListener('resize', () => { if (!createModal.hidden) updateCreateModalOffsets(); });
-
-      function updateCreateModalOffsets(){
-        try {
-          createModal.style.removeProperty('--comm-modal-left-offset');
-          createModal.style.removeProperty('--comm-modal-top-offset');
-          createModal.style.removeProperty('--comm-modal-right-offset');
-          createModal.style.removeProperty('--comm-modal-bottom-offset');
-          if (!(window.matchMedia && window.matchMedia('(min-width: 1025px)').matches)) return;
-          const side = document.querySelector('.sidebar-icones, .sidebar-desktop, aside.sidebar-icones');
-          const nav = document.querySelector('.navbar-desktop, header.navbar-desktop, .topbar-desktop');
-          let leftOffset = 148;
-          let topOffset = 92;
-          if (side) {
-            const rect = side.getBoundingClientRect();
-            leftOffset = Math.max(118, Math.round(rect.right + 12));
-          }
-          if (nav) {
-            const rect = nav.getBoundingClientRect();
-            topOffset = Math.max(82, Math.round(rect.bottom + 12));
-          }
-          createModal.style.setProperty('--comm-modal-left-offset', `${leftOffset}px`);
-          createModal.style.setProperty('--comm-modal-top-offset', `${topOffset}px`);
-          createModal.style.setProperty('--comm-modal-right-offset', '14px');
-          createModal.style.setProperty('--comm-modal-bottom-offset', '14px');
-        } catch(_) {}
-      }
-
-      async function openCreateModal(){
-        const uid = await requireAuthForCreate();
-        if (!uid) return;
-        createModal.hidden = false;
-        commPage?.classList.add('is-creating');
-        document.body.classList.add('comm-modal-open');
-        createModal.classList.remove('is-open');
-        updateCreateModalOffsets();
-        requestAnimationFrame(() => {
-          createModal.classList.add('is-open');
-          document.getElementById('commNome')?.focus();
-        });
-      }
-
-      function resetCreateUploads(){
-        const fotoName = document.getElementById('commFotoName');
-        const capaName = document.getElementById('commCapaName');
-        if (fotoName) fotoName.textContent = 'Nenhum arquivo escolhido';
-        if (capaName) capaName.textContent = 'Nenhum arquivo escolhido';
-      }
-
-      function closeCreateModal(){
-        createModal.classList.remove('is-open');
-        createModal.hidden = true;
-        createModal.style.removeProperty('--comm-modal-left-offset');
-        createModal.style.removeProperty('--comm-modal-top-offset');
-        createModal.style.removeProperty('--comm-modal-right-offset');
-        createModal.style.removeProperty('--comm-modal-bottom-offset');
-        commPage?.classList.remove('is-creating');
-        document.body.classList.remove('comm-modal-open');
-      }
-
-
-
-      function cleanupCreateModal(){
-        try { closeCreateModal(); } catch(_) {}
-      }
-
-      function bindCreateModalNavigationCleanup(){
-        const closeOnNavigate = (event) => {
-          if (!createModal || createModal.hidden) return;
-          const trigger = event && event.target && event.target.closest ? event.target.closest('a[href], [data-nav], .dropdown-item, .item a, .menu-item a') : null;
-          if (!trigger) return;
-          if (trigger.closest && trigger.closest('#commCreateModal')) return;
-          cleanupCreateModal();
-        };
-        document.addEventListener('click', closeOnNavigate, true);
-        window.addEventListener('pagehide', cleanupCreateModal);
-        window.addEventListener('beforeunload', cleanupCreateModal);
-        window.addEventListener('popstate', cleanupCreateModal);
-        window.addEventListener('hashchange', cleanupCreateModal);
-      }
-
-      async function readFileAsDataUrl(file){
-        if (!file) return '';
-        return await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ''));
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      }
-
-      async function saveCommunityLocally(row){
-        let current = [];
-        try { current = JSON.parse(localStorage.getItem(LOCAL_COMMUNITY_KEYS[0]) || '[]'); } catch(_) {}
-        if (!Array.isArray(current)) current = [];
-        current.unshift(row);
-        localStorage.setItem(LOCAL_COMMUNITY_KEYS[0], JSON.stringify(current));
-      }
-
-      async function tryCreateCommunityInSupabase(row){
-        const sb = getSupabaseClient();
-        if (!sb || typeof sb.from !== 'function') return false;
-        const payload = {
-          nome: row.nome,
-          descricao: row.descricao,
-          tipo: row.tipo,
-          privado: row.privado,
-          owner_uid: row.owner_uid,
-          capa_url: row.capa_url,
-          thumb_url: row.thumb_url,
-          membros: Array.isArray(row.membros) ? row.membros : [],
-          membros_total: row.membros_total || 0,
-          dataCriacao: row.dataCriacao,
-          created_at: row.created_at
-        };
-        try {
-          const { data, error } = await sb.from('comunidades').insert(payload).select('*').limit(1);
-          if (error) throw error;
-          const created = Array.isArray(data) ? data[0] : data;
-          if (created?.id) row.id = created.id;
-          return true;
-        } catch (err) {
-          console.warn('[DOKE] fallback local ao criar comunidade:', err);
-          return false;
-        }
-      }
-
-      async function handleCreateSubmit(event){
-        event.preventDefault();
-        const uid = await requireAuthForCreate();
-        if (!uid) return;
-        const nome = String(document.getElementById('commNome')?.value || '').trim();
-        const descricao = String(document.getElementById('commDesc')?.value || '').trim();
-        const tipo = String(document.getElementById('commTipo')?.value || 'Profissional').trim();
-        const privacidade = String(document.getElementById('commPrivacidade')?.value || 'publico').trim().toLowerCase();
-        const fotoFile = document.getElementById('commFoto')?.files?.[0] || null;
-        const capaFile = document.getElementById('commCapa')?.files?.[0] || null;
-        if (!nome || !descricao) return;
-        createSubmit.disabled = true;
-        createSubmit.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Criando...';
-        const foto = await readFileAsDataUrl(fotoFile).catch(() => '');
-        const capa = await readFileAsDataUrl(capaFile).catch(() => '');
-        const now = new Date().toISOString();
-        const row = {
-          id: `local-${Date.now()}`,
-          nome,
-          descricao,
-          tipo,
-          privado: privacidade === 'privado',
-          owner_uid: uid || state.uid || '',
-          thumb_url: foto,
-          capa_url: capa || foto,
-          membros: uid ? [uid] : [],
-          membros_total: uid ? 1 : 0,
-          dataCriacao: now,
-          created_at: now,
-          __createdViaDoke: true
-        };
-        await tryCreateCommunityInSupabase(row);
-        await saveCommunityLocally(row);
-        closeCreateModal();
-        createForm.reset();
-        resetCreateUploads();
-        createSubmit.disabled = false;
-        createSubmit.innerHTML = '<i class="bx bx-plus-circle"></i> Criar grupo';
-        await loadCommunities();
-        state.query = nome;
-        searchInput.value = nome;
-        applyFilters();
-      }
-
-      createBtn.addEventListener('click', openCreateModal);
-      bindCreateModalNavigationCleanup();
-      createModal.addEventListener('click', (event) => {
-        if (event.target.closest('[data-close-create]')) closeCreateModal();
-      });
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && !createModal.hidden) closeCreateModal();
-      });
-      window.addEventListener('pagehide', cleanupCreateModal);
-      window.addEventListener('beforeunload', cleanupCreateModal);
-      document.addEventListener('click', (event) => {
-        const navLink = event.target.closest('a[href], button[data-nav], [onclick*="location"], [onclick*="window.location"]');
-        if (navLink && !createModal.hidden) cleanupCreateModal();
-      }, true);
-      document.getElementById('commFoto')?.addEventListener('change', (event) => {
-        const file = event.target.files?.[0];
-        const label = document.getElementById('commFotoName');
-        if (label) label.textContent = file?.name || 'Nenhum arquivo escolhido';
-        const body = createModal.querySelector('.comm-compose__body');
-        if (body) requestAnimationFrame(() => { body.scrollTop = Math.max(0, body.scrollTop - 4); });
-      });
-      document.getElementById('commCapa')?.addEventListener('change', (event) => {
-        const file = event.target.files?.[0];
-        const label = document.getElementById('commCapaName');
-        if (label) label.textContent = file?.name || 'Nenhum arquivo escolhido';
-        const body = createModal.querySelector('.comm-compose__body');
-        if (body) requestAnimationFrame(() => { body.scrollTop = Math.max(0, body.scrollTop - 4); });
-      });
-
-      createForm.addEventListener('submit', handleCreateSubmit);
-
-      grid.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-open-group]');
-        if (!button) return;
-        const id = button.getAttribute('data-open-group');
-        if (!id) return;
-        window.location.href = `grupo.html?id=${encodeURIComponent(id)}`;
-      });
-      joinedEl.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-id]');
-        if (!button) return;
-        const id = button.getAttribute('data-id');
-        if (!id) return;
-        window.location.href = `grupo.html?id=${encodeURIComponent(id)}`;
-      });
-
-      window.addEventListener('load', async () => {
-        await loadCommunities();
-        syncFilterArrows();
-        requestAnimationFrame(() => document.body.classList.add('comm-ready'));
-      }, {once:true});
-    })();
-  </script>
-  <script defer src="doke-shell.js?v=20260315c03"></script>
+    });
+  }
+  window.addEventListener('load', function(){ setTimeout(bindSearch, 300); }, {once:true});
+})();
+</script>
+<script defer="" src="doke-shell.js?v=20260313v106"></script>
+  <script src="site-global-polish.js"></script>
+<script defer src="comunidade-reset.js?v=20260317v01"></script>
+<script defer src="comunidade-modal-fix.js?v=20260316v2"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
