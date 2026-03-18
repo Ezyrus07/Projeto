@@ -1,0 +1,1 @@
+V49: removed old page-notificacoes include and inline clean-notif-overrides style; removed perfil-upgrade/page-perfil/perfil-qna/doke-beforeafter legacy includes from meuperfil and inline progress script; strengthened page-level CSS/JS.

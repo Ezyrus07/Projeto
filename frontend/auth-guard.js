@@ -217,7 +217,7 @@
         if (storedSession.uid) persistLoginMarkers(storedSession.uid);
         return true;
       }
-      return false;
+      return hasTrustedLoginMarkers();
     }
 
     function redirectToLogin() {

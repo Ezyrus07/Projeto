@@ -1,0 +1,1 @@
+document.addEventListener('DOMContentLoaded',()=>{const items=[...document.querySelectorAll('#dpProgressCard,.profile-progress-card,.dp-progress-card')];items.forEach((el,i)=>{if(i>0)el.remove();});});

@@ -217,7 +217,7 @@
         if (storedSession.uid) persistLoginMarkers(storedSession.uid);
         return true;
       }
-      return false;
+      return hasTrustedLoginMarkers();
     }
 
     function redirectToLogin() {
@@ -312,11 +312,6 @@
         releasePage();
         return;
       }
-      if (liveSession === false) {
-        redirectToLogin();
-        return;
-      }
-      // Only trust local/session markers when Supabase is not available yet.
       if (storedSession && storedSession.access_token) {
         releasePage();
         return;
