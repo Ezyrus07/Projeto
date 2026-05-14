@@ -1,0 +1,350 @@
+/* DOKE — Detail reviews bridge
+   Reusa o contrato editorial das avaliações no detalhe do anúncio.
+   Escopo fechado em body[data-page="detalhes"] #reviews-list.
+*/
+
+body[data-page="detalhes"] #reviews-list{
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  color: #13233a;
+}
+
+body[data-page="detalhes"] #reviews-list *,
+body[data-page="detalhes"] #reviews-list *::before,
+body[data-page="detalhes"] #reviews-list *::after{
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-rating{
+  display: block;
+  margin: 0;
+  padding: 0 0 26px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-score{
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-score-num{
+  font-size: clamp(3.25rem, 6vw, 4.8rem);
+  line-height: .9;
+  font-weight: 950;
+  letter-spacing: -.075em;
+  color: #13233a;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-score-meta{
+  color: #13233a;
+  font-weight: 750;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-score-meta::after{
+  content: " · Todas verificadas";
+  color: #0b7768;
+  font-weight: 850;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-hist{
+  display: none;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-stars{
+  position: relative;
+  display: inline-block;
+  color: #d8dde6;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-stars-base{
+  display: block;
+  color: #d8dde6;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-stars-fill{
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  overflow: hidden;
+  color: #ffb000;
+  white-space: nowrap;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-stars-sm{
+  font-size: 15px;
+  letter-spacing: .05em;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-criteria{
+  margin: 0 0 28px;
+  padding: 24px 0 22px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-criteria-head,
+body[data-page="detalhes"] #reviews-list .fr-crit-dist,
+body[data-page="detalhes"] #reviews-list .fr-crit-comment-btn,
+body[data-page="detalhes"] #reviews-list .fr-crit-comments,
+body[data-page="detalhes"] #reviews-list .fr-crit-card-meta,
+body[data-page="detalhes"] #reviews-list .fr-crit-card .fr-stars{
+  display: none;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-criteria-viewport{
+  overflow: visible;
+  padding: 0;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-criteria-track{
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  width: 100%;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-crit-card{
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 4px clamp(12px, 2vw, 24px);
+  text-align: center;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid rgba(14, 37, 65, .14);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-crit-card:last-child{
+  border-right: 0;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-crit-card-title{
+  color: #13233a;
+  font-size: .95rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-crit-card-score{
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-crit-card-value{
+  color: #13233a;
+  font-size: 1.85rem;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-sentiment-bar{
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0 18px;
+  margin: 0 0 18px;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-sentiment-bar::-webkit-scrollbar{
+  display: none;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-sentiment-chip{
+  flex: 0 0 auto;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  border: 1px solid #dbe3ed;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: none;
+  color: #13233a;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-sentiment-chip.active{
+  border-color: rgba(11, 119, 104, .45);
+  background: rgba(11, 119, 104, .08);
+  color: #0b7768;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-comments{
+  margin-top: 18px;
+  padding-top: 0;
+  border-top: 1px solid rgba(14, 37, 65, .12);
+  background: transparent;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-comments-title{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: 26px 0 0;
+  color: #13233a;
+  font-size: 1.08rem;
+  font-weight: 900;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-comments-title::after{
+  content: "Ordenar: Mais recentes";
+  margin-left: auto;
+  color: #13233a;
+  font-size: .98rem;
+  font-weight: 800;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-comment-list{
+  display: grid;
+  gap: 0;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-comment{
+  max-width: min(730px, 100%);
+  padding: 26px 0;
+  border: 0;
+  border-bottom: 1px solid rgba(14, 37, 65, .12);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-comment-head{
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-review-avatar{
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-review-name{
+  color: #13233a;
+  font-size: 1.14rem;
+  font-weight: 900;
+  line-height: 1.12;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-review-date,
+body[data-page="detalhes"] #reviews-list .fr-review-service,
+body[data-page="detalhes"] #reviews-list .fr-review-service a{
+  color: #667085;
+  font-size: .95rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-review-score{
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: #13233a;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-review-score-num{
+  font-weight: 900;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-comment-body{
+  max-width: 620px;
+  margin: 8px 0 0 90px;
+  color: #25364d;
+  font-weight: 520;
+  line-height: 1.45;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-msg-label{
+  display: none;
+}
+
+body[data-page="detalhes"] #reviews-list .fr-empty{
+  border: 1px dashed rgba(14, 37, 65, .16);
+  border-radius: 18px;
+  background: #fff;
+  color: #667085;
+  box-shadow: none;
+}
+
+@media (max-width: 900px){
+  body[data-page="detalhes"] #reviews-list .fr-criteria-track{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 18px;
+  }
+
+  body[data-page="detalhes"] #reviews-list .fr-crit-card{
+    border-right: 0;
+    border-bottom: 1px solid rgba(14, 37, 65, .12);
+    padding-bottom: 16px;
+  }
+
+  body[data-page="detalhes"] #reviews-list .fr-crit-card:nth-last-child(-n+2){
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 640px){
+  body[data-page="detalhes"] #reviews-list .fr-score{
+    gap: 10px;
+  }
+
+  body[data-page="detalhes"] #reviews-list .fr-score-num{
+    width: 100%;
+  }
+
+  body[data-page="detalhes"] #reviews-list .fr-comments-title::after{
+    content: "";
+  }
+
+  body[data-page="detalhes"] #reviews-list .fr-comment-head{
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  body[data-page="detalhes"] #reviews-list .fr-review-avatar{
+    width: 48px;
+    height: 48px;
+  }
+
+  body[data-page="detalhes"] #reviews-list .fr-review-score{
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+
+  body[data-page="detalhes"] #reviews-list .fr-comment-body{
+    max-width: 100%;
+    margin-left: 0;
+    margin-top: 12px;
+  }
+}
